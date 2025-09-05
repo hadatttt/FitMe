@@ -27,7 +27,7 @@ class LoginFragment : Fragment() {
 
         binding?.let { b ->
             b.btnNext.setOnClickListener {
-                findNavController().navigate(R.id.action_login_to_slash)
+                findNavController().navigate(R.id.action_login_to_hello)
             }
             b.tvCancel .setOnClickListener {
                 findNavController().navigate(R.id.action_login_to_slash)

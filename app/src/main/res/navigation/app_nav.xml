@@ -30,8 +30,8 @@
             android:id="@+id/action_login_to_slash"
             app:destination="@id/splashFragment" />
         <action
-            android:id="@+id/action_login_to_login_2"
-            app:destination="@id/login2Fragment" />
+            android:id="@+id/action_login_to_hello"
+            app:destination="@id/helloFragment" />
     </fragment>
 
     <fragment
@@ -43,30 +43,14 @@
         <action
             android:id="@+id/action_register_to_slash"
             app:destination="@id/splashFragment" />
+        <action
+            android:id="@+id/action_register_to_hello"
+            app:destination="@id/helloFragment" />
     </fragment>
-
     <fragment
-        android:id="@+id/login2Fragment"
-        android:name="com.pbl6.fitme.login.Login2Fragment"
-        android:label="Login"
-        tools:layout="@layout/fragment_login_2">
-
-        <action
-            android:id="@+id/action_login_2_to_login"
-            app:destination="@id/loginFragment" />
-        <action
-            android:id="@+id/action_login_2_to_login_3"
-            app:destination="@id/login3Fragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/login3Fragment"
-        android:name="com.pbl6.fitme.login.Login3Fragment"
-        android:label="Login"
-        tools:layout="@layout/fragment_helo">
-
-        <action
-            android:id="@+id/action_login_3_to_login_2"
-            app:destination="@id/login2Fragment" />
+        android:id="@+id/helloFragment"
+        android:name="com.pbl6.fitme.hello.HelloFragment"
+        android:label="Hello"
+        tools:layout="@layout/fragment_hello">
     </fragment>
 </navigation>
