@@ -1,0 +1,22 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <ImageView
+        android:id="@+id/ivFlag"
+        android:layout_width="24dp"
+        android:layout_height="16dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/eye_slash"/>
+
+    <TextView
+        android:id="@+id/tvCountryName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Vietnam (+84)"
+        android:textSize="14sp"
+        android:textColor="#000"/>
+</LinearLayout>
