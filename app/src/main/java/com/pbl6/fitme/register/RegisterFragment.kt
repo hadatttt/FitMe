@@ -38,7 +38,7 @@ class RegisterFragment : Fragment() {
         }
 
         // EditText
-        val editText1: EditText = view.findViewById(R.id.r0yzi0lzr3tlh)
+        val editText1: EditText = view.findViewById(R.id.action_register_to_slash)
         editText1.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -47,17 +47,17 @@ class RegisterFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Button Done
-        val button1: View = view.findViewById(R.id.rbgl7d5rbxk9)
-        button1.setOnClickListener {
-            if (editTextValue1.isNotEmpty()) {
-                Toast.makeText(requireContext(), "Email: $editTextValue1", Toast.LENGTH_SHORT).show()
-                // Chuyển sang HomeFragment bằng Navigation
-                findNavController().navigate(R.id.action_register_to_slash)
-            } else {
-                Toast.makeText(requireContext(), "Please enter your email!", Toast.LENGTH_SHORT).show()
-            }
-        }
+//        // Button Done
+//        val button1: View = view.findViewById(R.id.rbgl7d5rbxk9)
+//        button1.setOnClickListener {
+//            if (editTextValue1.isNotEmpty()) {
+//                Toast.makeText(requireContext(), "Email: $editTextValue1", Toast.LENGTH_SHORT).show()
+//                // Chuyển sang HomeFragment bằng Navigation
+//                findNavController().navigate(R.id.action_register_to_slash)
+//            } else {
+//                Toast.makeText(requireContext(), "Please enter your email!", Toast.LENGTH_SHORT).show()
+//            }
+//        }
 
         val button2: View = view.findViewById(R.id.tv_cancel)
         button2.setOnClickListener {

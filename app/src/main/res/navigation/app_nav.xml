@@ -63,7 +63,7 @@
         android:id="@+id/login3Fragment"
         android:name="com.pbl6.fitme.login.Login3Fragment"
         android:label="Login"
-        tools:layout="@layout/fragment_login_3">
+        tools:layout="@layout/fragment_helo">
 
         <action
             android:id="@+id/action_login_3_to_login_2"
