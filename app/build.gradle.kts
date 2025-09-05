@@ -72,4 +72,8 @@ dependencies {
     api(libs.ssp.android)
     api(libs.permissionx)
     api(libs.androidx.media3.exoplayer.v131)
+    implementation(libs.ccp)
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
