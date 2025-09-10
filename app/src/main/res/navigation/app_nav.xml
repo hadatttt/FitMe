@@ -52,5 +52,16 @@
         android:name="com.pbl6.fitme.hello.HelloFragment"
         android:label="Hello"
         tools:layout="@layout/fragment_hello">
+        <action
+            android:id="@+id/action_hello_to_profile"
+            app:destination="@id/profileFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.pbl6.fitme.profile.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile">
+    </fragment>
+
 </navigation>
