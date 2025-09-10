@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentSplashBinding
+import com.pbl6.fitme.untils.singleClick
 
 class SplashFragment : Fragment() {
 
@@ -32,10 +33,10 @@ class SplashFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding?.let { b ->
-            b.btnGetStarted.setOnClickListener {
+            b.btnGetStarted.singleClick {
                 findNavController().navigate(R.id.action_splash_to_register)
             }
-            b.ivNextLogin.setOnClickListener {
+            b.ivNextLogin.singleClick {
                 findNavController().navigate(R.id.action_splash_to_login)
             }
         }

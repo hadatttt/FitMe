@@ -38,7 +38,7 @@
         android:layout_marginHorizontal="@dimen/_10sdp"
         android:layout_marginStart="12dp"
         android:layout_marginTop="@dimen/_20sdp"
-        android:background="@drawable/bg_circle_while"
+        android:background="@drawable/bg_white"
         android:hint="Email"
         android:inputType="text"
         android:padding="@dimen/_10sdp"
