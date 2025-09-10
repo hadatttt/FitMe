@@ -16,8 +16,6 @@ class LoginFragment : Fragment() {
 
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding
-
-    // trạng thái hiển thị mật khẩu
     private var isPasswordVisible = false
 
     override fun onCreateView(
@@ -42,20 +40,21 @@ class LoginFragment : Fragment() {
                     .build()
                 findNavController().navigate(R.id.action_login_to_slash, null, options)
             }
-
-            // toggle ẩn/hiện mật khẩu
-            b.ivTogglePassword.setOnClickListener {
+            b.ivTogglePassword.singleClick {
                 isPasswordVisible = !isPasswordVisible
                 if (isPasswordVisible) {
                     b.etPassword.inputType =
                         InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                    b.ivTogglePassword.setImageResource(R.drawable.eye_slash) // icon mắt mở
+                    b.ivTogglePassword.setImageResource(R.drawable.eye) // icon mắt mở
                 } else {
                     b.etPassword.inputType =
                         InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                    b.ivTogglePassword.setImageResource(R.drawable.eye)
+                    b.ivTogglePassword.setImageResource(R.drawable.eye_slash)
                 }
                 b.etPassword.setSelection(b.etPassword.text?.length ?: 0)
+            }
+            binding?.tvLogin?.singleClick {
+
             }
         }
     }

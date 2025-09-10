@@ -63,7 +63,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/_10sdp"
         android:layout_marginStart="12dp"
-        android:layout_marginTop="36dp"
+        android:layout_marginTop="28dp"
         android:background="@drawable/bg_white"
         android:hint="Password"
         android:inputType="text"

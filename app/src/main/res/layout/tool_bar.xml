@@ -42,8 +42,6 @@
                 android:contentDescription="Trang chủ"/>
 
         </LinearLayout>
-
-        <!-- Yêu thích -->
         <LinearLayout
             android:id="@+id/wish_id"
             android:layout_width="0dp"
