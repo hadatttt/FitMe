@@ -3,15 +3,12 @@ package com.pbl6.fitme.register
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.bumptech.glide.Glide
 import com.pbl6.fitme.R
 
 class RegisterFragment : Fragment() {
@@ -34,7 +31,6 @@ class RegisterFragment : Fragment() {
         ccp.setOnCountryChangeListener {
             val countryCode = ccp.selectedCountryCode   // vd: "84"
             val fullNumber = "+$countryCode${etPhone.text}"
-            println("Số đầy đủ: $fullNumber")
         }
 
         // EditText
@@ -47,18 +43,6 @@ class RegisterFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Button Done
-        val button1: View = view.findViewById(R.id.btn_done)
-        button1.setOnClickListener {
-            if (editTextValue1.isNotEmpty()) {
-                Toast.makeText(requireContext(), "Email: $editTextValue1", Toast.LENGTH_SHORT).show()
-                // Chuyển sang HomeFragment bằng Navigation
-                findNavController().navigate(R.id.action_register_to_hello)
-            } else {
-                Toast.makeText(requireContext(), "Please enter your email!", Toast.LENGTH_SHORT).show()
-            }
-        }
-        // Button Cancel
         val button2: View = view.findViewById(R.id.tv_cancel)
         button2.setOnClickListener {
             findNavController().navigate(R.id.action_register_to_slash)
