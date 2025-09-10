@@ -76,7 +76,14 @@ class RegisterFragment : Fragment() {
         }
 
         // Cancel
-c
+        binding.tvCancel.singleClick {
+            findNavController().navigate(R.id.action_register_to_slash)
+        }
+
+        // Done
+        binding.btnDone.singleClick {
+            findNavController().navigate(R.id.action_register_to_hello)
+        }
     }
 
     private fun openCamera() {
