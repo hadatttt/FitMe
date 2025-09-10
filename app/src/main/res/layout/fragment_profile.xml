@@ -1,6 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:background="@drawable/bg_background"
              android:layout_height="match_parent">
 
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/iv_avatar"
+        android:layout_width="130dp"
+        app:layout_constraintVertical_bias="0.3"
+        android:layout_height="130dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/image"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/RoundedImageStyle" />
+    <TextView
+        android:id="@+id/helo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chào bạn !"
+        android:layout_marginTop="@dimen/_30sdp"
+        app:layout_constraintTop_toBottomOf="@id/iv_avatar"
+        android:textColor="#202020"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+    <TextView
+        android:id="@+id/rap45csn183"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=" Hãy mua sắm nào "
+        android:layout_marginTop="@dimen/_30sdp"
+        app:layout_constraintTop_toBottomOf="@id/helo"
+        android:textColor="#202020"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_heart"
+        app:layout_constraintStart_toEndOf="@id/rap45csn183"
+        app:layout_constraintTop_toTopOf="@id/rap45csn183"
+        app:layout_constraintBottom_toBottomOf="@id/rap45csn183"
+        android:layout_margin="@dimen/_5sdp"/>
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/iv_next_login"
+        android:layout_width="@dimen/_30sdp"
+        android:layout_height="@dimen/_30sdp"
+        android:padding="@dimen/_7sdp"
+        android:src="@drawable/ic_next"
+        android:layout_marginStart="@dimen/_10sdp"
+        android:background="@drawable/bg_circle_blue"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="@dimen/_50sdp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rap45csn183"
+/>
 </androidx.constraintlayout.widget.ConstraintLayout>
