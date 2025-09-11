@@ -4,16 +4,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
-import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
-import com.pbl6.fitme.profile.ProductAdapter
 import com.pbl6.fitme.toolbar.ToolBarFragment
-import com.pbl6.fitme.untils.singleClick
-
 class WishlistFragment : ToolBarFragment() {
 
     override fun onCreateView(
@@ -29,17 +23,17 @@ class WishlistFragment : ToolBarFragment() {
         setupBottomNavigation(view)
 
         // Dữ liệu mẫu
-        val topProducts = listOf("Bag", "Watch", "Shirt", "Shoes", "Dress")
-        val newItems = listOf("Item1", "Item2", "Item3", "Item4", "Item5", "Item6")
-
-        // Setup RecyclerView
-        setupRecyclerView(view.findViewById(R.id.rvRecentlyViewed), topProducts)
-        setupRecyclerView(view.findViewById(R.id.rvWishlist), newItems)
+        val sampleItems = listOf(
+            WishlistProduct("Bag", "$25.00", "Pink", "M"),
+            WishlistProduct("Watch", "$17.00", "Black", "L"),
+            WishlistProduct("Shirt", "$12.00", "Blue", "S")
+        )
+        setupRecyclerView(view.findViewById(R.id.rvWishlist), sampleItems)
     }
 
-    private fun setupRecyclerView(rv: RecyclerView, data: List<String>) {
+    private fun setupRecyclerView(rv: RecyclerView, data: List<WishlistProduct>) {
         rv.layoutManager =
-            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        rv.adapter = ProductAdapter(data)
+            LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
+        rv.adapter = WishlistProductAdapter(data)
     }
 }

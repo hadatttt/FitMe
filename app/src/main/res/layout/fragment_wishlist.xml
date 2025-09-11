@@ -33,30 +33,31 @@
             android:textStyle="bold"
             android:textSize="16sp" />
 
-        <!-- RecyclerView hình tròn avatar -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvRecentlyViewed"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="10dp"
-            android:orientation="horizontal"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/item_product" />
+<!--        &lt;!&ndash; RecyclerView hình tròn avatar &ndash;&gt;-->
+<!--        <androidx.recyclerview.widget.RecyclerView-->
+<!--            android:id="@+id/rvRecentlyViewed"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_marginTop="10dp"-->
+<!--            android:orientation="horizontal"-->
+<!--            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"-->
+<!--            tools:listitem="@layout/item_product" />-->
     </LinearLayout>
 
     <!-- Danh sách sản phẩm -->
+
+    <!-- Thanh tool_bar cố định dưới -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvWishlist"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/layout_recent"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:clipToPadding="false"
         android:paddingBottom="70dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        tools:listitem="@layout/item_product" />
+        tools:listitem="@layout/item_product_wishlist" />
 
-    <!-- Thanh tool_bar cố định dưới -->
     <include
         android:id="@+id/tool_bar"
         layout="@layout/tool_bar"

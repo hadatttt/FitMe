@@ -56,15 +56,24 @@ class ProfileFragment : ToolBarFragment() {
         // Dữ liệu mẫu
         val topProducts = listOf("Bag", "Watch", "Shirt", "Shoes", "Dress")
         val stories = listOf("Story1", "Story2", "Story3")
-        val newItems = listOf("Item1", "Item2", "Item3", "Item4", "Item5", "Item6")
+        val productList = listOf(
+            Product("Bag", "$25.00"),
+            Product("Watch", "$17.00"),
+            Product("Shirt", "$12.00")
+        )
 
         // Setup RecyclerView
-        setupRecyclerView(view.findViewById(R.id.rvTopProducts), topProducts)
-        setupRecyclerView(view.findViewById(R.id.rvStories), stories)
-        setupRecyclerView(view.findViewById(R.id.rvNewItems), newItems)
+        setupRecyclerViewCatagory(view.findViewById(R.id.rvTopProducts), topProducts)
+        setupRecyclerViewCatagory(view.findViewById(R.id.rvStories), stories)
+        setupRecyclerViewProduct(view.findViewById(R.id.rvNewItems), productList)
     }
 
-    private fun setupRecyclerView(rv: RecyclerView, data: List<String>) {
+    private fun setupRecyclerViewCatagory(rv: RecyclerView, data: List<String>) {
+        rv.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        rv.adapter = CategoryAdapter(data)
+    }
+    private fun setupRecyclerViewProduct(rv: RecyclerView, data: List<Product>) {
         rv.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         rv.adapter = ProductAdapter(data)

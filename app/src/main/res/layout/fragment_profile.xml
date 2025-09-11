@@ -124,8 +124,9 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvTopProducts"
                 android:layout_width="match_parent"
-                android:layout_height="100dp"
-                android:orientation="horizontal"/>
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                />
 
             <!-- Stories -->
             <TextView
@@ -138,7 +139,7 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvStories"
                 android:layout_width="match_parent"
-                android:layout_height="180dp"
+                android:layout_height="wrap_content"
                 android:orientation="horizontal"/>
 
             <LinearLayout
@@ -186,7 +187,7 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvNewItems"
                 android:layout_width="match_parent"
-                android:layout_height="150dp"
+                android:layout_height="wrap_content"
                 android:orientation="horizontal"/>
         </LinearLayout>
     </ScrollView>

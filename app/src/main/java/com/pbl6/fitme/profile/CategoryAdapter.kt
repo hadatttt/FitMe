@@ -8,31 +8,24 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
 
-data class Product(
-    val title: String,
-    val price: String
-)
-
-class ProductAdapter(private val items: List<Product>) :
-    RecyclerView.Adapter<ProductAdapter.ViewHolder>() {
+class CategoryAdapter(private val items: List<String>) :
+    RecyclerView.Adapter<CategoryAdapter.ViewHolder>() {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imgProduct: ImageView = view.findViewById(R.id.imgProduct)
-        val txtTitle: TextView = view.findViewById(R.id.txtTitle)
-        val txtPrice: TextView = view.findViewById(R.id.txtPrice)
+        val imgItem: ImageView = view.findViewById(R.id.imgItem)
+        val txtName: TextView = view.findViewById(R.id.txtName)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_product, parent, false)
+            .inflate(R.layout.item_category, parent, false)
         return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = items[position]
-        holder.txtTitle.text = item.title
-        holder.txtPrice.text = item.price
-        holder.imgProduct.setImageResource(R.drawable.ic_splash) // ảnh tạm
+        holder.txtName.text = items[position]
+        // Tạm thời set ảnh mặc định, có thể dùng Glide để load ảnh từ URL
+        holder.imgItem.setImageResource(R.drawable.ic_launcher_foreground)
     }
 
     override fun getItemCount() = items.size

@@ -6,6 +6,7 @@ import androidx.navigation.fragment.findNavController
 import com.pbl6.fitme.R
 import com.pbl6.fitme.untils.singleClick
 import android.widget.LinearLayout
+import com.pbl6.fitme.cart.CartFragment
 import com.pbl6.fitme.profile.ProfileFragment
 import com.pbl6.fitme.wishlist.WishlistFragment
 
@@ -20,19 +21,36 @@ open class ToolBarFragment : Fragment() {
 
         home.singleClick {
             if (!isCurrentFragment(ProfileFragment::class.java)) {
-                findNavController().navigate(R.id.action_hello_to_profile)
+                if (isCurrentFragment(WishlistFragment::class.java)) {
+                    findNavController().navigate(R.id.action_wishlist_to_profile)
+                }
+                else {
+                    findNavController().navigate(R.id.action_hello_to_profile)
+                }
             }
         }
         wish.singleClick {
             if (!isCurrentFragment(WishlistFragment::class.java)) {
-                findNavController().navigate(R.id.action_profile_to_wishlist)
+                if (isCurrentFragment(ProfileFragment::class.java)) {
+                    findNavController().navigate(R.id.action_profile_to_wishlist)
+                }
+                else if (isCurrentFragment(CartFragment::class.java)) {
+                    findNavController().navigate(R.id.action_cart_to_wishlist)
+                }
             }
         }
         filter.singleClick {
 
         }
         cart.singleClick {
-
+            if (!isCurrentFragment(CartFragment::class.java)) {
+                if (isCurrentFragment(ProfileFragment::class.java)) {
+                    findNavController().navigate(R.id.action_profile_to_cart)
+                }
+                else if (isCurrentFragment(WishlistFragment::class.java)) {
+                    findNavController().navigate(R.id.action_wishlist_to_cart)
+                }
+            }
         }
         profile.singleClick {
 
