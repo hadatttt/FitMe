@@ -53,8 +53,15 @@ class LoginFragment : Fragment() {
                 }
                 b.etPassword.setSelection(b.etPassword.text?.length ?: 0)
             }
-            binding?.tvLogin?.singleClick {
-
+            binding?.btnNext?.
+                singleClick {
+                    val options = NavOptions.Builder()
+                        .setEnterAnim(R.anim.inright)
+                        .setExitAnim(R.anim.outleft)
+                        .setPopEnterAnim(R.anim.inleft)
+                        .setPopExitAnim(R.anim.outright)
+                        .build()
+                    findNavController().navigate(R.id.action_login_to_hello, null, options)
             }
         }
     }

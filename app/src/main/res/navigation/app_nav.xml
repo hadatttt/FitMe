@@ -62,6 +62,35 @@
         android:name="com.pbl6.fitme.profile.ProfileFragment"
         android:label="Profile"
         tools:layout="@layout/fragment_profile">
+        <action
+            android:id="@+id/action_profile_to_wishlist"
+            app:destination="@id/wishlistFragment" />
+        <action
+            android:id="@+id/action_profile_to_cart"
+            app:destination="@id/cartFragment" />
     </fragment>
-
+    <fragment
+        android:id="@+id/wishlistFragment"
+        android:name="com.pbl6.fitme.wishlist.WishlistFragment"
+        android:label="Wishlist"
+        tools:layout="@layout/fragment_wishlist">
+        <action
+            android:id="@+id/action_wishlist_to_profile"
+            app:destination="@id/profileFragment" />
+        <action
+            android:id="@+id/action_wishlist_to_cart"
+            app:destination="@id/cartFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/cartFragment"
+        android:name="com.pbl6.fitme.cart.CartFragment"
+        android:label="Cart"
+        tools:layout="@layout/fragment_cart">
+        <action
+            android:id="@+id/action_cart_to_profile"
+            app:destination="@id/profileFragment" />
+        <action
+            android:id="@+id/action_cart_to_wishlist"
+            app:destination="@id/wishlistFragment" />
+    </fragment>
 </navigation>

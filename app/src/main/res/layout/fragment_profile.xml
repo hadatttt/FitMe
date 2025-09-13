@@ -1,57 +1,202 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    tools:context=".MainActivity">
+    tools:context=".profile.ProfileFragment">
 
-    <!-- Top Products -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Top Products"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:paddingVertical="8dp" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvTopProducts"
+    <!-- Nội dung chính -->
+    <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:orientation="horizontal"
-        android:scrollbars="horizontal"/>
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:layout_above="@+id/tool_bar">
 
-    <!-- Stories -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Stories"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:paddingVertical="8dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvStories"
+            <!-- Header với avatar + My Activity + icon -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:weightSum="4">
+
+                <!-- Avatar -->
+                <ImageView
+                    android:id="@+id/imgAvatar"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_marginRight="@dimen/_30sdp"
+                    android:src="@drawable/image"
+                    android:scaleType="centerCrop"
+                    android:background="@drawable/bg_circle_while"
+                    android:layout_weight="1"/>
+
+                <!-- My Activity -->
+                <Button
+                    android:id="@+id/btnMyActivity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="My Activity"
+                    android:textSize="15sp"
+                    android:layout_weight="1"
+                    android:layout_marginRight="@dimen/_20sdp"
+                    android:backgroundTint="#004CFF"/>
+
+                <!-- Icon thông báo -->
+                <ImageView
+                    android:id="@+id/btnVoucher"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_voucher" />
+
+                <!-- Icon thông báo -->
+                <ImageView
+                    android:id="@+id/btnNotification"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_notification" />
+
+                <!-- Icon cài đặt -->
+                <ImageView
+                    android:id="@+id/btnSetting"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_setting"
+                    />
+            </LinearLayout>
+
+            <!-- Hello Romina -->
+            <TextView
+                android:id="@+id/txtHello"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hello, Romina!"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"/>
+
+            <!-- Announcement -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_bluelight"
+                android:padding="12dp"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Announcement: Lorem ipsum dolor sit amet..."
+                    android:textSize="14sp"/>
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/iv_see_all_notification"
+                    android:layout_width="@dimen/_25sdp"
+                    android:layout_height="@dimen/_25sdp"
+                    android:padding="@dimen/_7sdp"
+                    android:src="@drawable/ic_next"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:background="@drawable/bg_circle_blue"/>
+
+            </LinearLayout>
+
+            <!-- Top Products -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Top Products"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginTop="16dp"/>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvTopProducts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                />
+
+            <!-- Stories -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Stories"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginTop="16dp"/>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvStories"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="16dp">
+
+                <!-- New Items bên trái -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="New Items"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:layout_weight="1"
+                    android:layout_gravity="start"/>
+
+                <!-- See All + Icon bên phải -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="See All"
+                        android:textStyle="bold"
+                        android:textColor="#004CFF"
+                        android:textSize="18sp"/>
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/iv_see_all_new_items"
+                        android:layout_width="@dimen/_25sdp"
+                        android:layout_height="@dimen/_25sdp"
+                        android:padding="@dimen/_7sdp"
+                        android:src="@drawable/ic_next"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:background="@drawable/bg_circle_blue"/>
+                </LinearLayout>
+            </LinearLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvNewItems"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Thanh tool_bar cố định dưới -->
+    <include
+        android:id="@+id/tool_bar"
+        layout="@layout/tool_bar"
         android:layout_width="match_parent"
-        android:layout_height="180dp"
-        android:orientation="horizontal"
-        android:scrollbars="horizontal"/>
-
-    <!-- New Items -->
-    <TextView
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Items"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:paddingVertical="8dp" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvNewItems"
-        android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:orientation="horizontal"
-        android:scrollbars="horizontal"/>
-
-</LinearLayout>
+        android:layout_alignParentBottom="true"/>
+</RelativeLayout>
