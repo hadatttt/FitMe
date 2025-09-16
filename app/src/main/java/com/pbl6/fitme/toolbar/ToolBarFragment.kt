@@ -24,6 +24,9 @@ open class ToolBarFragment : Fragment() {
                 if (isCurrentFragment(WishlistFragment::class.java)) {
                     findNavController().navigate(R.id.action_wishlist_to_profile)
                 }
+                else if (isCurrentFragment(CartFragment::class.java)) {
+                    findNavController().navigate(R.id.action_cart_to_profile)
+                }
                 else {
                     findNavController().navigate(R.id.action_hello_to_profile)
                 }

@@ -20,7 +20,7 @@
     <LinearLayout
         android:id="@+id/layout_recent"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_below="@id/txtWishlist"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
@@ -32,32 +32,44 @@
             android:text="Recently viewed"
             android:textStyle="bold"
             android:textSize="16sp" />
+        <!-- Danh sách sản phẩm -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvWishlist"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/layout_recent"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false"
+            android:paddingBottom="70dp"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/item_product_wishlist" />
+        <!-- View hiển thị khi giỏ hàng rỗng -->
+        <LinearLayout
+            android:id="@+id/emptyView_wl"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
 
-<!--        &lt;!&ndash; RecyclerView hình tròn avatar &ndash;&gt;-->
-<!--        <androidx.recyclerview.widget.RecyclerView-->
-<!--            android:id="@+id/rvRecentlyViewed"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_marginTop="10dp"-->
-<!--            android:orientation="horizontal"-->
-<!--            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"-->
-<!--            tools:listitem="@layout/item_product" />-->
+            <ImageView
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:src="@drawable/ic_empty_wishlist"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Your cart is empty"
+                android:textSize="16sp"
+                android:textColor="#555555"
+                android:layout_marginTop="12dp"/>
+        </LinearLayout>
     </LinearLayout>
 
-    <!-- Danh sách sản phẩm -->
 
     <!-- Thanh tool_bar cố định dưới -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvWishlist"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/layout_recent"
-        android:layout_marginTop="10dp"
-        android:clipToPadding="false"
-        android:paddingBottom="70dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        tools:listitem="@layout/item_product_wishlist" />
-
     <include
         android:id="@+id/tool_bar"
         layout="@layout/tool_bar"

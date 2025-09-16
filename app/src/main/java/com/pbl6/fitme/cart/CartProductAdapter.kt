@@ -7,6 +7,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
+import com.pbl6.fitme.untils.singleClick
+
 data class CartProduct(
     val title: String,
     val detail: String,
@@ -17,7 +19,8 @@ data class CartProduct(
 class CartProductAdapter(
     private val items: MutableList<CartProduct>,
     private val listener: OnCartActionListener
-) : RecyclerView.Adapter<CartProductAdapter.ViewHolder>() {
+) : RecyclerView.Adapter<CartProductAdapter.VH>() {
+
 
     interface OnCartActionListener {
         fun onRemove(position: Int)
@@ -25,35 +28,52 @@ class CartProductAdapter(
         fun onDecrease(position: Int)
     }
 
-    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imgProduct: ImageView = view.findViewById(R.id.imgProduct)
-        val btnRemove: ImageView = view.findViewById(R.id.btnRemoveCart)
-        val btnIncrease: ImageView = view.findViewById(R.id.btnPlus)
-        val btnDecrease: ImageView = view.findViewById(R.id.btnMinus)
-        val txtTitle: TextView = view.findViewById(R.id.txtTitle)
-        val txtDetail: TextView = view.findViewById(R.id.txtDetail)
-        val txtPrice: TextView = view.findViewById(R.id.txtPrice)
+
+    inner class VH(view: View) : RecyclerView.ViewHolder(view) {
+        val txtTitle: TextView = view.findViewById(R.id.txtTitle_cart)
+        val txtDetail: TextView = view.findViewById(R.id.txtDetail_cart)
+        val txtPrice: TextView = view.findViewById(R.id.txtPrice_cart)
+        val imgProduct: ImageView = view.findViewById(R.id.imgProduct_cart)
         val txtQuantity: TextView = view.findViewById(R.id.txtQty)
+        val btnIncrease: View = view.findViewById(R.id.btnPlus)
+        val btnDecrease: View = view.findViewById(R.id.btnMinus)
+        val btnRemove: View = view.findViewById(R.id.btnRemoveCart)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_product_cart, parent, false)
-        return ViewHolder(view)
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_product_cart, parent, false)
+        return VH(view)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = items[position]
-        holder.txtTitle.text = item.title
-        holder.txtDetail.text = item.detail
-        holder.txtPrice.text = "$${item.price}"
-        holder.txtQuantity.text = item.quantity.toString()
-        holder.imgProduct.setImageResource(item.imageResId)
 
-        holder.btnRemove.setOnClickListener { listener.onRemove(position) }
-        holder.btnIncrease.setOnClickListener { listener.onIncrease(position) }
-        holder.btnDecrease.setOnClickListener { listener.onDecrease(position) }
+    override fun onBindViewHolder(holder: VH, position: Int) {
+        val product = items[position]
+        holder.txtTitle.text = product.title
+        holder.txtDetail.text = product.detail
+        holder.txtPrice.text = "${product.price}"
+        holder.txtQuantity.text = product.quantity.toString()
+        holder.imgProduct.setImageResource(product.imageResId)
+
+
+        holder.btnIncrease.singleClick {
+            val pos = holder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) listener.onIncrease(pos)
+        }
+
+
+        holder.btnDecrease.singleClick {
+            val pos = holder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) listener.onDecrease(pos)
+        }
+
+
+        holder.btnRemove.singleClick {
+            val pos = holder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) listener.onRemove(pos)
+        }
     }
 
-    override fun getItemCount() = items.size
+
+    override fun getItemCount(): Int = items.size
 }

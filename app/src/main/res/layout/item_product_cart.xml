@@ -14,7 +14,7 @@
         android:layout_height="90dp">
 
         <ImageView
-            android:id="@+id/imgProduct"
+            android:id="@+id/imgProduct_cart"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
@@ -40,7 +40,7 @@
         android:layout_marginStart="12dp">
 
         <TextView
-            android:id="@+id/txtTitle"
+            android:id="@+id/txtTitle_cart"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Lorem ipsum dolor sit amet consectetur."
@@ -48,7 +48,7 @@
             android:textColor="#333333" />
 
         <TextView
-            android:id="@+id/txtDetail"
+            android:id="@+id/txtDetail_cart"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Pink, Size M"
@@ -57,7 +57,7 @@
             android:layout_marginTop="2dp"/>
 
         <TextView
-            android:id="@+id/txtPrice"
+            android:id="@+id/txtPrice_cart"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="$17,00"
