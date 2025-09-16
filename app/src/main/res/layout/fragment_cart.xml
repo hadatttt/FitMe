@@ -63,7 +63,7 @@ tools:context=".wishlist.WishlistFragment">
             <ImageView
                 android:id="@+id/btnEditAddress"
                 android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_height="wrap_content"
                 android:src="@drawable/ic_edit" />
         </LinearLayout>
 

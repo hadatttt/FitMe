@@ -16,14 +16,20 @@ data class WishlistProduct(
     val size: String
 )
 
-class WishlistProductAdapter(private val items: List<WishlistProduct>) :
-    RecyclerView.Adapter<WishlistProductAdapter.ViewHolder>() {
+class WishlistProductAdapter(
+    private val items: MutableList<WishlistProduct>,
+    private val listener: OnWishlistActionListener
+) : RecyclerView.Adapter<WishlistProductAdapter.ViewHolder>() {
 
+    interface OnWishlistActionListener {
+        fun onRemove(position: Int)
+        fun onAddToCart(position: Int)
+    }
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imgProduct: ImageView = view.findViewById(R.id.imgProduct)
+        val imgProduct: ImageView = view.findViewById(R.id.imgProduct_wl)
         val btnRemove: ImageView = view.findViewById(R.id.btnRemove)
-        val txtTitle: TextView = view.findViewById(R.id.txtTitle)
-        val txtPrice: TextView = view.findViewById(R.id.txtPrice)
+        val txtTitle: TextView = view.findViewById(R.id.txtTitle_wl)
+        val txtPrice: TextView = view.findViewById(R.id.txtPrice_wl)
         val btnColor: TextView = view.findViewById(R.id.btnColor)
         val btnSize: TextView = view.findViewById(R.id.btnSize)
         val btnAddToCart: ImageView = view.findViewById(R.id.btnAddToCart)
@@ -43,14 +49,15 @@ class WishlistProductAdapter(private val items: List<WishlistProduct>) :
         holder.btnSize.text = item.size
         holder.imgProduct.setImageResource(R.drawable.ic_splash)
 
-        // Sự kiện nút xóa
         holder.btnRemove.singleClick {
-            // TODO: xử lý xóa sản phẩm khỏi wishlist
+            val pos = holder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) listener.onRemove(pos)
         }
 
-        // Sự kiện nút thêm vào giỏ
         holder.btnAddToCart.singleClick {
             // TODO: xử lý thêm sản phẩm vào giỏ hàng
+            val pos = holder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) listener.onAddToCart(pos)
         }
     }
 
