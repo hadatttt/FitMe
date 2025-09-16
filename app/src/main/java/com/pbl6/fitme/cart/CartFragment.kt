@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
+import android.widget.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
@@ -30,7 +30,7 @@ class CartFragment : ToolBarFragment() {
         emptyView = view.findViewById(R.id.emptyView)
         txtCartTitle = view.findViewById(R.id.txtCartTitle)
 
-        val editAddress = view.findViewById<TextView>(R.id.btnEditAddress)
+        val editAddress = view.findViewById<ImageView>(R.id.btnEditAddress)
         editAddress.singleClick {
             // Xử lý khi nhấn nút "Edit Address"
         }
