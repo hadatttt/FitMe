@@ -82,7 +82,7 @@
         <!-- Country Code Picker: có cờ, mã quốc gia, mũi tên xổ xuống -->
         <com.hbb20.CountryCodePicker
             android:id="@+id/countryCodePicker"
-            android:layout_width="@dimen/_30sdp"
+            android:layout_width="@dimen/_40sdp"
             android:layout_height="@dimen/_30sdp"
             app:ccpDialog_showTitle="true"
             app:ccpDialog_showFlag="true"
@@ -104,7 +104,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="Your number"
-            android:textColor="#D2D2D2"
+            android:textColor="@color/black"
             android:textSize="14sp"
             android:inputType="phone"/>
     </LinearLayout>
