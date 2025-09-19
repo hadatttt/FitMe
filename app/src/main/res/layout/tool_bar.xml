@@ -36,6 +36,7 @@
             android:clickable="true">
 
             <ImageView
+                android:id="@+id/ic_home"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_home"
@@ -52,6 +53,7 @@
             android:clickable="true">
 
             <ImageView
+                android:id="@+id/ic_wish"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_heart_blue"
@@ -70,6 +72,7 @@
             android:clickable="true">
 
             <ImageView
+                android:id="@+id/ic_filter"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_filter"
@@ -87,6 +90,7 @@
             android:clickable="true">
 
             <ImageView
+                android:id="@+id/ic_card"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_cart"
@@ -104,6 +108,7 @@
             android:clickable="true">
 
             <ImageView
+                android:id="@+id/ic_person"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_person"
