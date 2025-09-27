@@ -1,88 +1,34 @@
 [versions]
-agp = "8.9.3"
+agp = "8.11.1"
+gson = "2.13.2"
 kotlin = "2.0.21"
-coreKtx = "1.16.0"
+coreKtx = "1.17.0"
 junit = "4.13.2"
-junitVersion = "1.2.1"
-espressoCore = "3.6.1"
-appcompat = "1.7.0"
-material = "1.12.0"
-activity = "1.10.1"
-constraintlayout = "2.2.1"
-androiLibrary = "8.7.2"
-collectionKtx = "1.4.5"
-dotsindicator = "5.1.0"
-firebaseCrashlyticsGradle = "3.0.3"
-fragmentKtx = "1.8.6"
-glide = "4.16.0"
-googleServices = "4.4.2"
-kotlinxCoroutinesCore = "1.9.0"
-kotlinxCoroutinesAndroid = "1.9.0"
-ksp = "2.0.20-1.0.24"
-library = "2.4"
-lifecycleExtensions = "2.2.0"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+appcompat = "1.7.1"
+material = "1.13.0"
 lifecycleLivedataKtx = "2.8.7"
-lottie = "6.3.0"
 navigationFragmentKtx = "2.8.8"
-navigationSafeArgsGradlePlugin = "2.9.0"
-navigationSafeArgsGradlePluginVersion = "2.7.7"
-permissionx = "1.8.1"
-recyclerview = "1.4.0"
-roundedimageview = "2.3.0"
-sdpAndroid = "1.1.1"
-sspAndroid = "1.1.1"
-swiperefreshlayout = "1.1.0"
-utilcodex = "1.31.1"
-navigationFragmentKtxVersion = "2.8.9"
-navigationUiKtx = "2.8.9"
-androidxNavigationFragmentKtx = "2.9.0"
-navigationUiKtxVersion = "2.9.0"
 media3ExoplayerVersion = "1.7.1"
+permissionx = "1.8.1"
 
 [libraries]
-ccp = { module = "com.hbb20:ccp", version = "2.7.3" }
 androidx-media3-exoplayer-v131 = { module = "androidx.media3:media3-exoplayer", version.ref = "media3ExoplayerVersion" }
+androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleLivedataKtx" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-androidx-navigation-safe-args-gradle-plugin = { module = "androidx.navigation:navigation-safe-args-gradle-plugin", version.ref = "navigationSafeArgsGradlePlugin" }
-androidx-navigation-safe-args-gradle-plugin-v277 = { module = "androidx.navigation:navigation-safe-args-gradle-plugin", version.ref = "navigationSafeArgsGradlePluginVersion" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
-androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
-androidx-appcompat-resources = { module = "androidx.appcompat:appcompat-resources", version.ref = "appcompat" }
-androidx-collection-ktx = { module = "androidx.collection:collection-ktx", version.ref = "collectionKtx" }
-androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
-androidx-lifecycle-extensions = { module = "androidx.lifecycle:lifecycle-extensions", version.ref = "lifecycleExtensions" }
-androidx-lifecycle-livedata-ktx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycleLivedataKtx" }
-androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleLivedataKtx" }
-androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleLivedataKtx" }
-androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigationFragmentKtx" }
-androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
-androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
-dotsindicator = { module = "com.tbuonomo:dotsindicator", version.ref = "dotsindicator" }
-firebase-crashlytics-gradle = { module = "com.google.firebase:firebase-crashlytics-gradle", version.ref = "firebaseCrashlyticsGradle" }
-glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
-google-services = { module = "com.google.gms:google-services", version.ref = "googleServices" }
-kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
-library = { module = "com.daimajia.androidanimations:library", version.ref = "library" }
-lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
+androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 permissionx = { module = "com.guolindev.permissionx:permissionx", version.ref = "permissionx" }
-roundedimageview = { module = "com.makeramen:roundedimageview", version.ref = "roundedimageview" }
-sdp-android = { module = "com.intuit.sdp:sdp-android", version.ref = "sdpAndroid" }
-ssp-android = { module = "com.intuit.ssp:ssp-android", version.ref = "sspAndroid" }
-utilcodex = { module = "com.blankj:utilcodex", version.ref = "utilcodex" }
-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtxVersion" }
-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
-androidx-navigation-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "androidxNavigationFragmentKtx" }
-androidx-navigation-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtxVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-android-library = { id = "com.android.library", version.ref = "androiLibrary" }
-google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+android-library = { id = "com.android.library" }   # bỏ version
+

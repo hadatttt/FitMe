@@ -1,19 +1,17 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    id("kotlin-parcelize")
 }
 
+
 android {
-    namespace = "com.pbl6.fitme"
+    namespace = "hoang.dqm.codebase"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.pbl6.fitme"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -26,6 +24,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -35,47 +34,25 @@ android {
     }
     buildFeatures {
         viewBinding = true
-        buildConfig = true
     }
 }
 
 dependencies {
-
-    // Android
-    api(libs.androidx.core.ktx)
-    api(libs.androidx.appcompat)
-    api(libs.androidx.appcompat.resources)
-    api(libs.material)
-    api(libs.androidx.constraintlayout)
-    api(libs.androidx.recyclerview)
-    api(libs.androidx.lifecycle.livedata.ktx)
-    api(libs.androidx.lifecycle.viewmodel.ktx)
-    api(libs.androidx.lifecycle.runtime.ktx)
-    api(libs.androidx.lifecycle.extensions)
-    api(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     // Navigation
     api(libs.androidx.navigation.fragment.ktx)
     api(libs.androidx.navigation.ui.ktx)
 
-    // Coroutines
-    api(libs.kotlinx.coroutines.android)
-    api(libs.kotlinx.coroutines.core)
-    api(libs.androidx.collection.ktx)
+    implementation(libs.gson)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    api(libs.androidx.media3.exoplayer.v131)
 
     // Utils
-    api(libs.glide)
-    api(libs.dotsindicator)
-    api(libs.lottie)
-    api(libs.roundedimageview)
-    api(libs.sdp.android)
-    api(libs.ssp.android)
     api(libs.permissionx)
-    api(libs.androidx.media3.exoplayer.v131)
-    implementation(libs.ccp)
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }
