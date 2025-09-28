@@ -33,7 +33,7 @@ class LoginFragment : BaseFragment<FragmentLoginBinding, LoginViewmodel>() {
             binding.etPassword.setSelection(binding.etPassword.text?.length ?: 0)
         }
         binding.btnNext.singleClick {
-            navigate(R.id.cartFragment)
+            navigate(R.id.profileFragment)
         }
     }
 

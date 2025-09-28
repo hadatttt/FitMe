@@ -1,57 +1,29 @@
 package com.pbl6.fitme.profile
 
-import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageView
-import androidx.fragment.app.Fragment
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
+import com.pbl6.fitme.databinding.FragmentProfileBinding
 import hoang.dqm.codebase.base.activity.BaseFragment
+import hoang.dqm.codebase.base.activity.navigate
+import hoang.dqm.codebase.base.activity.onBackPressed
+import hoang.dqm.codebase.base.activity.popBackStack
+import hoang.dqm.codebase.utils.setDraggableWithClick
 import hoang.dqm.codebase.utils.singleClick
 
-class ProfileFragment : BaseFragment<>() {
+class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>() {
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_profile, container, false)
-    }
+    override fun initView() {
+        // Hiện toolbar trong Activity
+        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
+        toolbar.visibility = View.VISIBLE
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val setting: ImageView = view.findViewById(R.id.btnSetting)
-        val notification: ImageView = view.findViewById(R.id.btnNotification)
-        val voucher: ImageView = view.findViewById(R.id.btnVoucher)
-        val btnSeeAll = view.findViewById<View>(R.id.iv_see_all_new_items)
-        val btnSeeAllNotification = view.findViewById<View>(R.id.iv_see_all_notification)
-        val btnMyActivity = view.findViewById<Button>(R.id.btnMyActivity)
+        // Highlight tab person trong toolbar
+        highlightSelectedTab(R.id.person_id)
 
-        btnMyActivity.singleClick {
-
-        }
-        setting.singleClick {
-
-        }
-        notification.singleClick {
-
-        }
-        voucher.singleClick {
-
-        }
-        btnSeeAll.singleClick {
-
-        }
-        btnSeeAllNotification.singleClick {
-
-        }
-
-
-        // Dữ liệu mẫu
+        // ===== Data mẫu =====
         val topProducts = listOf("Bag", "Watch", "Shirt", "Shoes", "Dress")
         val stories = listOf("Story1", "Story2", "Story3")
         val productList = listOf(
@@ -60,20 +32,95 @@ class ProfileFragment : BaseFragment<>() {
             Product("Shirt", "$12.00")
         )
 
-        // Setup RecyclerView
-        setupRecyclerViewCatagory(view.findViewById(R.id.rvTopProducts), topProducts)
-        setupRecyclerViewCatagory(view.findViewById(R.id.rvStories), stories)
-        setupRecyclerViewProduct(view.findViewById(R.id.rvNewItems), productList)
+        // Setup RecyclerViews
+        setupRecyclerViewCategory(binding.rvTopProducts, topProducts)
+        setupRecyclerViewCategory(binding.rvStories, stories)
+        setupRecyclerViewProduct(binding.rvNewItems, productList)
     }
 
-    private fun setupRecyclerViewCatagory(rv: RecyclerView, data: List<String>) {
-        rv.layoutManager =
-            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+    override fun initListener() {
+        onBackPressed {
+            hideToolbar()
+            popBackStack()
+        }
+        binding.flCart.setDraggableWithClick {
+            hideToolbar()
+            popBackStack()
+        }
+        // ===== Button trong Profile =====
+        binding.btnMyActivity.singleClick {
+            // TODO: Navigate to MyActivity screen
+        }
+        binding.btnSetting.singleClick {
+            // TODO: Navigate to Settings screen
+        }
+        binding.btnNotification.singleClick {
+            // TODO: Show Notification list
+        }
+        binding.btnVoucher.singleClick {
+            // TODO: Show Voucher screen
+        }
+        binding.ivSeeAllNewItems.singleClick {
+            // TODO: Show full product list
+        }
+        binding.ivSeeAllNotification.singleClick {
+            // TODO: Show full notification list
+        }
+
+        // ===== Toolbar click =====
+        requireActivity().findViewById<View>(R.id.home_id).singleClick {
+            highlightSelectedTab(R.id.home_id)
+            // TODO: Navigate to HomeFragment
+        }
+        requireActivity().findViewById<View>(R.id.wish_id).singleClick {
+            highlightSelectedTab(R.id.wish_id)
+            // TODO: Navigate to WishFragment
+        }
+        requireActivity().findViewById<View>(R.id.filter_id).singleClick {
+            highlightSelectedTab(R.id.filter_id)
+            // TODO: Navigate to FilterFragment
+        }
+        requireActivity().findViewById<View>(R.id.cart_id).singleClick {
+            highlightSelectedTab(R.id.cart_id)
+            // TODO: Navigate to CartFragment
+        }
+        requireActivity().findViewById<View>(R.id.person_id).singleClick {
+            highlightSelectedTab(R.id.person_id)
+            // TODO: Navigate to ProfileFragment (current)
+        }
+    }
+
+    override fun initData() {
+        // TODO: Load data từ ViewModel
+    }
+
+    // ===== Toolbar Helpers =====
+    private fun highlightSelectedTab(selectedId: Int) {
+        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.filter_id, R.id.cart_id, R.id.person_id)
+        ids.forEach { id ->
+            val view = requireActivity().findViewById<View>(id)
+            if (id == selectedId) {
+                view.setBackgroundResource(R.drawable.bg_selected_tab)
+            } else {
+                view.setBackgroundColor(
+                    ContextCompat.getColor(requireContext(), android.R.color.transparent)
+                )
+            }
+        }
+    }
+
+    // ===== RecyclerView Helpers =====
+    private fun setupRecyclerViewCategory(rv: RecyclerView, data: List<String>) {
+        rv.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         rv.adapter = CategoryAdapter(data)
     }
+
     private fun setupRecyclerViewProduct(rv: RecyclerView, data: List<Product>) {
-        rv.layoutManager =
-            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        rv.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         rv.adapter = ProductAdapter(data)
+    }
+    private fun hideToolbar() {
+        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
+        toolbar.visibility = View.GONE
     }
 }

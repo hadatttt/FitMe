@@ -102,10 +102,5 @@ tools:context=".wishlist.WishlistFragment">
         </LinearLayout>
     </LinearLayout>
 
-<include
-    android:id="@+id/tool_bar"
-    layout="@layout/tool_bar"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_alignParentBottom="true"/>
+
 </RelativeLayout>
