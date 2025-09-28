@@ -5,12 +5,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
-import com.pbl6.fitme.cart.CartProductAdapter
-import com.pbl6.fitme.toolbar.ToolBarFragment
-class WishlistFragment : ToolBarFragment() {
+class WishlistFragment : Fragment() {
 
     private lateinit var adapter: WishlistProductAdapter
     private lateinit var txtTitle: TextView
@@ -28,7 +26,6 @@ class WishlistFragment : ToolBarFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupBottomNavigation(view)
 
         txtTitle = view.findViewById(R.id.txtWishlist)
         emptyView = view.findViewById(R.id.emptyView_wl)
@@ -59,7 +56,6 @@ class WishlistFragment : ToolBarFragment() {
         })
 
         rvWishlist.adapter = adapter
-        setupBottomNavigation(view)
         updateWishlistView()
     }
 

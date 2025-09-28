@@ -6,14 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.LinearLayout
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
-import com.pbl6.fitme.toolbar.ToolBarFragment
-import com.pbl6.fitme.untils.singleClick
+import hoang.dqm.codebase.base.activity.BaseFragment
+import hoang.dqm.codebase.utils.singleClick
 
-class ProfileFragment : ToolBarFragment() {
+class ProfileFragment : BaseFragment<>() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -50,8 +50,6 @@ class ProfileFragment : ToolBarFragment() {
 
         }
 
-        // Gọi menu chung
-        setupBottomNavigation(view)
 
         // Dữ liệu mẫu
         val topProducts = listOf("Bag", "Watch", "Shirt", "Shoes", "Dress")

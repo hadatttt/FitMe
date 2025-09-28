@@ -60,7 +60,7 @@ import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.application.getBaseApplication
 import hoang.dqm.codebase.service.session.isFirstScene
 import hoang.dqm.codebase.service.session.setFirstScene
-import hoang.dqm.codebase.service.sound.AppMusicPlayer
+
 
 fun BaseFragment<*, *>.trackingScreen() {
     if (isFirstScene(clazz = this)) {
@@ -158,7 +158,6 @@ class SingleClickListener<T : View>(
             }
             lastClickTime = nowTime
         }
-        AppMusicPlayer.playFxMusic(R.raw.sound_click)
     }
 }
 
@@ -607,7 +606,6 @@ fun View.setDraggableWithClick(onClick: () -> Unit) {
                             onClick()
                         }
                     }
-                    AppMusicPlayer.playFxMusic(R.raw.sound_click)
                 }
             }
         }

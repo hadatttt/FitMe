@@ -80,14 +80,6 @@
         android:layout_marginHorizontal="20dp">
 
         <!-- Country Code Picker: có cờ, mã quốc gia, mũi tên xổ xuống -->
-<!--        <com.hbb20.CountryCodePicker-->
-<!--            android:id="@+id/countryCodePicker"-->
-<!--            android:layout_width="@dimen/_40sdp"-->
-<!--            android:layout_height="@dimen/_30sdp"-->
-<!--            app:ccpDialog_showTitle="true"-->
-<!--            app:ccpDialog_showFlag="true"-->
-<!--            app:ccpDialog_showNameCode="true"-->
-<!--            app:ccpDialog_showPhoneCode="true"/>-->
 
 
         <!-- Divider -->

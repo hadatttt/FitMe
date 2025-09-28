@@ -8,89 +8,48 @@
     <fragment
         android:id="@+id/splashFragment"
         android:name="com.pbl6.fitme.splash.SplashFragment"
-        android:label="Splash"
-        tools:layout="@layout/fragment_splash">
-
+        android:label="Splash">
         <action
-            android:id="@+id/action_splash_to_login"
-            app:destination="@id/loginFragment" />
-
-        <action
-            android:id="@+id/action_splash_to_register"
+            android:id="@+id/action_splashFragment_to_registerFragment"
             app:destination="@id/registerFragment" />
+        <action
+            android:id="@+id/action_splashFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
     </fragment>
-
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.pbl6.fitme.login.LoginFragment"
         android:label="Login"
-        tools:layout="@layout/fragment_login">
-
-        <action
-            android:id="@+id/action_login_to_slash"
-            app:destination="@id/splashFragment" />
-        <action
-            android:id="@+id/action_login_to_hello"
-            app:destination="@id/helloFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_login"/>
 
     <fragment
         android:id="@+id/registerFragment"
         android:name="com.pbl6.fitme.register.RegisterFragment"
         android:label="Register"
         tools:layout="@layout/fragment_register">
-
-        <action
-            android:id="@+id/action_register_to_slash"
-            app:destination="@id/splashFragment" />
-        <action
-            android:id="@+id/action_register_to_hello"
-            app:destination="@id/helloFragment" />
     </fragment>
     <fragment
         android:id="@+id/helloFragment"
         android:name="com.pbl6.fitme.hello.HelloFragment"
         android:label="Hello"
         tools:layout="@layout/fragment_hello">
-        <action
-            android:id="@+id/action_hello_to_profile"
-            app:destination="@id/profileFragment" />
     </fragment>
-
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.pbl6.fitme.profile.ProfileFragment"
         android:label="Profile"
         tools:layout="@layout/fragment_profile">
-        <action
-            android:id="@+id/action_profile_to_wishlist"
-            app:destination="@id/wishlistFragment" />
-        <action
-            android:id="@+id/action_profile_to_cart"
-            app:destination="@id/cartFragment" />
     </fragment>
     <fragment
         android:id="@+id/wishlistFragment"
         android:name="com.pbl6.fitme.wishlist.WishlistFragment"
         android:label="Wishlist"
         tools:layout="@layout/fragment_wishlist">
-        <action
-            android:id="@+id/action_wishlist_to_profile"
-            app:destination="@id/profileFragment" />
-        <action
-            android:id="@+id/action_wishlist_to_cart"
-            app:destination="@id/cartFragment" />
     </fragment>
     <fragment
         android:id="@+id/cartFragment"
         android:name="com.pbl6.fitme.cart.CartFragment"
         android:label="Cart"
         tools:layout="@layout/fragment_cart">
-        <action
-            android:id="@+id/action_cart_to_profile"
-            app:destination="@id/profileFragment" />
-        <action
-            android:id="@+id/action_cart_to_wishlist"
-            app:destination="@id/wishlistFragment" />
     </fragment>
 </navigation>

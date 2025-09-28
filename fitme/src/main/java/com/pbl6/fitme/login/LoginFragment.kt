@@ -3,9 +3,10 @@ package com.pbl6.fitme.login
 import android.text.InputType
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentLoginBinding
-import com.pbl6.fitme.untils.singleClick
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
+import hoang.dqm.codebase.base.activity.popBackStack
+import hoang.dqm.codebase.utils.singleClick
 
 class LoginFragment : BaseFragment<FragmentLoginBinding, LoginViewmodel>() {
 
@@ -14,12 +15,10 @@ class LoginFragment : BaseFragment<FragmentLoginBinding, LoginViewmodel>() {
     override fun initView() {
 
     }
-
     override fun initListener() {
         binding.tvCancel.singleClick {
-            navigate(R.id.cartFragment)
+            popBackStack()
         }
-
         binding.ivTogglePassword.singleClick {
             isPasswordVisible = !isPasswordVisible
             if (isPasswordVisible) {
@@ -33,15 +32,11 @@ class LoginFragment : BaseFragment<FragmentLoginBinding, LoginViewmodel>() {
             }
             binding.etPassword.setSelection(binding.etPassword.text?.length ?: 0)
         }
-
-
         binding.btnNext.singleClick {
             navigate(R.id.cartFragment)
         }
     }
 
-
     override fun initData() {
-        TODO("Not yet implemented")
     }
 }

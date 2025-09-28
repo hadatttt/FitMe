@@ -7,7 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
-import com.pbl6.fitme.untils.singleClick
+import hoang.dqm.codebase.utils.singleClick
 
 data class WishlistProduct(
     val title: String,

@@ -5,13 +5,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
-import com.pbl6.fitme.toolbar.ToolBarFragment
-import com.pbl6.fitme.untils.singleClick
+import hoang.dqm.codebase.utils.singleClick
 
-class CartFragment : ToolBarFragment() {
+
+class CartFragment : Fragment() {
     private lateinit var txtCartTitle: TextView
     private val cartItems = mutableListOf<CartProduct>()
     private lateinit var rvCart: RecyclerView
@@ -80,9 +81,6 @@ class CartFragment : ToolBarFragment() {
 
 
         rvCart.adapter = cartAdapter
-
-
-        setupBottomNavigation(view)
         updateCartView()
         return view
     }
