@@ -8,25 +8,29 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
 
-class CategoryAdapter(private val items: List<String>) :
-    RecyclerView.Adapter<CategoryAdapter.ViewHolder>() {
+data class Category(
+    val name: String,
+    val imageRes: Int
+)
+class CategoryAdapter(private val categories: List<Category>) :
+    RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>() {
 
-    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imgItem: ImageView = view.findViewById(R.id.imgItem)
-        val txtName: TextView = view.findViewById(R.id.txtName)
+    inner class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val img: ImageView = itemView.findViewById(R.id.imgItem)
+        val name: TextView = itemView.findViewById(R.id.txtName)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoryViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_category, parent, false)
-        return ViewHolder(view)
+        return CategoryViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.txtName.text = items[position]
-        // Tạm thời set ảnh mặc định, có thể dùng Glide để load ảnh từ URL
-        holder.imgItem.setImageResource(R.drawable.ic_launcher_foreground)
+    override fun onBindViewHolder(holder: CategoryViewHolder, position: Int) {
+        val category = categories[position]
+        holder.img.setImageResource(category.imageRes)
+        holder.name.text = category.name
     }
 
-    override fun getItemCount() = items.size
+    override fun getItemCount(): Int = categories.size
 }

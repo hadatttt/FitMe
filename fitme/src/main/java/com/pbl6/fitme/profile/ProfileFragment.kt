@@ -24,12 +24,25 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         highlightSelectedTab(R.id.person_id)
 
         // ===== Data mẫu =====
-        val topProducts = listOf("Bag", "Watch", "Shirt", "Shoes", "Dress")
-        val stories = listOf("Story1", "Story2", "Story3")
+        val topProducts = listOf(
+            Category("Dresses", R.drawable.ic_launcher_foreground),
+            Category("Pants", R.drawable.ic_launcher_foreground),
+            Category("Skirts", R.drawable.ic_launcher_foreground),
+            Category("Shorts", R.drawable.ic_launcher_foreground),
+            Category("Jackets", R.drawable.ic_launcher_foreground),
+        )
+        val stories = listOf(
+            Category("Story1", R.drawable.ic_launcher_foreground),
+            Category("Story1", R.drawable.ic_launcher_foreground),
+            Category("Story1", R.drawable.ic_launcher_foreground),
+            Category("Story1", R.drawable.ic_launcher_foreground),
+            Category("Story1", R.drawable.ic_launcher_foreground),
+        )
         val productList = listOf(
-            Product("Bag", "$25.00"),
-            Product("Watch", "$17.00"),
-            Product("Shirt", "$12.00")
+            Product("White Top", 17.0, R.drawable.ic_splash),
+            Product("Yellow Set", 25.0, R.drawable.ic_splash),
+            Product("Pink Dress", 30.0, R.drawable.ic_splash),
+            Product("Shopping Girl", 25.0, R.drawable.ic_splash)
         )
 
         // Setup RecyclerViews
@@ -44,8 +57,7 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             popBackStack()
         }
         binding.flCart.setDraggableWithClick {
-            hideToolbar()
-            popBackStack()
+            navigate(R.id.action_profileFragment_to_cartFragment)
         }
         // ===== Button trong Profile =====
         binding.btnMyActivity.singleClick {
@@ -71,10 +83,12 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
             highlightSelectedTab(R.id.home_id)
             // TODO: Navigate to HomeFragment
+            navigate(R.id.action_profileFragment_to_homeFragment)
         }
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
             highlightSelectedTab(R.id.wish_id)
             // TODO: Navigate to WishFragment
+            navigate(R.id.action_profileFragment_to_wishlistFragment)
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
             highlightSelectedTab(R.id.filter_id)
@@ -83,10 +97,12 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
             // TODO: Navigate to CartFragment
+            navigate(R.id.action_profileFragment_to_cartFragment)
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
             highlightSelectedTab(R.id.person_id)
             // TODO: Navigate to ProfileFragment (current)
+
         }
     }
 
@@ -110,7 +126,7 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
     }
 
     // ===== RecyclerView Helpers =====
-    private fun setupRecyclerViewCategory(rv: RecyclerView, data: List<String>) {
+    private fun setupRecyclerViewCategory(rv: RecyclerView, data: List<Category>) {
         rv.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         rv.adapter = CategoryAdapter(data)
     }

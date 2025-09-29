@@ -52,7 +52,6 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     api(libs.androidx.media3.exoplayer.v131)
-
     // Utils
     api(libs.permissionx)
 }

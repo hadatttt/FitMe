@@ -1,44 +1,32 @@
 package com.pbl6.fitme.cart
 
-import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.*
-import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
+import com.pbl6.fitme.databinding.FragmentCartBinding
+import hoang.dqm.codebase.base.activity.BaseFragment
+import hoang.dqm.codebase.base.activity.navigate
+import hoang.dqm.codebase.base.activity.onBackPressed
+import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.utils.singleClick
 
+class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
 
-class CartFragment : Fragment() {
-    private lateinit var txtCartTitle: TextView
     private val cartItems = mutableListOf<CartProduct>()
-    private lateinit var rvCart: RecyclerView
-    private lateinit var emptyView: View
     private lateinit var cartAdapter: CartProductAdapter
 
+    override fun initView() {
+        // Hiện toolbar
+        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
+        toolbar.visibility = View.VISIBLE
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        val view = inflater.inflate(R.layout.fragment_cart, container, false)
+        // Highlight tab cart
+        highlightSelectedTab(R.id.cart_id)
 
+        // Setup RecyclerView
+        binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
 
-        rvCart = view.findViewById(R.id.rvCart)
-        emptyView = view.findViewById(R.id.emptyView)
-        txtCartTitle = view.findViewById(R.id.txtCartTitle)
-
-        val editAddress = view.findViewById<ImageView>(R.id.btnEditAddress)
-        editAddress.singleClick {
-            // Xử lý khi nhấn nút "Edit Address"
-        }
-
-        rvCart.layoutManager = LinearLayoutManager(requireContext())
-
-
+        // Data mẫu
         cartItems.addAll(
             listOf(
                 CartProduct("T-Shirt", "Pink, Size M", 17.00, R.drawable.ic_splash, 1),
@@ -47,17 +35,14 @@ class CartFragment : Fragment() {
             )
         )
 
-
         cartAdapter = CartProductAdapter(cartItems, object : CartProductAdapter.OnCartActionListener {
             override fun onRemove(position: Int) {
                 if (position in cartItems.indices) {
                     cartItems.removeAt(position)
                     cartAdapter.notifyItemRemoved(position)
-                    cartAdapter.notifyItemRangeChanged(position, cartItems.size - position)
                     updateCartView()
                 }
             }
-
 
             override fun onIncrease(position: Int) {
                 if (position in cartItems.indices) {
@@ -65,7 +50,6 @@ class CartFragment : Fragment() {
                     cartAdapter.notifyItemChanged(position)
                 }
             }
-
 
             override fun onDecrease(position: Int) {
                 if (position in cartItems.indices) {
@@ -79,21 +63,78 @@ class CartFragment : Fragment() {
             }
         })
 
-
-        rvCart.adapter = cartAdapter
+        binding.rvCart.adapter = cartAdapter
         updateCartView()
-        return view
     }
 
-
-    private fun updateCartView() {
-        txtCartTitle.text = "Cart (${cartItems.size})"
-        if (cartItems.isEmpty()) {
-            rvCart.visibility = View.GONE
-            emptyView.visibility = View.VISIBLE
-        } else {
-            rvCart.visibility = View.VISIBLE
-            emptyView.visibility = View.GONE
+    override fun initListener() {
+        onBackPressed {
+            hideToolbar()
+            popBackStack()
         }
+
+        binding.btnEditAddress.singleClick {
+            // TODO: Navigate/Edit Address
+        }
+
+        // ===== Toolbar click =====
+        requireActivity().findViewById<View>(R.id.home_id).singleClick {
+            highlightSelectedTab(R.id.home_id)
+            // TODO: Navigate to HomeFragment
+            navigate(R.id.action_cartFragment_to_homeFragment)
+        }
+        requireActivity().findViewById<View>(R.id.wish_id).singleClick {
+            highlightSelectedTab(R.id.wish_id)
+            // TODO: Navigate to WishFragment
+            navigate(R.id.action_cartFragment_to_wishlistFragment)
+        }
+        requireActivity().findViewById<View>(R.id.filter_id).singleClick {
+            highlightSelectedTab(R.id.filter_id)
+            // TODO: Navigate to FilterFragment
+        }
+        requireActivity().findViewById<View>(R.id.cart_id).singleClick {
+            highlightSelectedTab(R.id.cart_id)
+            // Stay in CartFragment
+        }
+        requireActivity().findViewById<View>(R.id.person_id).singleClick {
+            highlightSelectedTab(R.id.person_id)
+            // TODO: Navigate to ProfileFragment
+            navigate(R.id.action_cartFragment_to_profileFragment)
+        }
+    }
+
+    override fun initData() {
+        // TODO: Load data từ ViewModel thay vì data mẫu
+    }
+
+    // ===== Helpers =====
+    private fun updateCartView() {
+        binding.txtCartTitle.text = "Cart (${cartItems.size})"
+        if (cartItems.isEmpty()) {
+            binding.rvCart.visibility = View.GONE
+            binding.emptyView.visibility = View.VISIBLE
+        } else {
+            binding.rvCart.visibility = View.VISIBLE
+            binding.emptyView.visibility = View.GONE
+        }
+    }
+
+    private fun highlightSelectedTab(selectedId: Int) {
+        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.filter_id, R.id.cart_id, R.id.person_id)
+        ids.forEach { id ->
+            val view = requireActivity().findViewById<View>(id)
+            if (id == selectedId) {
+                view.setBackgroundResource(R.drawable.bg_selected_tab)
+            } else {
+                view.setBackgroundColor(
+                    resources.getColor(android.R.color.transparent, null)
+                )
+            }
+        }
+    }
+
+    private fun hideToolbar() {
+        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
+        toolbar.visibility = View.GONE
     }
 }

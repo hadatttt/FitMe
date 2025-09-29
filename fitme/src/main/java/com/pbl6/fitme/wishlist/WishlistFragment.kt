@@ -1,35 +1,32 @@
 package com.pbl6.fitme.wishlist
 
-import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
-import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
-class WishlistFragment : Fragment() {
+import com.pbl6.fitme.databinding.FragmentWishlistBinding
+import hoang.dqm.codebase.base.activity.BaseFragment
+import hoang.dqm.codebase.base.activity.navigate
+import hoang.dqm.codebase.base.activity.onBackPressed
+import hoang.dqm.codebase.base.activity.popBackStack
+import hoang.dqm.codebase.utils.singleClick
 
-    private lateinit var adapter: WishlistProductAdapter
-    private lateinit var txtTitle: TextView
-    private lateinit var emptyView: View
-    private lateinit var rvWishlist: RecyclerView
+class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel>() {
+
     private val wishlistItems = mutableListOf<WishlistProduct>()
+    private lateinit var adapter: WishlistProductAdapter
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_wishlist, container, false)
-    }
+    override fun initView() {
+        // Hiện toolbar
+        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
+        toolbar.visibility = View.VISIBLE
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+        // Highlight tab wish
+        highlightSelectedTab(R.id.wish_id)
 
-
-        txtTitle = view.findViewById(R.id.txtWishlist)
-        emptyView = view.findViewById(R.id.emptyView_wl)
-        rvWishlist = view.findViewById(R.id.rvWishlist)
+        // Setup RecyclerView
+        binding.rvWishlist.layoutManager =
+            LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false)
 
         // Dữ liệu mẫu
         wishlistItems.addAll(
@@ -39,35 +36,90 @@ class WishlistFragment : Fragment() {
                 WishlistProduct("Shirt", "$12.00", "Blue", "S")
             )
         )
+
         adapter = WishlistProductAdapter(wishlistItems, object :
             WishlistProductAdapter.OnWishlistActionListener {
             override fun onRemove(position: Int) {
                 if (position in wishlistItems.indices) {
                     wishlistItems.removeAt(position)
                     adapter.notifyItemRemoved(position)
-                    adapter.notifyItemRangeChanged(position, wishlistItems.size - position)
                     updateWishlistView()
                 }
             }
 
             override fun onAddToCart(position: Int) {
-                // TODO: Thêm vào giỏ hàng
+                // TODO: Thêm sản phẩm này vào Cart
             }
         })
 
-        rvWishlist.adapter = adapter
+        binding.rvWishlist.adapter = adapter
         updateWishlistView()
     }
 
-
-    private fun updateWishlistView() {
-        txtTitle.text = "Wishlist (${wishlistItems.size})"
-        if (wishlistItems.isEmpty()) {
-            rvWishlist.visibility = View.GONE
-            emptyView.visibility = View.VISIBLE
-        } else {
-            rvWishlist.visibility = View.VISIBLE
-            emptyView.visibility = View.GONE
+    override fun initListener() {
+        onBackPressed {
+            hideToolbar()
+            popBackStack()
         }
+
+        // ===== Toolbar click =====
+        requireActivity().findViewById<View>(R.id.home_id).singleClick {
+            highlightSelectedTab(R.id.home_id)
+            // TODO: Navigate to HomeFragment
+            navigate(R.id.action_wishlistFragment_to_homeFragment)
+        }
+        requireActivity().findViewById<View>(R.id.wish_id).singleClick {
+            highlightSelectedTab(R.id.wish_id)
+            // Stay in WishlistFragment
+        }
+        requireActivity().findViewById<View>(R.id.filter_id).singleClick {
+            highlightSelectedTab(R.id.filter_id)
+            // TODO: Navigate to FilterFragment
+        }
+        requireActivity().findViewById<View>(R.id.cart_id).singleClick {
+            highlightSelectedTab(R.id.cart_id)
+            // TODO: Navigate to CartFragment
+            navigate(R.id.action_wishlistFragment_to_cartFragment)
+        }
+        requireActivity().findViewById<View>(R.id.person_id).singleClick {
+            highlightSelectedTab(R.id.person_id)
+            // TODO: Navigate to ProfileFragment
+            navigate(R.id.action_wishlistFragment_to_profileFragment)
+        }
+    }
+
+    override fun initData() {
+        // TODO: Load data từ ViewModel thay cho dữ liệu mẫu
+    }
+
+    // ===== Helpers =====
+    private fun updateWishlistView() {
+        binding.txtWishlist.text = "Wishlist (${wishlistItems.size})"
+        if (wishlistItems.isEmpty()) {
+            binding.rvWishlist.visibility = View.GONE
+            binding.emptyViewWl.visibility = View.VISIBLE
+        } else {
+            binding.rvWishlist.visibility = View.VISIBLE
+            binding.emptyViewWl.visibility = View.GONE
+        }
+    }
+
+    private fun highlightSelectedTab(selectedId: Int) {
+        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.filter_id, R.id.cart_id, R.id.person_id)
+        ids.forEach { id ->
+            val view = requireActivity().findViewById<View>(id)
+            if (id == selectedId) {
+                view.setBackgroundResource(R.drawable.bg_selected_tab)
+            } else {
+                view.setBackgroundColor(
+                    resources.getColor(android.R.color.transparent, null)
+                )
+            }
+        }
+    }
+
+    private fun hideToolbar() {
+        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
+        toolbar.visibility = View.GONE
     }
 }

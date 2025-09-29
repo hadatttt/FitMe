@@ -10,7 +10,8 @@ import com.pbl6.fitme.R
 
 data class Product(
     val title: String,
-    val price: String
+    val price: Double,
+    val imageRes: Int
 )
 
 class ProductAdapter(private val items: List<Product>) :
@@ -31,7 +32,7 @@ class ProductAdapter(private val items: List<Product>) :
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         holder.txtTitle.text = item.title
-        holder.txtPrice.text = item.price
+        holder.txtPrice.text = item.price.toString()
         holder.imgProduct.setImageResource(R.drawable.ic_splash) // ảnh tạm
     }
 

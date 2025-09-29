@@ -80,7 +80,6 @@
 
         <!-- Country Code Picker: có cờ, mã quốc gia, mũi tên xổ xuống -->
 
-
         <!-- Divider -->
         <View
             android:layout_width="1dp"
