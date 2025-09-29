@@ -1,18 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-xmlns:app="http://schemas.android.com/apk/res-auto"
-xmlns:tools="http://schemas.android.com/tools"
-android:layout_width="match_parent"
-android:layout_height="match_parent"
-tools:context=".wishlist.WishlistFragment">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".cart.CartFragment">
+
+    <!-- Nội dung chính: Title, Address, RecyclerView, Empty View -->
     <LinearLayout
+        android:id="@+id/layoutContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="@android:color/white"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:layout_above="@id/layoutCheckout">
 
-        <!-- Tiêu đề -->
         <TextView
             android:id="@+id/txtCartTitle"
             android:layout_width="wrap_content"
@@ -23,7 +24,6 @@ tools:context=".wishlist.WishlistFragment">
             android:textColor="#000000"
             android:layout_marginBottom="16dp" />
 
-        <!-- Shipping Address -->
         <LinearLayout
             android:id="@+id/layoutShipping"
             android:layout_width="match_parent"
@@ -67,17 +67,16 @@ tools:context=".wishlist.WishlistFragment">
                 android:src="@drawable/ic_edit" />
         </LinearLayout>
 
-        <!-- Danh sách sản phẩm trong giỏ -->
+        <!-- RecyclerView -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvCart"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:clipToPadding="false"
-            android:scrollbars="vertical"
-            android:visibility="visible"/>
+            android:scrollbars="vertical" />
 
-        <!-- View hiển thị khi giỏ hàng rỗng -->
+        <!-- Empty View -->
         <LinearLayout
             android:id="@+id/emptyView"
             android:layout_width="match_parent"
@@ -102,5 +101,39 @@ tools:context=".wishlist.WishlistFragment">
         </LinearLayout>
     </LinearLayout>
 
+    <!-- Checkout Bar cố định dưới -->
+    <LinearLayout
+        android:id="@+id/layoutCheckout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:layout_marginBottom="40dp"
+        android:gravity="center_vertical"
+        android:background="@android:color/white"
+        android:elevation="4dp"
+        android:layout_alignParentBottom="true">
 
+        <TextView
+            android:id="@+id/txtTotal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Total $0.00"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#000000" />
+
+        <Button
+            android:id="@+id/btnCheckout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#0066FF"
+            android:text="Checkout"
+            android:textColor="@android:color/white"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_marginStart="12dp"
+            android:layout_gravity="center_vertical"/>
+    </LinearLayout>
 </RelativeLayout>

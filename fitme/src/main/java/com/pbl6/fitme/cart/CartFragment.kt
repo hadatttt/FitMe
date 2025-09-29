@@ -1,5 +1,6 @@
 package com.pbl6.fitme.cart
 
+import android.os.Bundle
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
@@ -48,6 +49,7 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
                 if (position in cartItems.indices) {
                     cartItems[position].quantity++
                     cartAdapter.notifyItemChanged(position)
+                    updateCartView()
                 }
             }
 
@@ -56,6 +58,7 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
                     if (cartItems[position].quantity > 1) {
                         cartItems[position].quantity--
                         cartAdapter.notifyItemChanged(position)
+                        updateCartView()
                     } else {
                         onRemove(position)
                     }
@@ -76,17 +79,25 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
         binding.btnEditAddress.singleClick {
             // TODO: Navigate/Edit Address
         }
+        binding.btnCheckout.singleClick {
+            if (cartItems.isNotEmpty()) {
+                val bundle = Bundle().apply {
+                    putSerializable("cart_items", ArrayList(cartItems))
+                }
+                navigate(R.id.checkoutFragment, bundle)
+            }
+        }
 
         // ===== Toolbar click =====
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
             highlightSelectedTab(R.id.home_id)
             // TODO: Navigate to HomeFragment
-            navigate(R.id.action_cartFragment_to_homeFragment)
+            navigate(R.id.homeFragment)
         }
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
             highlightSelectedTab(R.id.wish_id)
             // TODO: Navigate to WishFragment
-            navigate(R.id.action_cartFragment_to_wishlistFragment)
+            navigate(R.id.wishlistFragment)
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
             highlightSelectedTab(R.id.filter_id)
@@ -99,7 +110,7 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
             highlightSelectedTab(R.id.person_id)
             // TODO: Navigate to ProfileFragment
-            navigate(R.id.action_cartFragment_to_profileFragment)
+            navigate(R.id.profileFragment)
         }
     }
 
@@ -110,14 +121,30 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
     // ===== Helpers =====
     private fun updateCartView() {
         binding.txtCartTitle.text = "Cart (${cartItems.size})"
+
         if (cartItems.isEmpty()) {
             binding.rvCart.visibility = View.GONE
             binding.emptyView.visibility = View.VISIBLE
+            binding.txtTotal.text = "Total $0.00"
+            // Nút Checkout màu trắng và disabled
+            binding.btnCheckout.isEnabled = false
+            binding.btnCheckout.setBackgroundColor(resources.getColor(android.R.color.white, null))
+            binding.btnCheckout.setTextColor(resources.getColor(android.R.color.black, null))
         } else {
             binding.rvCart.visibility = View.VISIBLE
             binding.emptyView.visibility = View.GONE
+
+            // Tính tổng tiền
+            val total = cartItems.sumOf { it.price * it.quantity }
+            binding.txtTotal.text = "Total $%.2f".format(total)
+
+            // Nút Checkout màu xanh và enabled
+            binding.btnCheckout.isEnabled = true
+            binding.btnCheckout.setBackgroundColor(resources.getColor(R.color.maincolor, null))
+            binding.btnCheckout.setTextColor(resources.getColor(android.R.color.white, null))
         }
     }
+
 
     private fun highlightSelectedTab(selectedId: Int) {
         val ids = listOf(R.id.home_id, R.id.wish_id, R.id.filter_id, R.id.cart_id, R.id.person_id)

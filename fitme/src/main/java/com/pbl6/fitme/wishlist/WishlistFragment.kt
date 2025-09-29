@@ -66,7 +66,7 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
             highlightSelectedTab(R.id.home_id)
             // TODO: Navigate to HomeFragment
-            navigate(R.id.action_wishlistFragment_to_homeFragment)
+            navigate(R.id.homeFragment)
         }
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
             highlightSelectedTab(R.id.wish_id)
@@ -79,12 +79,12 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
             // TODO: Navigate to CartFragment
-            navigate(R.id.action_wishlistFragment_to_cartFragment)
+            navigate(R.id.cartFragment)
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
             highlightSelectedTab(R.id.person_id)
             // TODO: Navigate to ProfileFragment
-            navigate(R.id.action_wishlistFragment_to_profileFragment)
+            navigate(R.id.profileFragment)
         }
     }
 

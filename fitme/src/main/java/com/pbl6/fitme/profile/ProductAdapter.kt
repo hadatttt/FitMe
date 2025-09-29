@@ -19,8 +19,8 @@ class ProductAdapter(private val items: List<Product>) :
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imgProduct: ImageView = view.findViewById(R.id.imgProduct)
-        val txtTitle: TextView = view.findViewById(R.id.txtTitle)
-        val txtPrice: TextView = view.findViewById(R.id.txtPrice)
+        val txtTitle: TextView = view.findViewById(R.id.tvProductName)
+        val txtPrice: TextView = view.findViewById(R.id.tvProductPrice)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

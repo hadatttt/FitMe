@@ -57,7 +57,7 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             popBackStack()
         }
         binding.flCart.setDraggableWithClick {
-            navigate(R.id.action_profileFragment_to_cartFragment)
+            navigate(R.id.cartFragment)
         }
         // ===== Button trong Profile =====
         binding.btnMyActivity.singleClick {
@@ -83,12 +83,12 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
             highlightSelectedTab(R.id.home_id)
             // TODO: Navigate to HomeFragment
-            navigate(R.id.action_profileFragment_to_homeFragment)
+            navigate(R.id.homeFragment)
         }
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
             highlightSelectedTab(R.id.wish_id)
             // TODO: Navigate to WishFragment
-            navigate(R.id.action_profileFragment_to_wishlistFragment)
+            navigate(R.id.wishlistFragment)
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
             highlightSelectedTab(R.id.filter_id)
@@ -97,7 +97,7 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
             // TODO: Navigate to CartFragment
-            navigate(R.id.action_profileFragment_to_cartFragment)
+            navigate(R.id.cartFragment)
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
             highlightSelectedTab(R.id.person_id)

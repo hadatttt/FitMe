@@ -53,15 +53,6 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeViewModel>() {
 
         // Setup RecyclerView
         setupRecyclerViews()
-        val searchView = requireActivity().findViewById<SearchView>(R.id.searchView)
-
-        // Ẩn kính lúp mặc định
-        val searchIcon: ImageView = searchView.findViewById(
-            androidx.appcompat.R.id.search_mag_icon
-        )
-        searchIcon.visibility = View.GONE
-        val searchPlate = searchView.findViewById<View>(androidx.appcompat.R.id.search_plate)
-        searchPlate.setBackgroundColor(Color.TRANSPARENT)
     }
 
     private fun setupRecyclerViews() {
@@ -96,7 +87,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeViewModel>() {
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
             highlightSelectedTab(R.id.wish_id)
             // TODO: Navigate to WishFragment
-            navigate(R.id.action_homeFragment_to_wishlistFragment)
+            navigate(R.id.wishlistFragment)
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
             highlightSelectedTab(R.id.filter_id)
@@ -105,12 +96,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeViewModel>() {
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
             // TODO: Navigate to CartFragment
-            navigate(R.id.action_homeFragment_to_cartFragment)
+            navigate(R.id.cartFragment)
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
             highlightSelectedTab(R.id.person_id)
             // TODO: Navigate to ProfileFragment (current)
-            navigate(R.id.action_homeFragment_to_profileFragment)
+            navigate(R.id.profileFragment)
         }
     }
 
