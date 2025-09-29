@@ -98,5 +98,45 @@ fun Fragment.showDialog(dialogFragment: DialogFragment, tag: String? = null) {
         }
     }
 }
+// Hàm cho Fragment
+fun Fragment.navigateWithoutAnimation(
+    destination: Int, extraData: Bundle? = null, isPop: Boolean = false
+) {
+    if (!isAdded || view == null) return
+    viewLifecycleOwner.lifecycleScope.launch {
+        viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            activity?.navigateWithoutAnimation(destination, extraData, isPop)
+        }
+    }
+}
+
+// Hàm cho FragmentActivity
+fun FragmentActivity.navigateWithoutAnimation(
+    destination: Int, extraData: Bundle? = null, isPop: Boolean = false, isPopAll: Boolean = false
+) {
+    try {
+        val navController = findNavController(R.id.navHostFragment)
+        navController.navigate(destination, extraData, navOptions {
+            // Gán tất cả hiệu ứng bằng 0 để tắt chúng
+            anim {
+                enter = 0
+                exit = 0
+                popEnter = 0
+                popExit = 0
+            }
+            if (isPopAll) {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+            } else if (isPop) {
+                navController.currentDestination?.id?.let { currentDestination ->
+                    popUpTo(currentDestination) { inclusive = true }
+                }
+            }
+        })
+    } catch (ex: Exception) {
+        ex.printStackTrace()
+    }
+}
 
 
