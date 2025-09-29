@@ -6,6 +6,7 @@ import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentCartBinding
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
+import hoang.dqm.codebase.base.activity.navigateWithoutAnimation
 import hoang.dqm.codebase.base.activity.onBackPressed
 import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.utils.singleClick
@@ -70,36 +71,24 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
     override fun initListener() {
         onBackPressed {
             hideToolbar()
-            popBackStack()
+            popBackStack(R.id.loginFragment)
         }
 
         binding.btnEditAddress.singleClick {
             // TODO: Navigate/Edit Address
         }
 
-        // ===== Toolbar click =====
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
-            highlightSelectedTab(R.id.home_id)
-            // TODO: Navigate to HomeFragment
-            navigate(R.id.action_cartFragment_to_homeFragment)
+            navigateWithoutAnimation(R.id.homeMainFragment)
         }
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
-            highlightSelectedTab(R.id.wish_id)
-            // TODO: Navigate to WishFragment
-            navigate(R.id.action_cartFragment_to_wishlistFragment)
+            navigateWithoutAnimation(R.id.wishlistFragment)
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
             highlightSelectedTab(R.id.filter_id)
-            // TODO: Navigate to FilterFragment
-        }
-        requireActivity().findViewById<View>(R.id.cart_id).singleClick {
-            highlightSelectedTab(R.id.cart_id)
-            // Stay in CartFragment
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
-            highlightSelectedTab(R.id.person_id)
-            // TODO: Navigate to ProfileFragment
-            navigate(R.id.action_cartFragment_to_profileFragment)
+            navigateWithoutAnimation(R.id.profileFragment)
         }
     }
 
@@ -107,7 +96,6 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
         // TODO: Load data từ ViewModel thay vì data mẫu
     }
 
-    // ===== Helpers =====
     private fun updateCartView() {
         binding.txtCartTitle.text = "Cart (${cartItems.size})"
         if (cartItems.isEmpty()) {

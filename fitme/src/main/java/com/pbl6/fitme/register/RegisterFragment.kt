@@ -12,6 +12,7 @@ import com.pbl6.fitme.databinding.FragmentRegisterBinding
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.utils.singleClick
 import androidx.activity.result.contract.ActivityResultContracts
+import hoang.dqm.codebase.base.activity.popBackStack
 
 class RegisterFragment : BaseFragment<FragmentRegisterBinding, RegisterViewModel>() {
     private var editTextValue1: String = ""
@@ -47,10 +48,10 @@ class RegisterFragment : BaseFragment<FragmentRegisterBinding, RegisterViewModel
             requestCameraPermission.launch(android.Manifest.permission.CAMERA)
         }
         binding.tvCancel.singleClick {
-            navigate(R.id.action_registerFragment_to_splashFragment)
+            popBackStack()
         }
         binding.btnDone.singleClick {
-            navigate(R.id.action_registerFragment_to_loginFragment)
+            navigate(R.id.loginFragment)
         }
     }
 

@@ -7,6 +7,7 @@ import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentWishlistBinding
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
+import hoang.dqm.codebase.base.activity.navigateWithoutAnimation
 import hoang.dqm.codebase.base.activity.onBackPressed
 import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.utils.singleClick
@@ -20,11 +21,7 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
         // Hiện toolbar
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
-
-        // Highlight tab wish
         highlightSelectedTab(R.id.wish_id)
-
-        // Setup RecyclerView
         binding.rvWishlist.layoutManager =
             LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false)
 
@@ -59,40 +56,24 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
     override fun initListener() {
         onBackPressed {
             hideToolbar()
-            popBackStack()
+            popBackStack(R.id.loginFragment)
         }
-
-        // ===== Toolbar click =====
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
-            highlightSelectedTab(R.id.home_id)
-            // TODO: Navigate to HomeFragment
-            navigate(R.id.action_wishlistFragment_to_homeFragment)
-        }
-        requireActivity().findViewById<View>(R.id.wish_id).singleClick {
-            highlightSelectedTab(R.id.wish_id)
-            // Stay in WishlistFragment
+            navigateWithoutAnimation(R.id.homeMainFragment, isPop = true)
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
-            highlightSelectedTab(R.id.filter_id)
-            // TODO: Navigate to FilterFragment
         }
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
-            highlightSelectedTab(R.id.cart_id)
-            // TODO: Navigate to CartFragment
-            navigate(R.id.action_wishlistFragment_to_cartFragment)
+            navigateWithoutAnimation(R.id.cartFragment,isPop = true)
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
-            highlightSelectedTab(R.id.person_id)
-            // TODO: Navigate to ProfileFragment
-            navigate(R.id.action_wishlistFragment_to_profileFragment)
+            navigateWithoutAnimation(R.id.profileFragment,isPop = true)
         }
     }
 
     override fun initData() {
-        // TODO: Load data từ ViewModel thay cho dữ liệu mẫu
     }
 
-    // ===== Helpers =====
     private fun updateWishlistView() {
         binding.txtWishlist.text = "Wishlist (${wishlistItems.size})"
         if (wishlistItems.isEmpty()) {
