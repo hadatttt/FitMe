@@ -61,53 +61,42 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         }
         // ===== Button trong Profile =====
         binding.btnMyActivity.singleClick {
-            // TODO: Navigate to MyActivity screen
         }
         binding.btnSetting.singleClick {
-            // TODO: Navigate to Settings screen
         }
         binding.btnNotification.singleClick {
-            // TODO: Show Notification list
         }
         binding.btnVoucher.singleClick {
-            // TODO: Show Voucher screen
         }
         binding.ivSeeAllNewItems.singleClick {
-            // TODO: Show full product list
         }
         binding.ivSeeAllNotification.singleClick {
-            // TODO: Show full notification list
         }
 
         // ===== Toolbar click =====
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
             highlightSelectedTab(R.id.home_id)
-            // TODO: Navigate to HomeFragment
             navigate(R.id.homeFragment)
         }
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
             highlightSelectedTab(R.id.wish_id)
-            // TODO: Navigate to WishFragment
             navigate(R.id.wishlistFragment)
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
             highlightSelectedTab(R.id.filter_id)
-            // TODO: Navigate to FilterFragment
+            navigate(R.id.filterFragment)
         }
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
-            // TODO: Navigate to CartFragment
             navigate(R.id.cartFragment)
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
             highlightSelectedTab(R.id.person_id)
-            // TODO: Navigate to ProfileFragment (current)
 
         }
     }
 
     override fun initData() {
-        // TODO: Load data từ ViewModel
     }
 
     // ===== Toolbar Helpers =====

@@ -91,17 +91,15 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
         // ===== Toolbar click =====
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
             highlightSelectedTab(R.id.home_id)
-            // TODO: Navigate to HomeFragment
             navigate(R.id.homeFragment)
         }
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
             highlightSelectedTab(R.id.wish_id)
-            // TODO: Navigate to WishFragment
             navigate(R.id.wishlistFragment)
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
             highlightSelectedTab(R.id.filter_id)
-            // TODO: Navigate to FilterFragment
+            navigate(R.id.filterFragment)
         }
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
@@ -109,13 +107,11 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
             highlightSelectedTab(R.id.person_id)
-            // TODO: Navigate to ProfileFragment
             navigate(R.id.profileFragment)
         }
     }
 
     override fun initData() {
-        // TODO: Load data từ ViewModel thay vì data mẫu
     }
 
     // ===== Helpers =====

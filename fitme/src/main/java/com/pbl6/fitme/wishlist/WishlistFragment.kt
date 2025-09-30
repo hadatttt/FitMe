@@ -65,7 +65,6 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
         // ===== Toolbar click =====
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
             highlightSelectedTab(R.id.home_id)
-            // TODO: Navigate to HomeFragment
             navigate(R.id.homeFragment)
         }
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
@@ -74,22 +73,19 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
             highlightSelectedTab(R.id.filter_id)
-            // TODO: Navigate to FilterFragment
+            navigate(R.id.filterFragment)
         }
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
-            // TODO: Navigate to CartFragment
             navigate(R.id.cartFragment)
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
             highlightSelectedTab(R.id.person_id)
-            // TODO: Navigate to ProfileFragment
             navigate(R.id.profileFragment)
         }
     }
 
     override fun initData() {
-        // TODO: Load data từ ViewModel thay cho dữ liệu mẫu
     }
 
     // ===== Helpers =====

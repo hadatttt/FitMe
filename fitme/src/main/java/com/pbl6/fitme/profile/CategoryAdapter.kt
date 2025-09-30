@@ -3,6 +3,7 @@ package com.pbl6.fitme.profile
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -12,12 +13,25 @@ data class Category(
     val name: String,
     val imageRes: Int
 )
+
 class CategoryAdapter(private val categories: List<Category>) :
     RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>() {
+
+    private var selectedPosition = RecyclerView.NO_POSITION
 
     inner class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val img: ImageView = itemView.findViewById(R.id.imgItem)
         val name: TextView = itemView.findViewById(R.id.txtName)
+        val container: FrameLayout = itemView.findViewById(R.id.container)
+
+        init {
+            itemView.setOnClickListener {
+                val prevPos = selectedPosition
+                selectedPosition = adapterPosition
+                notifyItemChanged(prevPos)
+                notifyItemChanged(selectedPosition)
+            }
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoryViewHolder {
@@ -30,7 +44,23 @@ class CategoryAdapter(private val categories: List<Category>) :
         val category = categories[position]
         holder.img.setImageResource(category.imageRes)
         holder.name.text = category.name
+
+        // Đổi màu khi chọn
+        if (position == selectedPosition) {
+            holder.container.setBackgroundResource(R.drawable.bg_bluelight_circle)
+        } else {
+            holder.container.setBackgroundResource(R.drawable.bg_outer_circle)
+        }
     }
 
     override fun getItemCount(): Int = categories.size
+
+    fun getSelectedCategory(): String? {
+        return if (selectedPosition != RecyclerView.NO_POSITION) categories[selectedPosition].name else null
+    }
+    fun clearSelection() {
+        val oldPos = selectedPosition
+        selectedPosition = RecyclerView.NO_POSITION
+        if (oldPos != RecyclerView.NO_POSITION) notifyItemChanged(oldPos)
+    }
 }

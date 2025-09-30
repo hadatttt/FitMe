@@ -71,7 +71,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
             highlightSelectedTab(R.id.filter_id)
-            // TODO: Navigate to FilterFragment
+            navigate(R.id.filterFragment)
         }
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)

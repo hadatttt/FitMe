@@ -22,7 +22,7 @@ import hoang.dqm.codebase.base.activity.onBackPressed
 import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.utils.singleClick
 
-class HomeFragment : BaseFragment<FragmentHomeBinding, HomeViewModel>() {
+class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -57,7 +57,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeViewModel>() {
 
     private fun setupRecyclerViews() {
         // Categories Horizontal
-        binding.rvCategories.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        binding.rvCategories.layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.HORIZONTAL, false)
         binding.rvCategories.adapter = CategoryAdapter(getDummyCategories())
 
         // Products Grid
@@ -74,33 +74,27 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeViewModel>() {
             requestCameraPermission.launch(android.Manifest.permission.CAMERA)
         }
         binding.ivFilter.singleClick {
-            // TODO: Navigate to FilterFragment
         }
         binding.tvAllItems.singleClick {
-            // TODO: Navigate to AllItemsFragment
         }
         // ===== Toolbar click =====
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
             highlightSelectedTab(R.id.home_id)
-            // TODO: Navigate to HomeFragment
         }
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
             highlightSelectedTab(R.id.wish_id)
-            // TODO: Navigate to WishFragment
             navigate(R.id.wishlistFragment)
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
             highlightSelectedTab(R.id.filter_id)
-            // TODO: Navigate to FilterFragment
+            navigate(R.id.filterFragment)
         }
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
-            // TODO: Navigate to CartFragment
             navigate(R.id.cartFragment)
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
             highlightSelectedTab(R.id.person_id)
-            // TODO: Navigate to ProfileFragment (current)
             navigate(R.id.profileFragment)
         }
     }

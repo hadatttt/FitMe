@@ -8,12 +8,12 @@
 
     <!-- Vòng tròn ngoài -->
     <FrameLayout
-        android:id="@+id/container"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:background="@drawable/bg_outer_circle"
         android:foregroundGravity="center"
-        android:gravity="center">
+        android:gravity="center"
+        android:layout_marginTop="10dp">
 
         <!-- Ảnh tròn bên trong -->
         <androidx.cardview.widget.CardView
@@ -24,21 +24,14 @@
             app:cardElevation="0dp"
             app:cardPreventCornerOverlap="true">
 
-            <ImageView
-                android:id="@+id/imgItem"
+            <TextView
+                android:id="@+id/sizeView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_cart" />
+                android:gravity="center"
+                android:text="S"
+                android:textStyle="bold"
+                android:textSize="16sp" />
         </androidx.cardview.widget.CardView>
     </FrameLayout>
-
-    <TextView
-        android:id="@+id/txtName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Item"
-        android:textSize="14sp"
-        android:gravity="center"
-        android:layout_marginTop="4dp"/>
 </LinearLayout>
