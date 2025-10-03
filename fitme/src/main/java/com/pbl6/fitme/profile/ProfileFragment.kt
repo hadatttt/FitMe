@@ -1,5 +1,6 @@
 package com.pbl6.fitme.profile
 
+import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -8,6 +9,7 @@ import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentProfileBinding
 import com.pbl6.fitme.model.Category
 import com.pbl6.fitme.model.Product
+import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.onBackPressed
@@ -20,6 +22,9 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
 
     override fun initView() {
+        val session = SessionManager.getInstance()
+        val token = session.getAccessToken(requireContext())
+        Log.d("SessionManager", "AccessToken = $token")
         // Hiện toolbar trong Activity
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
