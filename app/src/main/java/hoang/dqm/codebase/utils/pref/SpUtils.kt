@@ -3,13 +3,12 @@ package hoang.dqm.codebase.utils.pref
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
-import hoang.dqm.codebase.base.application.appInfo
 import hoang.dqm.codebase.utils.toJson
 
 class SpUtils internal constructor(private val SP_FILE_KEY: String){
 
     companion object {
-        private val DEFAULT_SP_FILE_KEY: String = "${appInfo().appId}.SharedPreferenceUtils.DEFAULT_SP_FILE_NAME}"
+        private val DEFAULT_SP_FILE_KEY: String = "SharedPreferenceUtils.DEFAULT_SP_FILE_NAME}"
 
         @JvmStatic
         fun getInstance(spFileName: String) = SpUtils(spFileName)

@@ -12,9 +12,11 @@ import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.utils.singleClick
 
 class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel>() {
-
-    private val wishlistItems = mutableListOf<WishlistProduct>()
+    private val wishlistItems = mutableListOf<com.pbl6.fitme.model.WishlistItem>()
+    private val productMap = mutableMapOf<java.util.UUID, com.pbl6.fitme.model.Product>()
+    private val variantMap = mutableMapOf<java.util.UUID, com.pbl6.fitme.model.ProductVariant>()
     private lateinit var adapter: WishlistProductAdapter
+    private val wishlistRepository = com.pbl6.fitme.repository.WishlistRepository()
 
     override fun initView() {
         // Hiện toolbar
@@ -28,30 +30,35 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
         binding.rvWishlist.layoutManager =
             LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false)
 
-        // Dữ liệu mẫu
-        wishlistItems.addAll(
-            listOf(
-                WishlistProduct("Bag", "$25.00", "Pink", "M"),
-                WishlistProduct("Watch", "$17.00", "Black", "L"),
-                WishlistProduct("Shirt", "$12.00", "Blue", "S")
-            )
-        )
+        // Lấy dữ liệu wishlist từ API
+        wishlistRepository.getWishlist { result ->
+            wishlistItems.clear()
+            if (result != null) {
+                wishlistItems.addAll(result)
+            }
+            adapter.notifyDataSetChanged()
+            updateWishlistView()
+        }
 
-        adapter = WishlistProductAdapter(wishlistItems, object :
-            WishlistProductAdapter.OnWishlistActionListener {
-            override fun onRemove(position: Int) {
-                if (position in wishlistItems.indices) {
-                    wishlistItems.removeAt(position)
-                    adapter.notifyItemRemoved(position)
-                    updateWishlistView()
+        // Chuẩn hóa truyền dữ liệu cho Adapter
+        // Giả sử bạn đã có productMap và variantMap từ MainRepository
+        adapter = WishlistProductAdapter(
+            wishlistItems,
+            productMap,
+            variantMap,
+            object : WishlistProductAdapter.OnWishlistActionListener {
+                override fun onRemove(position: Int) {
+                    if (position in wishlistItems.indices) {
+                        wishlistItems.removeAt(position)
+                        adapter.notifyItemRemoved(position)
+                        updateWishlistView()
+                    }
+                }
+                override fun onAddToCart(position: Int) {
+                    // TODO: Thêm sản phẩm này vào Cart
                 }
             }
-
-            override fun onAddToCart(position: Int) {
-                // TODO: Thêm sản phẩm này vào Cart
-            }
-        })
-
+        )
         binding.rvWishlist.adapter = adapter
         updateWishlistView()
     }

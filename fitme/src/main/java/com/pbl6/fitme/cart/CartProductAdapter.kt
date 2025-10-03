@@ -8,16 +8,13 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
 import hoang.dqm.codebase.utils.singleClick
+import com.pbl6.fitme.model.CartItem
+import com.bumptech.glide.Glide
 
-data class CartProduct(
-    val title: String,
-    val detail: String,
-    val price: Double,
-    val imageResId: Int,
-    var quantity: Int
-)
 class CartProductAdapter(
-    private val items: MutableList<CartProduct>,
+    private val items: MutableList<CartItem>,
+    private val variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant>,
+    private val productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product>,
     private val listener: OnCartActionListener
 ) : RecyclerView.Adapter<CartProductAdapter.VH>() {
 
@@ -48,25 +45,28 @@ class CartProductAdapter(
 
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        val product = items[position]
-        holder.txtTitle.text = product.title
-        holder.txtDetail.text = product.detail
-        holder.txtPrice.text = "${product.price}"
-        holder.txtQuantity.text = product.quantity.toString()
-        holder.imgProduct.setImageResource(product.imageResId)
+        val cartItem = items[position]
+        val variant = variantMap[cartItem.variantId]
+        val product = variant?.let { productMap[it.productId] }
 
+        holder.txtTitle.text = product?.productName ?: "Unknown"
+        holder.txtDetail.text = variant?.size?.let { "Size: $it" } ?: ""
+        holder.txtPrice.text = variant?.price?.let { "$${String.format("%.2f", it)}" } ?: ""
+        holder.txtQuantity.text = cartItem.quantity.toString()
+        Glide.with(holder.imgProduct.context)
+            .load(R.drawable.ic_splash) // Nếu có imageUrl thì thay bằng product.imageUrl
+            .placeholder(R.drawable.ic_splash)
+            .into(holder.imgProduct)
 
         holder.btnIncrease.singleClick {
             val pos = holder.bindingAdapterPosition
             if (pos != RecyclerView.NO_POSITION) listener.onIncrease(pos)
         }
 
-
         holder.btnDecrease.singleClick {
             val pos = holder.bindingAdapterPosition
             if (pos != RecyclerView.NO_POSITION) listener.onDecrease(pos)
         }
-
 
         holder.btnRemove.singleClick {
             val pos = holder.bindingAdapterPosition

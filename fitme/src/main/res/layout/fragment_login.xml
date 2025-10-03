@@ -40,6 +40,17 @@
         app:layout_constraintBottom_toBottomOf="@id/tv_good"
         android:layout_margin="@dimen/_5sdp"/>
 
+    <TextView
+            android:id="@+id/et_error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/red"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:paddingHorizontal="@dimen/_20sdp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_good"
+            android:text="" />
     <EditText
         android:id="@+id/et_email"
         android:layout_width="match_parent"
@@ -53,8 +64,10 @@
         android:textColor="@color/black"
         android:textSize="@dimen/_14ssp"
         android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_good" />
+            app:layout_constraintTop_toBottomOf="@id/et_error"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+         />
 
     <EditText
         android:id="@+id/et_password"

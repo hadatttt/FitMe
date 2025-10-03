@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentFilterBinding
-import com.pbl6.fitme.profile.Category
+import com.pbl6.fitme.model.Category
 import com.pbl6.fitme.profile.CategoryAdapter
 
 class FilterFragment : Fragment() {
@@ -46,25 +46,19 @@ class FilterFragment : Fragment() {
         }
     }
 
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+
     private fun setupCategoryRecycler() {
-
-        val categories = listOf(
-            Category("Dresses", R.drawable.ic_launcher_foreground),
-            Category("Pants", R.drawable.ic_launcher_foreground),
-            Category("Skirts", R.drawable.ic_launcher_foreground),
-            Category("Shorts", R.drawable.ic_launcher_foreground),
-            Category("Jackets", R.drawable.ic_launcher_foreground),
-            Category("Hoodies", R.drawable.ic_launcher_foreground),
-            Category("Shirts", R.drawable.ic_launcher_foreground),
-            Category("Polo", R.drawable.ic_launcher_foreground),
-            Category("T-shirts", R.drawable.ic_launcher_foreground),
-            Category("Tunics", R.drawable.ic_launcher_foreground)
-        )
-
-        categoryAdapter = CategoryAdapter(categories)
-        binding.rvCategory.apply {
-            layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.HORIZONTAL, false)
-            adapter = categoryAdapter
+        mainRepository.getCategories { categories: List<Category>? ->
+            if (categories != null) {
+                categoryAdapter = CategoryAdapter(categories)
+                binding.rvCategory.apply {
+                    layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.HORIZONTAL, false)
+                    adapter = categoryAdapter
+                }
+            } else {
+                Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

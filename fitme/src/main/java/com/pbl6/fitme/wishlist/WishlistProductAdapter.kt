@@ -8,16 +8,14 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
 import hoang.dqm.codebase.utils.singleClick
+import com.pbl6.fitme.model.WishlistItem
 
-data class WishlistProduct(
-    val title: String,
-    val price: String,
-    val color: String,
-    val size: String
-)
+import com.bumptech.glide.Glide
 
 class WishlistProductAdapter(
-    private val items: MutableList<WishlistProduct>,
+    private val items: MutableList<WishlistItem>,
+    private val productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product>,
+    private val variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant>,
     private val listener: OnWishlistActionListener
 ) : RecyclerView.Adapter<WishlistProductAdapter.ViewHolder>() {
 
@@ -43,11 +41,18 @@ class WishlistProductAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
-        holder.txtTitle.text = item.title
-        holder.txtPrice.text = item.price
-        holder.btnColor.text = item.color
-        holder.btnSize.text = item.size
-        holder.imgProduct.setImageResource(R.drawable.ic_splash)
+        val product = productMap[item.productId]
+        // Nếu có variantId, bạn có thể truyền thêm vào WishlistItem hoặc map theo productId
+        val variant = variantMap.values.find { it.productId == item.productId }
+
+        holder.txtTitle.text = product?.productName ?: "Unknown"
+        holder.txtPrice.text = variant?.price?.let { "$${String.format("%.2f", it)}" } ?: ""
+        holder.btnColor.text = variant?.color ?: ""
+        holder.btnSize.text = variant?.size ?: ""
+        Glide.with(holder.imgProduct.context)
+            .load(R.drawable.ic_splash) // Nếu có imageUrl thì thay bằng product.imageUrl
+            .placeholder(R.drawable.ic_splash)
+            .into(holder.imgProduct)
 
         holder.btnRemove.singleClick {
             val pos = holder.bindingAdapterPosition
@@ -55,7 +60,6 @@ class WishlistProductAdapter(
         }
 
         holder.btnAddToCart.singleClick {
-            // TODO: xử lý thêm sản phẩm vào giỏ hàng
             val pos = holder.bindingAdapterPosition
             if (pos != RecyclerView.NO_POSITION) listener.onAddToCart(pos)
         }

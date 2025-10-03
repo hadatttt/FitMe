@@ -1,0 +1,32 @@
+package com.pbl6.fitme.repository
+
+import android.util.Log
+import com.pbl6.fitme.network.AuthApiService
+import com.pbl6.fitme.network.ApiClient
+import com.pbl6.fitme.network.LoginRequest
+import com.pbl6.fitme.network.LoginResponse
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
+class AuthRepository {
+    private val authApi = ApiClient.retrofit.create(AuthApiService::class.java)
+
+    fun login(email: String, password: String, onResult: (LoginResponse?) -> Unit) {
+        val request = LoginRequest(email, password)
+        authApi.login(request).enqueue(object : Callback<LoginResponse> {
+            override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+                if (response.isSuccessful) {
+                    onResult(response.body())
+                } else {
+                    Log.e("AuthRepository", "API error: ${response.code()} - ${response.message()}")
+                    onResult(null)
+                }
+            }
+            override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                Log.e("AuthRepository", "Network failure: ${t.localizedMessage}", t)
+                onResult(null)
+            }
+        })
+    }
+}

@@ -3,7 +3,7 @@ package com.pbl6.fitme.checkout
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
-import com.pbl6.fitme.cart.CartProduct
+import com.pbl6.fitme.model.CartItem
 import com.pbl6.fitme.databinding.FragmentCheckoutBinding
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
@@ -13,6 +13,11 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     private var total: Double = 0.0
     private var shippingFee: Double = 0.0
     private lateinit var checkoutProductAdapter: CheckoutProductAdapter
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+
+    private var productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product> = emptyMap()
+    private var variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant> = emptyMap()
+    private var cartItems: List<CartItem> = emptyList()
 
     override fun initView() {
         // Hiện toolbar
@@ -22,10 +27,8 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         // Highlight tab cart
         highlightSelectedTab(R.id.cart_id)
 
-        // Setup RecyclerView
-        checkoutProductAdapter = CheckoutProductAdapter()
-        binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvCart.adapter = checkoutProductAdapter
+    // Setup RecyclerView
+    binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
     }
 
     override fun initListener() {
@@ -84,17 +87,24 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     }
 
     override fun initData() {
-        // Nhận dữ liệu từ CartFragment
-        val products = arguments?.getSerializable("cart_items") as? ArrayList<CartProduct> ?: arrayListOf()
-
-        // Đổ dữ liệu vào adapter
-        checkoutProductAdapter.submitList(products)
-
-        // Tính tổng tiền sản phẩm
-        total = products.sumOf { it.price * it.quantity }
-
-        // Hiển thị tổng cộng (mặc định Standard shipping)
-        updateTotalPrice()
+        // Lấy dữ liệu từ MainRepository
+        mainRepository.getProducts { products ->
+            productMap = products?.associateBy { it.productId } ?: emptyMap()
+            mainRepository.getProductVariants { variants ->
+                variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
+                mainRepository.getCartItems { items ->
+                    cartItems = items ?: emptyList()
+                    checkoutProductAdapter = CheckoutProductAdapter(variantMap, productMap)
+                    binding.rvCart.adapter = checkoutProductAdapter
+                    checkoutProductAdapter.submitList(cartItems)
+                    total = cartItems.sumOf { cartItem ->
+                        val variant = variantMap[cartItem.variantId]
+                        (variant?.price ?: 0.0) * cartItem.quantity
+                    }
+                    updateTotalPrice()
+                }
+            }
+        }
     }
 
     private fun updateTotalPrice() {

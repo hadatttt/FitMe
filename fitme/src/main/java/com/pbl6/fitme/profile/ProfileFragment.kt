@@ -1,11 +1,15 @@
 package com.pbl6.fitme.profile
 
+import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentProfileBinding
+import com.pbl6.fitme.model.Category
+import com.pbl6.fitme.model.Product
+import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.onBackPressed
@@ -15,7 +19,12 @@ import hoang.dqm.codebase.utils.singleClick
 
 class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>() {
 
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+
     override fun initView() {
+        val session = SessionManager.getInstance()
+        val token = session.getAccessToken(requireContext())
+        Log.d("SessionManager", "AccessToken = $token")
         // Hiện toolbar trong Activity
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
@@ -23,32 +32,22 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         // Highlight tab person trong toolbar
         highlightSelectedTab(R.id.person_id)
 
-        // ===== Data mẫu =====
-        val topProducts = listOf(
-            Category("Dresses", R.drawable.ic_launcher_foreground),
-            Category("Pants", R.drawable.ic_launcher_foreground),
-            Category("Skirts", R.drawable.ic_launcher_foreground),
-            Category("Shorts", R.drawable.ic_launcher_foreground),
-            Category("Jackets", R.drawable.ic_launcher_foreground),
-        )
-        val stories = listOf(
-            Category("Story1", R.drawable.ic_launcher_foreground),
-            Category("Story1", R.drawable.ic_launcher_foreground),
-            Category("Story1", R.drawable.ic_launcher_foreground),
-            Category("Story1", R.drawable.ic_launcher_foreground),
-            Category("Story1", R.drawable.ic_launcher_foreground),
-        )
-        val productList = listOf(
-            Product("White Top", 17.0, R.drawable.ic_splash),
-            Product("Yellow Set", 25.0, R.drawable.ic_splash),
-            Product("Pink Dress", 30.0, R.drawable.ic_splash),
-            Product("Shopping Girl", 25.0, R.drawable.ic_splash)
-        )
-
-        // Setup RecyclerViews
-        setupRecyclerViewCategory(binding.rvTopProducts, topProducts)
-        setupRecyclerViewCategory(binding.rvStories, stories)
-        setupRecyclerViewProduct(binding.rvNewItems, productList)
+        // Lấy dữ liệu từ API bằng Retrofit
+        mainRepository.getCategories { categories: List<Category>? ->
+            if (categories != null) {
+                setupRecyclerViewCategory(binding.rvTopProducts, categories)
+                setupRecyclerViewCategory(binding.rvStories, categories)
+            } else {
+                // Xử lý lỗi hoặc hiển thị thông báo
+            }
+        }
+        mainRepository.getProducts { products: List<Product>? ->
+            if (products != null) {
+                setupRecyclerViewProduct(binding.rvNewItems, products)
+            } else {
+                // Xử lý lỗi hoặc hiển thị thông báo
+            }
+        }
     }
 
     override fun initListener() {
