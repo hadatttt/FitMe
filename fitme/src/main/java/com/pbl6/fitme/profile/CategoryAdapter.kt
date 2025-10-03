@@ -8,11 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
-
-data class Category(
-    val name: String,
-    val imageRes: Int
-)
+import com.pbl6.fitme.model.Category
 
 class CategoryAdapter(private val categories: List<Category>) :
     RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>() {
@@ -42,8 +38,11 @@ class CategoryAdapter(private val categories: List<Category>) :
 
     override fun onBindViewHolder(holder: CategoryViewHolder, position: Int) {
         val category = categories[position]
-        holder.img.setImageResource(category.imageRes)
-        holder.name.text = category.name
+        holder.name.text = category.categoryName
+        // Nếu có trường imageUrl, dùng Glide/Picasso để load ảnh
+        // Glide.with(holder.img.context).load(category.imageUrl).into(holder.img)
+        // Hiện tại dùng ảnh tạm
+        holder.img.setImageResource(R.drawable.ic_splash)
 
         // Đổi màu khi chọn
         if (position == selectedPosition) {
@@ -56,7 +55,7 @@ class CategoryAdapter(private val categories: List<Category>) :
     override fun getItemCount(): Int = categories.size
 
     fun getSelectedCategory(): String? {
-        return if (selectedPosition != RecyclerView.NO_POSITION) categories[selectedPosition].name else null
+        return if (selectedPosition != RecyclerView.NO_POSITION) categories[selectedPosition].categoryName else null
     }
     fun clearSelection() {
         val oldPos = selectedPosition

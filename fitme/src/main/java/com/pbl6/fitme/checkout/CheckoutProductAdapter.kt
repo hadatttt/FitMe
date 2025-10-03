@@ -9,10 +9,13 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
-import com.pbl6.fitme.cart.CartProduct
+import com.pbl6.fitme.model.CartItem
+import com.bumptech.glide.Glide
 
-class CheckoutProductAdapter :
-    ListAdapter<CartProduct, CheckoutProductAdapter.VH>(DiffCallback()) {
+class CheckoutProductAdapter(
+    private val variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant>,
+    private val productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product>
+) : ListAdapter<CartItem, CheckoutProductAdapter.VH>(DiffCallback()) {
 
     inner class VH(view: View) : RecyclerView.ViewHolder(view) {
         val txtProductName: TextView = view.findViewById(R.id.tvProductName)
@@ -28,19 +31,25 @@ class CheckoutProductAdapter :
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        val product = getItem(position)
-        holder.txtProductName.text = "${product.title} - ${product.detail}"
-        holder.txtPrice.text = "$${String.format("%.2f", product.price)}"
-        holder.txtQuantity.text = "x${product.quantity}"
-        holder.imgProduct.setImageResource(product.imageResId)
+        val cartItem = getItem(position)
+        val variant = variantMap[cartItem.variantId]
+        val product = variant?.let { productMap[it.productId] }
+
+        holder.txtProductName.text = product?.productName ?: "Unknown"
+        holder.txtPrice.text = variant?.price?.let { "$${String.format("%.2f", it)}" } ?: ""
+        holder.txtQuantity.text = "x${cartItem.quantity}"
+        Glide.with(holder.imgProduct.context)
+            .load(R.drawable.ic_splash) // Nếu có imageUrl thì thay bằng product.imageUrl
+            .placeholder(R.drawable.ic_splash)
+            .into(holder.imgProduct)
     }
 
-    class DiffCallback : DiffUtil.ItemCallback<CartProduct>() {
-        override fun areItemsTheSame(oldItem: CartProduct, newItem: CartProduct): Boolean {
-            return oldItem.title == newItem.title && oldItem.detail == newItem.detail
+    class DiffCallback : DiffUtil.ItemCallback<CartItem>() {
+        override fun areItemsTheSame(oldItem: CartItem, newItem: CartItem): Boolean {
+            return oldItem.cartItemId == newItem.cartItemId
         }
 
-        override fun areContentsTheSame(oldItem: CartProduct, newItem: CartProduct): Boolean {
+        override fun areContentsTheSame(oldItem: CartItem, newItem: CartItem): Boolean {
             return oldItem == newItem
         }
     }

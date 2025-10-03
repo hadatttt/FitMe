@@ -16,6 +16,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.profile.*
 import com.pbl6.fitme.databinding.FragmentHomeBinding
+import com.pbl6.fitme.model.Category
+import com.pbl6.fitme.model.Product
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.onBackPressed
@@ -55,14 +57,25 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         setupRecyclerViews()
     }
 
-    private fun setupRecyclerViews() {
-        // Categories Horizontal
-        binding.rvCategories.layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.HORIZONTAL, false)
-        binding.rvCategories.adapter = CategoryAdapter(getDummyCategories())
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
 
-        // Products Grid
-        binding.rvItems.layoutManager = GridLayoutManager(requireContext(), 2)
-        binding.rvItems.adapter = ProductAdapter(getDummyProducts())
+    private fun setupRecyclerViews() {
+        mainRepository.getCategories { categories: List<Category>? ->
+            if (categories != null) {
+                binding.rvCategories.layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.HORIZONTAL, false)
+                binding.rvCategories.adapter = CategoryAdapter(categories)
+            } else {
+                Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
+            }
+        }
+        mainRepository.getProducts { products: List<Product>? ->
+            if (products != null) {
+                binding.rvItems.layoutManager = GridLayoutManager(requireContext(), 2)
+                binding.rvItems.adapter = ProductAdapter(products)
+            } else {
+                Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun initListener() {
@@ -120,24 +133,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         cameraLauncher.launch(intent)
     }
     // ===== Dummy Data =====
-    private fun getDummyCategories(): List<Category> {
-        return listOf(
-                Category("Dresses", R.drawable.ic_launcher_foreground),
-        Category("Pants", R.drawable.ic_launcher_foreground),
-        Category("Skirts", R.drawable.ic_launcher_foreground),
-        Category("Shorts", R.drawable.ic_launcher_foreground),
-        Category("Jackets", R.drawable.ic_launcher_foreground),
-        )
-    }
 
-    private fun getDummyProducts(): List<Product> {
-        return listOf(
-            Product("White Top", 17.0, R.drawable.ic_splash),
-            Product("Yellow Set", 25.0, R.drawable.ic_splash),
-            Product("Pink Dress", 30.0, R.drawable.ic_splash),
-            Product("Shopping Girl", 25.0, R.drawable.ic_splash)
-        )
-    }
     private fun hideToolbar() {
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.GONE
