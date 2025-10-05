@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
 import com.pbl6.fitme.model.Category
 
-class CategoryAdapter(private val categories: List<Category>) :
+class CategoryAdapter(private var categories: List<Category>) : // Thay đổi: val -> var
     RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>() {
 
     private var selectedPosition = RecyclerView.NO_POSITION
@@ -23,7 +23,7 @@ class CategoryAdapter(private val categories: List<Category>) :
         init {
             itemView.setOnClickListener {
                 val prevPos = selectedPosition
-                selectedPosition = adapterPosition
+                selectedPosition = bindingAdapterPosition
                 notifyItemChanged(prevPos)
                 notifyItemChanged(selectedPosition)
             }
@@ -44,7 +44,6 @@ class CategoryAdapter(private val categories: List<Category>) :
         // Hiện tại dùng ảnh tạm
         holder.img.setImageResource(R.drawable.ic_splash)
 
-        // Đổi màu khi chọn
         if (position == selectedPosition) {
             holder.container.setBackgroundResource(R.drawable.bg_bluelight_circle)
         } else {
@@ -57,9 +56,16 @@ class CategoryAdapter(private val categories: List<Category>) :
     fun getSelectedCategory(): String? {
         return if (selectedPosition != RecyclerView.NO_POSITION) categories[selectedPosition].categoryName else null
     }
+
     fun clearSelection() {
         val oldPos = selectedPosition
         selectedPosition = RecyclerView.NO_POSITION
         if (oldPos != RecyclerView.NO_POSITION) notifyItemChanged(oldPos)
+    }
+
+    fun updateData(newCategories: List<Category>) {
+        this.categories = newCategories
+        clearSelection()
+        notifyDataSetChanged()
     }
 }
