@@ -1,4 +1,6 @@
 package com.pbl6.fitme.filter
 
-class FilterViewModel {
+import hoang.dqm.codebase.base.viewmodel.BaseViewModel
+
+class FilterViewModel: BaseViewModel() {
 }
