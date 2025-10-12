@@ -43,7 +43,7 @@ class WishlistProductAdapter(
         val item = items[position]
         val product = productMap[item.productId]
         // Nếu có variantId, bạn có thể truyền thêm vào WishlistItem hoặc map theo productId
-        val variant = variantMap.values.find { it.productId == item.productId }
+        val variant = variantMap.values.find { it.variantId == item.productId }
 
         holder.txtTitle.text = product?.productName ?: "Unknown"
         holder.txtPrice.text = variant?.price?.let { "$${String.format("%.2f", it)}" } ?: ""

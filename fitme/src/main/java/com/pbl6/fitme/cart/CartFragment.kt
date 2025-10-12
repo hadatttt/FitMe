@@ -31,53 +31,53 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
         // Setup RecyclerView
         binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
 
-        // Load dữ liệu đồng bộ
-        mainRepository.getProducts { products ->
-            productMap = products?.associateBy { it.productId } ?: emptyMap()
-            mainRepository.getProductVariants { variants ->
-                variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
-                mainRepository.getCartItems { items ->
-                    cartItems.clear()
-                    if (items != null) {
-                        cartItems.addAll(items)
-                    }
-                    cartAdapter = CartProductAdapter(
-                        cartItems,
-                        variantMap,
-                        productMap,
-                        object : CartProductAdapter.OnCartActionListener {
-                            override fun onRemove(position: Int) {
-                                if (position in cartItems.indices) {
-                                    cartItems.removeAt(position)
-                                    cartAdapter.notifyItemRemoved(position)
-                                    updateCartView()
-                                }
-                            }
-                            override fun onIncrease(position: Int) {
-                                if (position in cartItems.indices) {
-                                    cartItems[position] = cartItems[position].copy(quantity = cartItems[position].quantity + 1)
-                                    cartAdapter.notifyItemChanged(position)
-                                    updateCartView()
-                                }
-                            }
-                            override fun onDecrease(position: Int) {
-                                if (position in cartItems.indices) {
-                                    if (cartItems[position].quantity > 1) {
-                                        cartItems[position] = cartItems[position].copy(quantity = cartItems[position].quantity - 1)
-                                        cartAdapter.notifyItemChanged(position)
-                                        updateCartView()
-                                    } else {
-                                        onRemove(position)
-                                    }
-                                }
-                            }
-                        }
-                    )
-                    binding.rvCart.adapter = cartAdapter
-                    updateCartView()
-                }
-            }
-        }
+//        // Load dữ liệu đồng bộ
+//        mainRepository.getProducts { products ->
+//            productMap = products?.associateBy { it.productId } ?: emptyMap()
+//            mainRepository.getProductVariants { variants ->
+//                variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
+//                mainRepository.getCartItems { items ->
+//                    cartItems.clear()
+//                    if (items != null) {
+//                        cartItems.addAll(items)
+//                    }
+//                    cartAdapter = CartProductAdapter(
+//                        cartItems,
+//                        variantMap,
+//                        productMap,
+//                        object : CartProductAdapter.OnCartActionListener {
+//                            override fun onRemove(position: Int) {
+//                                if (position in cartItems.indices) {
+//                                    cartItems.removeAt(position)
+//                                    cartAdapter.notifyItemRemoved(position)
+//                                    updateCartView()
+//                                }
+//                            }
+//                            override fun onIncrease(position: Int) {
+//                                if (position in cartItems.indices) {
+//                                    cartItems[position] = cartItems[position].copy(quantity = cartItems[position].quantity + 1)
+//                                    cartAdapter.notifyItemChanged(position)
+//                                    updateCartView()
+//                                }
+//                            }
+//                            override fun onDecrease(position: Int) {
+//                                if (position in cartItems.indices) {
+//                                    if (cartItems[position].quantity > 1) {
+//                                        cartItems[position] = cartItems[position].copy(quantity = cartItems[position].quantity - 1)
+//                                        cartAdapter.notifyItemChanged(position)
+//                                        updateCartView()
+//                                    } else {
+//                                        onRemove(position)
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    )
+//                    binding.rvCart.adapter = cartAdapter
+//                    updateCartView()
+//                }
+//            }
+//        }
     }
 
     override fun initListener() {

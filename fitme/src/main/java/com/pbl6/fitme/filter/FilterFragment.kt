@@ -11,7 +11,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentFilterBinding
-import com.pbl6.fitme.model.Category
 import com.pbl6.fitme.profile.CategoryAdapter
 import hoang.dqm.codebase.base.activity.BaseFragment
 
@@ -62,7 +61,7 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, FilterViewModel>() {
         }
         binding.tvPrice.text = "$${binding.priceRangeSlider.values[0].toInt()} — $${binding.priceRangeSlider.values[1].toInt()}"
 
-        categoryAdapter = CategoryAdapter(emptyList())
+//        categoryAdapter = CategoryAdapter(emptyList())
         binding.rvCategory.apply {
             layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.HORIZONTAL, false)
             adapter = categoryAdapter
@@ -103,13 +102,13 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, FilterViewModel>() {
     }
 
     override fun initData() {
-        mainRepository.getCategories { categories: List<Category>? ->
-            if (categories != null) {
-                categoryAdapter.updateData(categories)
-            } else {
-                Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
-            }
-        }
+//        mainRepository.getCategories { categories: List<Category>? ->
+//            if (categories != null) {
+//                categoryAdapter.updateData(categories)
+//            } else {
+//                Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
+//            }
+//        }
     }
 
     override fun onDestroyView() {

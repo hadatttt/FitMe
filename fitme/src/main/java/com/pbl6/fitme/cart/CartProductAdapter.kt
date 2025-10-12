@@ -47,7 +47,7 @@ class CartProductAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val cartItem = items[position]
         val variant = variantMap[cartItem.variantId]
-        val product = variant?.let { productMap[it.productId] }
+        val product = variant?.let { productMap[it.variantId] }
 
         holder.txtTitle.text = product?.productName ?: "Unknown"
         holder.txtDetail.text = variant?.size?.let { "Size: $it" } ?: ""

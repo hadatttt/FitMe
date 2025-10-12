@@ -1,5 +1,6 @@
 package com.pbl6.fitme.home
 
+import Category
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
@@ -11,13 +12,10 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
-import com.pbl6.fitme.profile.*
 import com.pbl6.fitme.databinding.FragmentHomeBinding
-import com.pbl6.fitme.model.Category
-import com.pbl6.fitme.model.Product
+import com.pbl6.fitme.profile.CategoryAdapter
+import com.pbl6.fitme.profile.ProductAdapter
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.onBackPressed
@@ -46,38 +44,52 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
             }
         }
     override fun initView() {
-        // Hiện toolbar trong Activity
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
-
-        // Highlight tab person trong toolbar
         highlightSelectedTab(R.id.home_id)
-
-        // Setup RecyclerView
         setupRecyclerViews()
     }
-
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+    // ... bên trong class HomeFragment
 
     private fun setupRecyclerViews() {
-        mainRepository.getCategories { categories: List<Category>? ->
-            if (categories != null) {
-                binding.rvCategories.layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.HORIZONTAL, false)
-                binding.rvCategories.adapter = CategoryAdapter(categories)
-            } else {
-                Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
+        val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+
+        if (!token.isNullOrBlank()) {
+            // --- 1. Lấy và hiển thị DANH MỤC (đã có) ---
+            mainRepository.getCategories(token) { categories: List<Category>? ->
+                activity?.runOnUiThread {
+                    if (categories != null) {
+                        binding.rvCategories.layoutManager =
+                            androidx.recyclerview.widget.LinearLayoutManager(requireContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
+                        binding.rvCategories.adapter =
+                            CategoryAdapter(categories)
+                    } else {
+                        Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
-        }
-        mainRepository.getProducts { products: List<Product>? ->
-            if (products != null) {
-                binding.rvItems.layoutManager = GridLayoutManager(requireContext(), 2)
-                binding.rvItems.adapter = ProductAdapter(products)
-            } else {
-                Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
+
+            // --- 2. Lấy và hiển thị SẢN PHẨM (phần thêm mới) ---
+            mainRepository.getProducts(token) { products: List<com.pbl6.fitme.model.Product>? ->
+                activity?.runOnUiThread {
+                    if (products != null) {
+                        // Giả sử RecyclerView cho sản phẩm có id là rvItems
+                        binding.rvItems.layoutManager =
+                            androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2) // Hiển thị dạng lưới 2 cột
+                        binding.rvItems.adapter =
+                            ProductAdapter(products)
+                    } else {
+                        Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
+
+        } else {
+            // Gộp chung thông báo khi chưa đăng nhập
+            Toast.makeText(requireContext(), "Vui lòng đăng nhập để xem dữ liệu", Toast.LENGTH_LONG).show()
         }
     }
-
     override fun initListener() {
         onBackPressed {
             hideToolbar()

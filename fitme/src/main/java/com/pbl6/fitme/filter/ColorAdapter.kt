@@ -21,15 +21,10 @@ class ColorAdapter(private val items: List<String>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val colorCode = items[position]
-
-        // card ngoài
         val card = holder.binding.cardColor
-        // view màu bên trong
         val colorView = holder.binding.colorView
 
         colorView.setBackgroundColor(Color.parseColor(colorCode))
-
-        // hiệu ứng chọn
         if (position == selectedPosition) {
             card.strokeWidth = 10
             card.strokeColor = Color.BLACK
@@ -46,11 +41,9 @@ class ColorAdapter(private val items: List<String>) :
     }
 
     override fun getItemCount(): Int = items.size
-
     fun getSelectedColor(): String? {
         return if (selectedPosition != RecyclerView.NO_POSITION) items[selectedPosition] else null
     }
-
     fun clearSelection() {
         val oldPos = selectedPosition
         selectedPosition = RecyclerView.NO_POSITION
