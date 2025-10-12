@@ -33,7 +33,7 @@ class CheckoutProductAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val cartItem = getItem(position)
         val variant = variantMap[cartItem.variantId]
-        val product = variant?.let { productMap[it.productId] }
+        val product = variant?.let { productMap[it.variantId] }
 
         holder.txtProductName.text = product?.productName ?: "Unknown"
         holder.txtPrice.text = variant?.price?.let { "$${String.format("%.2f", it)}" } ?: ""

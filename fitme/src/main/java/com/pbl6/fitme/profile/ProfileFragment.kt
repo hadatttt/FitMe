@@ -1,5 +1,6 @@
 package com.pbl6.fitme.profile
 
+import Category
 import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
@@ -7,7 +8,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentProfileBinding
-import com.pbl6.fitme.model.Category
 import com.pbl6.fitme.model.Product
 import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
@@ -33,21 +33,21 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         highlightSelectedTab(R.id.person_id)
 
         // Lấy dữ liệu từ API bằng Retrofit
-        mainRepository.getCategories { categories: List<Category>? ->
-            if (categories != null) {
-                setupRecyclerViewCategory(binding.rvTopProducts, categories)
-                setupRecyclerViewCategory(binding.rvStories, categories)
-            } else {
-                // Xử lý lỗi hoặc hiển thị thông báo
-            }
-        }
-        mainRepository.getProducts { products: List<Product>? ->
-            if (products != null) {
-                setupRecyclerViewProduct(binding.rvNewItems, products)
-            } else {
-                // Xử lý lỗi hoặc hiển thị thông báo
-            }
-        }
+//        mainRepository.getCategories { categories: List<Category>? ->
+//            if (categories != null) {
+//                setupRecyclerViewCategory(binding.rvTopProducts, categories)
+//                setupRecyclerViewCategory(binding.rvStories, categories)
+//            } else {
+//                // Xử lý lỗi hoặc hiển thị thông báo
+//            }
+//        }
+//        mainRepository.getProducts { products: List<Product>? ->
+//            if (products != null) {
+//                setupRecyclerViewProduct(binding.rvNewItems, products)
+//            } else {
+//                // Xử lý lỗi hoặc hiển thị thông báo
+//            }
+//        }
     }
 
     override fun initListener() {
@@ -97,8 +97,6 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
 
     override fun initData() {
     }
-
-    // ===== Toolbar Helpers =====
     private fun highlightSelectedTab(selectedId: Int) {
         val ids = listOf(R.id.home_id, R.id.wish_id, R.id.filter_id, R.id.cart_id, R.id.person_id)
         ids.forEach { id ->

@@ -1,5 +1,3 @@
-package com.pbl6.fitme.model
-
 import java.util.UUID
 
 data class Category(
@@ -9,5 +7,6 @@ data class Category(
     val imageUrl: String?,
     val isActive: Boolean?,
     val sortOrder: Int?,
-    val parentCategoryId: UUID?
+    val parentCategoryId: UUID?,
+    val subcategories: List<Category> = emptyList()
 )

@@ -88,23 +88,23 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
 
     override fun initData() {
         // Lấy dữ liệu từ MainRepository
-        mainRepository.getProducts { products ->
-            productMap = products?.associateBy { it.productId } ?: emptyMap()
-            mainRepository.getProductVariants { variants ->
-                variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
-                mainRepository.getCartItems { items ->
-                    cartItems = items ?: emptyList()
-                    checkoutProductAdapter = CheckoutProductAdapter(variantMap, productMap)
-                    binding.rvCart.adapter = checkoutProductAdapter
-                    checkoutProductAdapter.submitList(cartItems)
-                    total = cartItems.sumOf { cartItem ->
-                        val variant = variantMap[cartItem.variantId]
-                        (variant?.price ?: 0.0) * cartItem.quantity
-                    }
-                    updateTotalPrice()
-                }
-            }
-        }
+//        mainRepository.getProducts { products ->
+//            productMap = products?.associateBy { it.productId } ?: emptyMap()
+//            mainRepository.getProductVariants { variants ->
+//                variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
+//                mainRepository.getCartItems { items ->
+//                    cartItems = items ?: emptyList()
+//                    checkoutProductAdapter = CheckoutProductAdapter(variantMap, productMap)
+//                    binding.rvCart.adapter = checkoutProductAdapter
+//                    checkoutProductAdapter.submitList(cartItems)
+//                    total = cartItems.sumOf { cartItem ->
+//                        val variant = variantMap[cartItem.variantId]
+//                        (variant?.price ?: 0.0) * cartItem.quantity
+//                    }
+//                    updateTotalPrice()
+//                }
+//            }
+//        }
     }
 
     private fun updateTotalPrice() {
