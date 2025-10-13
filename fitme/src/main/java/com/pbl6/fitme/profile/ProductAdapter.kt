@@ -30,16 +30,15 @@ class ProductAdapter(private val items: List<Product>) :
         val item = items[position]
         holder.txtTitle.text = item.productName
 
-        // Dùng Glide để load ảnh từ URL
-        // Kiểm tra xem danh sách ảnh có rỗng không
-        if (item.images.isNotEmpty()) {
+        // Use mainImageUrl convenience property
+        val imageUrl = item.mainImageUrl
+        if (!imageUrl.isNullOrBlank()) {
             Glide.with(holder.imgProduct.context)
-                .load(item.images[0]) // Load ảnh đầu tiên trong danh sách
-                .placeholder(R.drawable.ic_splash) // Ảnh tạm trong khi chờ load
-                .error(R.drawable.ic_splash)       // Ảnh hiển thị khi có lỗi
+                .load(imageUrl)
+                .placeholder(R.drawable.ic_splash)
+                .error(R.drawable.ic_splash)
                 .into(holder.imgProduct)
         } else {
-            // Nếu không có ảnh nào, dùng ảnh mặc định
             holder.imgProduct.setImageResource(R.drawable.ic_splash)
         }
 

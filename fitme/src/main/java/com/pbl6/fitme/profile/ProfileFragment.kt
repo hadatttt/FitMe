@@ -119,9 +119,9 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
                 activity?.runOnUiThread {
                     if (products != null) {
                         // Giả sử RecyclerView cho sản phẩm có id là rvItems
-                        binding.rvTopProducts.layoutManager =
+                        binding.rvNewItems.layoutManager =
                             androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2) // Hiển thị dạng lưới 2 cột
-                        binding.rvTopProducts.adapter =
+                        binding.rvNewItems.adapter =
                             ProductAdapter(products)
                     } else {
                         Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
