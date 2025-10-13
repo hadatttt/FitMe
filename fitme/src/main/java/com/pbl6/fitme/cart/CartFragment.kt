@@ -15,8 +15,8 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
 
     private val cartItems = mutableListOf<com.pbl6.fitme.model.CartItem>()
     private lateinit var cartAdapter: CartProductAdapter
-    private val mainRepository = com.pbl6.fitme.repository.MainRepository
-
+    private val cartRepository = com.pbl6.fitme.repository.CartRepository()
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
     private var productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product> = emptyMap()
     private var variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant> = emptyMap()
 
@@ -30,54 +30,74 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
 
         // Setup RecyclerView
         binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
+        val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+        if (!token.isNullOrBlank()) {
+            // Load dữ liệu: products -> variants -> cart
+            mainRepository.getProducts(token) { products: List<com.pbl6.fitme.model.Product>? ->
+                activity?.runOnUiThread {
+                    productMap = products?.associateBy { it.productId } ?: emptyMap()
 
-//        // Load dữ liệu đồng bộ
-//        mainRepository.getProducts { products ->
-//            productMap = products?.associateBy { it.productId } ?: emptyMap()
-//            mainRepository.getProductVariants { variants ->
-//                variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
-//                mainRepository.getCartItems { items ->
-//                    cartItems.clear()
-//                    if (items != null) {
-//                        cartItems.addAll(items)
-//                    }
-//                    cartAdapter = CartProductAdapter(
-//                        cartItems,
-//                        variantMap,
-//                        productMap,
-//                        object : CartProductAdapter.OnCartActionListener {
-//                            override fun onRemove(position: Int) {
-//                                if (position in cartItems.indices) {
-//                                    cartItems.removeAt(position)
-//                                    cartAdapter.notifyItemRemoved(position)
-//                                    updateCartView()
-//                                }
-//                            }
-//                            override fun onIncrease(position: Int) {
-//                                if (position in cartItems.indices) {
-//                                    cartItems[position] = cartItems[position].copy(quantity = cartItems[position].quantity + 1)
-//                                    cartAdapter.notifyItemChanged(position)
-//                                    updateCartView()
-//                                }
-//                            }
-//                            override fun onDecrease(position: Int) {
-//                                if (position in cartItems.indices) {
-//                                    if (cartItems[position].quantity > 1) {
-//                                        cartItems[position] = cartItems[position].copy(quantity = cartItems[position].quantity - 1)
-//                                        cartAdapter.notifyItemChanged(position)
-//                                        updateCartView()
-//                                    } else {
-//                                        onRemove(position)
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    )
-//                    binding.rvCart.adapter = cartAdapter
-//                    updateCartView()
-//                }
-//            }
-//        }
+                    mainRepository.getProductVariants { variants: List<com.pbl6.fitme.model.ProductVariant>? ->
+                        activity?.runOnUiThread {
+                            variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
+
+                            // Use CartRepository to fetch cart items
+                            cartRepository.getCart { items: List<com.pbl6.fitme.model.CartItem>? ->
+                                activity?.runOnUiThread {
+                                    cartItems.clear()
+                                    if (items != null) {
+                                        cartItems.addAll(items)
+                                    }
+
+                                    cartAdapter = CartProductAdapter(
+                                        cartItems,
+                                        variantMap,
+                                        productMap,
+                                        object : CartProductAdapter.OnCartActionListener {
+                                            override fun onRemove(position: Int) {
+                                                if (position in cartItems.indices) {
+                                                    cartItems.removeAt(position)
+                                                    cartAdapter.notifyItemRemoved(position)
+                                                    updateCartView()
+                                                }
+                                            }
+
+                                            override fun onIncrease(position: Int) {
+                                                if (position in cartItems.indices) {
+                                                    cartItems[position] = cartItems[position].copy(
+                                                        quantity = cartItems[position].quantity + 1
+                                                    )
+                                                    cartAdapter.notifyItemChanged(position)
+                                                    updateCartView()
+                                                }
+                                            }
+
+                                            override fun onDecrease(position: Int) {
+                                                if (position in cartItems.indices) {
+                                                    if (cartItems[position].quantity > 1) {
+                                                        cartItems[position] = cartItems[position].copy(
+                                                            quantity = cartItems[position].quantity - 1
+                                                        )
+                                                        cartAdapter.notifyItemChanged(position)
+                                                        updateCartView()
+                                                    } else {
+                                                        onRemove(position)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    )
+
+                                    binding.rvCart.adapter = cartAdapter
+                                    updateCartView()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
     override fun initListener() {
@@ -114,7 +134,6 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
         }
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
-            // Stay in CartFragment
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
             highlightSelectedTab(R.id.person_id)

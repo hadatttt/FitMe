@@ -76,7 +76,6 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
         }
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
             highlightSelectedTab(R.id.wish_id)
-            // Stay in WishlistFragment
         }
         requireActivity().findViewById<View>(R.id.filter_id).singleClick {
             highlightSelectedTab(R.id.filter_id)

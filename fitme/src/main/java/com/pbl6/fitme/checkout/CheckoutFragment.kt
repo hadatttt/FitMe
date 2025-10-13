@@ -13,7 +13,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     private var total: Double = 0.0
     private var shippingFee: Double = 0.0
     private lateinit var checkoutProductAdapter: CheckoutProductAdapter
-    private val mainRepository = com.pbl6.fitme.repository.MainRepository
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
 
     private var productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product> = emptyMap()
     private var variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant> = emptyMap()

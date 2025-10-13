@@ -4,13 +4,10 @@ import Category
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.provider.MediaStore
 import android.view.View
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentHomeBinding
@@ -63,7 +60,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
                         binding.rvCategories.layoutManager =
                             androidx.recyclerview.widget.LinearLayoutManager(requireContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
                         binding.rvCategories.adapter =
-                            CategoryAdapter(categories)
+                            CategoryAdapter(categories) { /* no-op selection */ }
                     } else {
                         Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
                     }

@@ -15,12 +15,17 @@ import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentFilterBinding
 import com.pbl6.fitme.home.HomeMainViewModel
 import Category
+import android.util.Log
 import com.pbl6.fitme.profile.CategoryAdapter
 import hoang.dqm.codebase.base.activity.BaseFragment
+import hoang.dqm.codebase.base.activity.navigate
+import hoang.dqm.codebase.base.activity.onBackPressed
+import hoang.dqm.codebase.base.activity.popBackStack
+import hoang.dqm.codebase.utils.singleClick
 
 class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() {
 
-    private lateinit var categoryAdapter: CategoryAdapter
+    private val categoryAdapter = CategoryAdapter(emptyList())
     private lateinit var colorAdapter: ColorAdapter
     private lateinit var sizeAdapter: SizeAdapter
 
@@ -42,8 +47,29 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() 
     }
 
     override fun initListener() {
-        binding.ivClose.setOnClickListener {
-            requireActivity().supportFragmentManager.popBackStack()
+        onBackPressed {
+            hideToolbar()
+            popBackStack()
+        }
+        // ===== Toolbar click =====
+        requireActivity().findViewById<View>(R.id.home_id).singleClick {
+            highlightSelectedTab(R.id.home_id)
+            navigate(R.id.homeFragment)
+        }
+        requireActivity().findViewById<View>(R.id.wish_id).singleClick {
+            highlightSelectedTab(R.id.wish_id)
+            navigate(R.id.wishlistFragment)
+        }
+        requireActivity().findViewById<View>(R.id.filter_id).singleClick {
+            highlightSelectedTab(R.id.filter_id)
+        }
+        requireActivity().findViewById<View>(R.id.cart_id).singleClick {
+            highlightSelectedTab(R.id.cart_id)
+            navigate(R.id.cartFragment)
+        }
+        requireActivity().findViewById<View>(R.id.person_id).singleClick {
+            highlightSelectedTab(R.id.person_id)
+            navigate(R.id.profileFragment)
         }
     }
 
@@ -54,17 +80,32 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() 
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
 
     private fun setupCategoryRecycler() {
-//        mainRepository.getCategories { categories: List<Category>? ->
-//            if (categories != null) {
-//                categoryAdapter = CategoryAdapter(categories)
-//                binding.rvCategory.apply {
-//                    layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.HORIZONTAL, false)
-//                    adapter = categoryAdapter
-//                }
-//            } else {
-//                Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
-//            }
-//        }
+        val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+
+        if (!token.isNullOrBlank()) {
+            // --- 1. Lấy và hiển thị DANH MỤC (đã có) ---
+            mainRepository.getCategories(token) { categories: List<Category>? ->
+                activity?.runOnUiThread {
+                    if (categories != null) {
+                        binding.rvCategory.layoutManager =
+                            androidx.recyclerview.widget.LinearLayoutManager(
+                                requireContext(),
+                                androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL,
+                                false
+                            )
+                        // reuse shared adapter
+                        categoryAdapter.updateData(categories)
+                        binding.rvCategory.adapter = categoryAdapter
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            "Không lấy được danh mục",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        }
     }
 
     private fun setupColorRecycler() {
@@ -117,7 +158,7 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() 
             val selectedColor = colorAdapter.getSelectedColor()
             val selectedSize = sizeAdapter.getSelectedSize()
             val priceRange = binding.priceRangeSlider.values
-
+            Log.d("FilterFragment", "Applied filters\nCategory: $selectedCategory\nColor: $selectedColor\nSize: $selectedSize\nPrice: ${priceRange[0]} - ${priceRange[1]}")
             Toast.makeText(
                 requireContext(),
                 "Applied filters\nCategory: $selectedCategory\nColor: $selectedColor\nSize: $selectedSize\nPrice: ${priceRange[0]} - ${priceRange[1]}",

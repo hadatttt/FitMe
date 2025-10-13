@@ -34,17 +34,15 @@ class MainRepository {
     // 🛍️ Lấy danh sách sản phẩm (có token)
     fun getProducts(token: String, onResult: (List<Product>?) -> Unit) {
         val bearerToken = "Bearer $token"
-
-        // Callback phải khớp với kiểu trả về của ApiService
-        productApi.getProducts(bearerToken).enqueue(object : Callback<BaseResponse<List<Product>>> { // <-- Sửa ở đây
+        productApi.getProducts(bearerToken)
+            .enqueue(object : Callback<BaseResponse<List<Product>>> {
 
             override fun onResponse(
                 call: Call<BaseResponse<List<Product>>>,
-                response: Response<BaseResponse<List<Product>>> // <-- Sửa cả ở đây
+                response: Response<BaseResponse<List<Product>>>
             ) {
                 if (response.isSuccessful) {
-                    // Lấy dữ liệu từ trường 'result' bên trong BaseResponse
-                    onResult(response.body()?.result) // <-- Thay đổi quan trọng nhất!
+                    onResult(response.body()?.result)
                 } else {
                     onResult(null)
                 }

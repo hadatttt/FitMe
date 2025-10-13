@@ -3,12 +3,10 @@ package com.pbl6.fitme.profile
 import Category
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentProfileBinding
-import com.pbl6.fitme.model.Product
 import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
@@ -32,22 +30,7 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         // Highlight tab person trong toolbar
         highlightSelectedTab(R.id.person_id)
 
-        // Lấy dữ liệu từ API bằng Retrofit
-//        mainRepository.getCategories { categories: List<Category>? ->
-//            if (categories != null) {
-//                setupRecyclerViewCategory(binding.rvTopProducts, categories)
-//                setupRecyclerViewCategory(binding.rvStories, categories)
-//            } else {
-//                // Xử lý lỗi hoặc hiển thị thông báo
-//            }
-//        }
-//        mainRepository.getProducts { products: List<Product>? ->
-//            if (products != null) {
-//                setupRecyclerViewProduct(binding.rvNewItems, products)
-//            } else {
-//                // Xử lý lỗi hoặc hiển thị thông báo
-//            }
-//        }
+        setupRecyclerViews()
     }
 
     override fun initListener() {
@@ -113,14 +96,43 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
     }
 
     // ===== RecyclerView Helpers =====
-    private fun setupRecyclerViewCategory(rv: RecyclerView, data: List<Category>) {
-        rv.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        rv.adapter = CategoryAdapter(data)
-    }
+    private fun setupRecyclerViews() {
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
 
-    private fun setupRecyclerViewProduct(rv: RecyclerView, data: List<Product>) {
-        rv.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        rv.adapter = ProductAdapter(data)
+        if (!token.isNullOrBlank()) {
+            // --- 1. Lấy và hiển thị DANH MỤC (đã có) ---
+            mainRepository.getCategories(token) { categories: List<Category>? ->
+                activity?.runOnUiThread {
+                    if (categories != null) {
+                        binding.rvStories.layoutManager =
+                            androidx.recyclerview.widget.LinearLayoutManager(requireContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
+                        binding.rvStories.adapter =
+                            CategoryAdapter(categories) { /* no-op selection */ }
+                    } else {
+                        Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+            // --- 2. Lấy và hiển thị SẢN PHẨM (phần thêm mới) ---
+            mainRepository.getProducts(token) { products: List<com.pbl6.fitme.model.Product>? ->
+                activity?.runOnUiThread {
+                    if (products != null) {
+                        // Giả sử RecyclerView cho sản phẩm có id là rvItems
+                        binding.rvTopProducts.layoutManager =
+                            androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2) // Hiển thị dạng lưới 2 cột
+                        binding.rvTopProducts.adapter =
+                            ProductAdapter(products)
+                    } else {
+                        Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+        } else {
+            // Gộp chung thông báo khi chưa đăng nhập
+            Toast.makeText(requireContext(), "Vui lòng đăng nhập để xem dữ liệu", Toast.LENGTH_LONG).show()
+        }
     }
     private fun hideToolbar() {
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)

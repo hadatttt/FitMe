@@ -10,7 +10,10 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
 
-class CategoryAdapter(private var categories: List<Category>) : // Thay đổi: val -> var
+class CategoryAdapter(
+    private var categories: List<Category>,
+    private val onSelectionChanged: (String?) -> Unit = {}
+) : // Thay đổi: val -> var
     RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>() {
 
     private var selectedPosition = RecyclerView.NO_POSITION
@@ -26,6 +29,9 @@ class CategoryAdapter(private var categories: List<Category>) : // Thay đổi: 
                 selectedPosition = bindingAdapterPosition
                 notifyItemChanged(prevPos)
                 notifyItemChanged(selectedPosition)
+
+                val selected = if (selectedPosition != RecyclerView.NO_POSITION) categories[selectedPosition].categoryName else null
+                onSelectionChanged(selected)
             }
         }
     }
@@ -61,6 +67,7 @@ class CategoryAdapter(private var categories: List<Category>) : // Thay đổi: 
         val oldPos = selectedPosition
         selectedPosition = RecyclerView.NO_POSITION
         if (oldPos != RecyclerView.NO_POSITION) notifyItemChanged(oldPos)
+        onSelectionChanged(null)
     }
 
     fun updateData(newCategories: List<Category>) {

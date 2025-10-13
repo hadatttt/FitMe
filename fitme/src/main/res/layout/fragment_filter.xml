@@ -32,13 +32,6 @@
                     android:textSize="20sp"
                     android:textStyle="bold" />
 
-                <!-- Close Button -->
-                <ImageView
-                    android:id="@+id/ivClose"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/ic_close"
-                    android:contentDescription="Close" />
             </LinearLayout>
 
 

@@ -4,6 +4,7 @@ import android.text.InputType
 import android.util.Log
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentLoginBinding
+import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.popBackStack
@@ -18,7 +19,7 @@ class LoginFragment : BaseFragment<FragmentLoginBinding, LoginViewmodel>() {
     }
     private val authRepository = com.pbl6.fitme.repository.AuthRepository()
     // Truy cập MainRepository qua Activity hoặc Singleton
-    private val mainRepository = com.pbl6.fitme.repository.MainRepository
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
 
     override fun initListener() {
         binding.tvCancel.singleClick {
@@ -42,8 +43,8 @@ class LoginFragment : BaseFragment<FragmentLoginBinding, LoginViewmodel>() {
             val password = binding.etPassword.text?.toString() ?: ""
             authRepository.login(email, password) { response ->
                 if (response != null && response.result?.token?.isNotEmpty() == true) {
-                    // Truyền token cho MainRepository
-                    mainRepository.setToken(response.result.token)
+                    SessionManager.getInstance().saveLoginResponse(requireContext(), response)
+                    android.util.Log.d("SessionManager", "LoginResponse saved: token=${response.result.token}")
                     navigate(R.id.profileFragment)
                 } else {
                     Log.d("Auth", "Login response: ${response}")

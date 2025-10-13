@@ -10,6 +10,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentSettingsBinding
 import hoang.dqm.codebase.base.activity.navigate
+import hoang.dqm.codebase.base.activity.popBackStack
+import hoang.dqm.codebase.utils.singleClick
 
 class SettingsFragment : Fragment() {
 
@@ -26,7 +28,7 @@ class SettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        hideToolbar()
         val allItems = listOf(
             // Personal
             SettingOption("Profile"),
@@ -50,6 +52,9 @@ class SettingsFragment : Fragment() {
             adapter = SettingsAdapter(allItems) { item ->
                 handleItemClick(item)
             }
+        }
+        binding.ivClose.singleClick {
+            requireActivity().supportFragmentManager.popBackStack()
         }
     }
 
@@ -79,5 +84,9 @@ class SettingsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+    private fun hideToolbar() {
+        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
+        toolbar.visibility = View.GONE
     }
 }
