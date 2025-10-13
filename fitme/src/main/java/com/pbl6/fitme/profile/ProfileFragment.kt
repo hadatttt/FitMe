@@ -1,13 +1,15 @@
 package com.pbl6.fitme.profile
 
+import Category
+import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentProfileBinding
-import com.pbl6.fitme.model.Category
 import com.pbl6.fitme.model.Product
+import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.onBackPressed
@@ -17,9 +19,12 @@ import hoang.dqm.codebase.utils.singleClick
 
 class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>() {
 
-    private val mainRepository = com.pbl6.fitme.repository.MainRepository
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
 
     override fun initView() {
+        val session = SessionManager.getInstance()
+        val token = session.getAccessToken(requireContext())
+        Log.d("SessionManager", "AccessToken = $token")
         // Hiện toolbar trong Activity
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
@@ -28,25 +33,21 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         highlightSelectedTab(R.id.person_id)
 
         // Lấy dữ liệu từ API bằng Retrofit
-        mainRepository.getCategories { categories: List<Category>? ->
-            if (categories != null) {
-                android.util.Log.d("ProfileFragment", "Categories loaded: ${categories.size}")
-                setupRecyclerViewCategory(binding.rvTopProducts, categories)
-                setupRecyclerViewCategory(binding.rvStories, categories)
-            } else {
-                android.util.Log.e("ProfileFragment", "Failed to load categories or categories is null")
-                // Xử lý lỗi hoặc hiển thị thông báo
-            }
-        }
-        mainRepository.getProducts { products: List<Product>? ->
-            if (products != null) {
-                android.util.Log.d("ProfileFragment", "Products loaded: ${products.size}")
-                setupRecyclerViewProduct(binding.rvNewItems, products)
-            } else {
-                android.util.Log.e("ProfileFragment", "Failed to load products or products is null")
-                // Xử lý lỗi hoặc hiển thị thông báo
-            }
-        }
+//        mainRepository.getCategories { categories: List<Category>? ->
+//            if (categories != null) {
+//                setupRecyclerViewCategory(binding.rvTopProducts, categories)
+//                setupRecyclerViewCategory(binding.rvStories, categories)
+//            } else {
+//                // Xử lý lỗi hoặc hiển thị thông báo
+//            }
+//        }
+//        mainRepository.getProducts { products: List<Product>? ->
+//            if (products != null) {
+//                setupRecyclerViewProduct(binding.rvNewItems, products)
+//            } else {
+//                // Xử lý lỗi hoặc hiển thị thông báo
+//            }
+//        }
     }
 
     override fun initListener() {
@@ -97,8 +98,6 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
 
     override fun initData() {
     }
-
-    // ===== Toolbar Helpers =====
     private fun highlightSelectedTab(selectedId: Int) {
         val ids = listOf(R.id.home_id, R.id.wish_id, R.id.filter_id, R.id.cart_id, R.id.person_id)
         ids.forEach { id ->

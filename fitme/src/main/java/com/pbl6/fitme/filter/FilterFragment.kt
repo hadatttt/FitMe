@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentFilterBinding
 import com.pbl6.fitme.home.HomeMainViewModel
-import com.pbl6.fitme.model.Category
+import Category
 import com.pbl6.fitme.profile.CategoryAdapter
 import hoang.dqm.codebase.base.activity.BaseFragment
 
@@ -51,20 +51,20 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() 
         // no-op for now; data is loaded by repository callbacks in setupCategoryRecycler
     }
 
-    private val mainRepository = com.pbl6.fitme.repository.MainRepository
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
 
     private fun setupCategoryRecycler() {
-        mainRepository.getCategories { categories: List<Category>? ->
-            if (categories != null) {
-                categoryAdapter = CategoryAdapter(categories)
-                binding.rvCategory.apply {
-                    layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.HORIZONTAL, false)
-                    adapter = categoryAdapter
-                }
-            } else {
-                Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
-            }
-        }
+//        mainRepository.getCategories { categories: List<Category>? ->
+//            if (categories != null) {
+//                categoryAdapter = CategoryAdapter(categories)
+//                binding.rvCategory.apply {
+//                    layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.HORIZONTAL, false)
+//                    adapter = categoryAdapter
+//                }
+//            } else {
+//                Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
+//            }
+//        }
     }
 
     private fun setupColorRecycler() {
