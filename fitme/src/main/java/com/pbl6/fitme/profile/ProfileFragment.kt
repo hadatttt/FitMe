@@ -122,7 +122,12 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
                         binding.rvNewItems.layoutManager =
                             androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2) // Hiển thị dạng lưới 2 cột
                         binding.rvNewItems.adapter =
-                            ProductAdapter(products)
+                            ProductAdapter(products) { product ->
+                                val bundle = android.os.Bundle().apply {
+                                    putString("productId", product.productId.toString())
+                                }
+                                navigate(R.id.productDetailFragment, bundle)
+                            }
                     } else {
                         Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
                     }

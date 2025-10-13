@@ -10,8 +10,10 @@ import com.bumptech.glide.Glide // <-- Import Glide
 import com.pbl6.fitme.R
 import com.pbl6.fitme.model.Product
 
-class ProductAdapter(private val items: List<Product>) :
-    RecyclerView.Adapter<ProductAdapter.ViewHolder>() {
+class ProductAdapter(
+    private val items: List<Product>,
+    private val onItemClick: ((Product) -> Unit)? = null
+) : RecyclerView.Adapter<ProductAdapter.ViewHolder>() {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imgProduct: ImageView = view.findViewById(R.id.imgProduct)
@@ -20,11 +22,7 @@ class ProductAdapter(private val items: List<Product>) :
         // val txtPrice: TextView = view.findViewById(R.id.tvProductPrice)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_product, parent, false)
-        return ViewHolder(view)
-    }
+    // onCreateViewHolder implemented below (with click wiring)
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
@@ -46,6 +44,29 @@ class ProductAdapter(private val items: List<Product>) :
         // if (item.variants.isNotEmpty()) {
         //     holder.txtPrice.text = "${item.variants[0].price} đ"
         // }
+    }
+
+    override fun onViewAttachedToWindow(holder: ViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        // no-op
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
+        super.onBindViewHolder(holder, position, payloads)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_product, parent, false)
+        val vh = ViewHolder(view)
+        // set click listener
+        vh.itemView.setOnClickListener {
+            val pos = vh.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) {
+                onItemClick?.invoke(items[pos])
+            }
+        }
+        return vh
     }
 
     override fun getItemCount() = items.size

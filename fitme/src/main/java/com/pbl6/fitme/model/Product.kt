@@ -6,9 +6,12 @@ import java.util.UUID
 data class Product(
     val productId: UUID,
     val productName: String,
+    val createdAt: String? = null,
     val description: String?,
     val categoryName: String, // mapped from categoryId by API layer
     val brandName: String,    // mapped from brandId by API layer
+    val gender: String? = null,
+    val season: String? = null,
     val isActive: Boolean,
     val images: List<ProductImage> = emptyList(),
     val variants: List<ProductVariant> = emptyList(),

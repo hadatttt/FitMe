@@ -74,8 +74,13 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
                         // Giả sử RecyclerView cho sản phẩm có id là rvItems
                         binding.rvItems.layoutManager =
                             androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2) // Hiển thị dạng lưới 2 cột
-                        binding.rvItems.adapter =
-                            ProductAdapter(products)
+                            binding.rvItems.adapter =
+                                ProductAdapter(products) { product ->
+                                    val bundle = android.os.Bundle().apply {
+                                        putString("productId", product.productId.toString())
+                                    }
+                                    navigate(R.id.productDetailFragment, bundle)
+                                }
                     } else {
                         Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
                     }

@@ -92,10 +92,13 @@ class MainRepository {
 
                             Product(
                                 productId = pr.productId,
+                                createdAt = pr.createdAt,
                                 productName = pr.productName,
                                 description = pr.description,
                                 categoryName = pr.categoryName,
                                 brandName = pr.brandName,
+                                gender = pr.gender,
+                                season = pr.season,
                                 isActive = pr.isActive,
                                 images = images,
                                 variants = variants,
@@ -113,6 +116,70 @@ class MainRepository {
                     onResult(null)
                 }
             })
+    }
+    
+    // Lấy chi tiết 1 product theo id
+    fun getProductById(token: String, id: String, onResult: (Product?) -> Unit) {
+        val bearer = "Bearer $token"
+        productApi.getProductById(bearer, id).enqueue(object : Callback<BaseResponse<com.pbl6.fitme.model.ProductResponse>> {
+            override fun onResponse(
+                call: Call<BaseResponse<com.pbl6.fitme.model.ProductResponse>>,
+                response: Response<BaseResponse<com.pbl6.fitme.model.ProductResponse>>
+            ) {
+                if (response.isSuccessful) {
+                    val pr = response.body()?.result
+                    if (pr == null) {
+                        onResult(null)
+                        return
+                    }
+
+                    val images = pr.images.mapIndexed { idx, url ->
+                        ProductImage(
+                            imageId = idx.toLong() * -1,
+                            createdAt = null,
+                            imageUrl = url,
+                            isMain = idx == 0,
+                            updatedAt = null,
+                            productId = pr.productId
+                        )
+                    }
+
+                    val variants = pr.variants.map { vr ->
+                        ProductVariant(
+                            variantId = vr.variantId,
+                            color = vr.color,
+                            size = vr.size,
+                            price = vr.price,
+                            stockQuantity = vr.stockQuantity,
+                            productId = pr.productId
+                        )
+                    }
+
+                    val product = Product(
+                        productId = pr.productId,
+                        createdAt = pr.createdAt,
+                        productName = pr.productName,
+                        description = pr.description,
+                        categoryName = pr.categoryName,
+                        brandName = pr.brandName,
+                        gender = pr.gender,
+                        season = pr.season,
+                        isActive = pr.isActive,
+                        images = images,
+                        variants = variants,
+                        reviews = emptyList()
+                    )
+
+                    onResult(product)
+                } else {
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<BaseResponse<com.pbl6.fitme.model.ProductResponse>>, t: Throwable) {
+                onResult(null)
+            }
+        })
     }
     fun getCategories(token: String, onResult: (List<Category>?) -> Unit) {
         val bearerToken = "Bearer $token"
@@ -157,6 +224,57 @@ class MainRepository {
 
             override fun onFailure(call: Call<List<WishlistItem>>, t: Throwable) {
                 onResult(null)
+            }
+        })
+    }
+
+    // Add variant to cart
+    fun addToCart(token: String, req: com.pbl6.fitme.model.AddCartRequest, onResult: (Boolean) -> Unit) {
+        val bearer = "Bearer $token"
+        cartApi.addToCart(bearer, req).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if (response.isSuccessful) {
+                    onResult(true)
+                } else {
+                    // log details for debugging
+                    try {
+                        val body = response.errorBody()?.string()
+                        android.util.Log.e("MainRepository", "addToCart failed code=${response.code()} body=$body")
+                    } catch (ex: Exception) {
+                        android.util.Log.e("MainRepository", "addToCart failed code=${response.code()} (error reading body)")
+                    }
+                    onResult(false)
+                }
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                android.util.Log.e("MainRepository", "addToCart network failure", t)
+                onResult(false)
+            }
+        })
+    }
+
+    // Add product to wishlist
+    fun addToWishlist(token: String, req: com.pbl6.fitme.model.AddWishlistRequest, onResult: (Boolean) -> Unit) {
+        val bearer = "Bearer $token"
+        wishlistApi.addToWishlist(bearer, req).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if (response.isSuccessful) {
+                    onResult(true)
+                } else {
+                    try {
+                        val body = response.errorBody()?.string()
+                        android.util.Log.e("MainRepository", "addToWishlist failed code=${response.code()} body=$body")
+                    } catch (ex: Exception) {
+                        android.util.Log.e("MainRepository", "addToWishlist failed code=${response.code()} (error reading body)")
+                    }
+                    onResult(false)
+                }
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                android.util.Log.e("MainRepository", "addToWishlist network failure", t)
+                onResult(false)
             }
         })
     }

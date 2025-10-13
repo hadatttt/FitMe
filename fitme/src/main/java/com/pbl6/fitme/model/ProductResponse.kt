@@ -6,9 +6,12 @@ import java.util.UUID
 data class ProductResponse(
     val productId: UUID,
     val productName: String,
+    val createdAt: String?,
     val description: String?,
     val categoryName: String,
     val brandName: String,
+    val gender: String?,
+    val season: String?,
     val isActive: Boolean,
     val images: List<String> = emptyList(),
     val variants: List<VariantResponse> = emptyList()

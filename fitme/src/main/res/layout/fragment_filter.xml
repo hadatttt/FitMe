@@ -83,6 +83,32 @@
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 />
 
+            <!-- Gender -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Gender"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spinnerGender"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <!-- Season -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Season"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spinnerSeason"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
             <!-- Price -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -163,6 +189,21 @@
                     android:layout_height="wrap_content"
                     android:text="Price Low to High" />
             </RadioGroup>
+
+            <!-- Results RecyclerView -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Results"
+                android:textStyle="bold" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvItems"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager" />
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
