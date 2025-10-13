@@ -8,7 +8,8 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class CartRepository {
-    private val cartApiService = ApiClient.retrofit.create(CartApiService::class.java)
+    private var token: String? = null
+    private val cartApiService = ApiClient.getRetrofit(token).create(CartApiService::class.java)
 
     fun getCart(onResult: (List<CartItem>?) -> Unit) {
         cartApiService.getCartItems().enqueue(object : Callback<List<CartItem>> {

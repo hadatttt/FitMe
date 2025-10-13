@@ -10,7 +10,8 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class AuthRepository {
-    private val authApi = ApiClient.retrofit.create(AuthApiService::class.java)
+    private var token: String? = null
+    private val authApi = ApiClient.getRetrofit(token).create(AuthApiService::class.java)
 
     fun login(email: String, password: String, onResult: (LoginResponse?) -> Unit) {
         val request = LoginRequest(email, password)

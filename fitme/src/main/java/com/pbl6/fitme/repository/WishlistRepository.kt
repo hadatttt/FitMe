@@ -8,7 +8,8 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class WishlistRepository {
-    private val wishlistApiService = ApiClient.retrofit.create(WishlistApiService::class.java)
+    private var token: String? = null
+    private val wishlistApiService = ApiClient.getRetrofit(token).create(WishlistApiService::class.java)
 
     fun getWishlist(onResult: (List<WishlistItem>?) -> Unit) {
         wishlistApiService.getWishlistItems().enqueue(object : Callback<List<WishlistItem>> {

@@ -11,12 +11,22 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class MainRepository {
-    private val productApi = ApiClient.retrofit.create(ProductApiService::class.java)
-    private val categoryApi = ApiClient.retrofit.create(CategoryApiService::class.java)
-    private val cartApi = ApiClient.retrofit.create(CartApiService::class.java)
-    private val wishlistApi = ApiClient.retrofit.create(WishlistApiService::class.java)
-    private val variantApi = ApiClient.retrofit.create(ProductVariantApiService::class.java)
+object MainRepository {
+    private var token: String? = null
+    private var productApi = ApiClient.getRetrofit(token).create(ProductApiService::class.java)
+    private var categoryApi = ApiClient.getRetrofit(token).create(CategoryApiService::class.java)
+    private var cartApi = ApiClient.getRetrofit(token).create(CartApiService::class.java)
+    private var wishlistApi = ApiClient.getRetrofit(token).create(WishlistApiService::class.java)
+    private var variantApi = ApiClient.getRetrofit(token).create(ProductVariantApiService::class.java)
+
+    fun setToken(newToken: String?) {
+        token = newToken
+        productApi = ApiClient.getRetrofit(token).create(ProductApiService::class.java)
+        categoryApi = ApiClient.getRetrofit(token).create(CategoryApiService::class.java)
+        cartApi = ApiClient.getRetrofit(token).create(CartApiService::class.java)
+        wishlistApi = ApiClient.getRetrofit(token).create(WishlistApiService::class.java)
+        variantApi = ApiClient.getRetrofit(token).create(ProductVariantApiService::class.java)
+    }
     fun getProductVariants(onResult: (List<ProductVariant>?) -> Unit) {
         variantApi.getProductVariants().enqueue(object : Callback<List<ProductVariant>> {
             override fun onResponse(call: Call<List<ProductVariant>>, response: Response<List<ProductVariant>>) {

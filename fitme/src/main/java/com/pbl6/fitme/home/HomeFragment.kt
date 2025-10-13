@@ -57,7 +57,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         setupRecyclerViews()
     }
 
-    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository
 
     private fun setupRecyclerViews() {
         mainRepository.getCategories { categories: List<Category>? ->
@@ -113,6 +113,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
     }
 
     override fun initData() { }
+
 
     // ===== Toolbar Helpers =====
     private fun highlightSelectedTab(selectedId: Int) {

@@ -7,46 +7,51 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentFilterBinding
+import com.pbl6.fitme.home.HomeMainViewModel
 import com.pbl6.fitme.model.Category
 import com.pbl6.fitme.profile.CategoryAdapter
+import hoang.dqm.codebase.base.activity.BaseFragment
 
-class FilterFragment : Fragment() {
-
-    private var _binding: FragmentFilterBinding? = null
-    private val binding get() = _binding!!
+class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() {
 
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var colorAdapter: ColorAdapter
     private lateinit var sizeAdapter: SizeAdapter
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = FragmentFilterBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+    override fun initView() {
+        // Hiện toolbar trong Activity
+        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
+        toolbar.visibility = View.VISIBLE
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+        // Highlight tab person trong toolbar
+        highlightSelectedTab(R.id.filter_id)
 
         setupCategoryRecycler()
         setupColorRecycler()
         setupSizeRecycler()
         setupPriceRange()
         setupButtons()
-        hideToolbar()
+        // preserve original behavior (was hiding toolbar after setup)
+        // hideToolbar()
+    }
+
+    override fun initListener() {
         binding.ivClose.setOnClickListener {
             requireActivity().supportFragmentManager.popBackStack()
         }
     }
 
-    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+    override fun initData() {
+        // no-op for now; data is loaded by repository callbacks in setupCategoryRecycler
+    }
+
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository
 
     private fun setupCategoryRecycler() {
         mainRepository.getCategories { categories: List<Category>? ->
@@ -124,11 +129,21 @@ class FilterFragment : Fragment() {
 
 
     }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    // ===== Toolbar Helpers =====
+    private fun highlightSelectedTab(selectedId: Int) {
+        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.filter_id, R.id.cart_id, R.id.person_id)
+        ids.forEach { id ->
+            val view = requireActivity().findViewById<View>(id)
+            if (id == selectedId) {
+                view.setBackgroundResource(R.drawable.bg_selected_tab)
+            } else {
+                view.setBackgroundColor(
+                    ContextCompat.getColor(requireContext(), android.R.color.transparent)
+                )
+            }
+        }
     }
+    // BaseFragment will clear binding in onDetach; no need to override onDestroyView here
     private fun hideToolbar() {
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.GONE

@@ -15,7 +15,7 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
 
     private val cartItems = mutableListOf<com.pbl6.fitme.model.CartItem>()
     private lateinit var cartAdapter: CartProductAdapter
-    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository
 
     private var productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product> = emptyMap()
     private var variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant> = emptyMap()
