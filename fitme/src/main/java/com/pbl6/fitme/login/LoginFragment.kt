@@ -18,7 +18,6 @@ class LoginFragment : BaseFragment<FragmentLoginBinding, LoginViewmodel>() {
 
     }
     private val authRepository = com.pbl6.fitme.repository.AuthRepository()
-    // Truy cập MainRepository qua Activity hoặc Singleton
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
 
     override fun initListener() {

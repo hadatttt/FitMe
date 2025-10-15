@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         val session = SessionManager.getInstance()
         val token = session.getAccessToken(this)
         val startDestinationId = if (!token.isNullOrEmpty() && !session.isAccessTokenExpired(this)) {
-            R.id.profileFragment
+            R.id.homeFragment
         } else {
             R.id.splashFragment
         }

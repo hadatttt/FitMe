@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,7 +48,6 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         setupRecyclerViews()
     }
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
-    // ... bên trong class HomeFragment
 
     private fun setupRecyclerViews() {
         val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
@@ -57,6 +57,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
             mainRepository.getCategories(token) { categories: List<Category>? ->
                 activity?.runOnUiThread {
                     if (categories != null) {
+                        Log.d("HomeFragment", "API Products Response: $categories")
                         binding.rvCategories.layoutManager =
                             androidx.recyclerview.widget.LinearLayoutManager(requireContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
                         binding.rvCategories.adapter =
@@ -67,20 +68,20 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
                 }
             }
 
-            // --- 2. Lấy và hiển thị SẢN PHẨM (phần thêm mới) ---
+            val productAdapter = ProductAdapter()
+            binding.rvItems.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2)
+            binding.rvItems.adapter = productAdapter
+            productAdapter.setOnClickItemRecyclerView { product, _ ->
+                val bundle = android.os.Bundle().apply {
+                    putString("productId", product.productId.toString())
+                }
+                navigate(R.id.productDetailFragment, bundle)
+            }
             mainRepository.getProducts(token) { products: List<com.pbl6.fitme.model.Product>? ->
                 activity?.runOnUiThread {
                     if (products != null) {
-                        // Giả sử RecyclerView cho sản phẩm có id là rvItems
-                        binding.rvItems.layoutManager =
-                            androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2) // Hiển thị dạng lưới 2 cột
-                            binding.rvItems.adapter =
-                                ProductAdapter(products) { product ->
-                                    val bundle = android.os.Bundle().apply {
-                                        putString("productId", product.productId.toString())
-                                    }
-                                    navigate(R.id.productDetailFragment, bundle)
-                                }
+                        Log.d("HomeFragment", "API Products Response: $products")
+                        productAdapter.setList(products)
                     } else {
                         Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
                     }
