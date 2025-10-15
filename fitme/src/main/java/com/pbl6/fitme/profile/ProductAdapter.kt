@@ -19,7 +19,7 @@ class ProductAdapter(
         val imgProduct: ImageView = view.findViewById(R.id.imgProduct)
         val txtTitle: TextView = view.findViewById(R.id.tvProductName)
         // TODO: Thêm các view khác nếu cần, ví dụ như giá tiền
-        // val txtPrice: TextView = view.findViewById(R.id.tvProductPrice)
+        val txtPrice: TextView = view.findViewById(R.id.tvProductPrice)
     }
 
     // onCreateViewHolder implemented below (with click wiring)
@@ -41,9 +41,9 @@ class ProductAdapter(
         }
 
         // TODO: Hiển thị giá tiền của biến thể đầu tiên (nếu có)
-        // if (item.variants.isNotEmpty()) {
-        //     holder.txtPrice.text = "${item.variants[0].price} đ"
-        // }
+         if (item.variants.isNotEmpty()) {
+             holder.txtPrice.text = "${item.variants[0].price} đ"
+         }
     }
 
     override fun onViewAttachedToWindow(holder: ViewHolder) {

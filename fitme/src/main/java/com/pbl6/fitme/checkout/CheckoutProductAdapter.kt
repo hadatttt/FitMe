@@ -19,6 +19,7 @@ class CheckoutProductAdapter(
 
     inner class VH(view: View) : RecyclerView.ViewHolder(view) {
         val txtProductName: TextView = view.findViewById(R.id.tvProductName)
+        val txtVariant: TextView = view.findViewById(R.id.tvVariant)
         val txtPrice: TextView = view.findViewById(R.id.tvPrice)
         val imgProduct: ImageView = view.findViewById(R.id.imgProduct)
         val txtQuantity: TextView = view.findViewById(R.id.tvQuantity)
@@ -33,15 +34,24 @@ class CheckoutProductAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val cartItem = getItem(position)
         val variant = variantMap[cartItem.variantId]
-        val product = variant?.let { productMap[it.variantId] }
+        val product = variant?.let { productMap[it.productId] }
 
-        holder.txtProductName.text = product?.productName ?: "Unknown"
+        // Title: prefer product name; show variant details in separate field
+        holder.txtProductName.text = product?.productName ?: (variant?.let { "${it.color} - ${it.size}" } ?: "Unknown")
+        holder.txtVariant.text = variant?.let { "${it.color} - ${it.size}" } ?: ""
+
         holder.txtPrice.text = variant?.price?.let { "$${String.format("%.2f", it)}" } ?: ""
         holder.txtQuantity.text = "x${cartItem.quantity}"
-        Glide.with(holder.imgProduct.context)
-            .load(R.drawable.ic_splash) // Nếu có imageUrl thì thay bằng product.imageUrl
-            .placeholder(R.drawable.ic_splash)
-            .into(holder.imgProduct)
+
+        val imageUrl = product?.mainImageUrl
+        if (!imageUrl.isNullOrBlank()) {
+            Glide.with(holder.imgProduct.context)
+                .load(imageUrl)
+                .placeholder(R.drawable.ic_splash)
+                .into(holder.imgProduct)
+        } else {
+            holder.imgProduct.setImageResource(R.drawable.ic_splash)
+        }
     }
 
     class DiffCallback : DiffUtil.ItemCallback<CartItem>() {

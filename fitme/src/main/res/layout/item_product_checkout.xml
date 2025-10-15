@@ -46,7 +46,21 @@
         app:layout_constraintStart_toEndOf="@id/imgProduct"
         app:layout_constraintEnd_toStartOf="@id/tvPrice"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp" />
+
+    <!-- Variant info (color - size) -->
+    <TextView
+        android:id="@+id/tvVariant"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Black - M"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        app:layout_constraintStart_toStartOf="@id/tvProductName"
+        app:layout_constraintEnd_toEndOf="@id/tvProductName"
+        app:layout_constraintTop_toBottomOf="@id/tvProductName"
+        android:layout_marginTop="2dp" />
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp" />
 
