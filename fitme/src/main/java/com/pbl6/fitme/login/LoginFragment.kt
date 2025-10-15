@@ -44,7 +44,7 @@ class LoginFragment : BaseFragment<FragmentLoginBinding, LoginViewmodel>() {
                 if (response != null && response.result?.token?.isNotEmpty() == true) {
                     SessionManager.getInstance().saveLoginResponse(requireContext(), response)
                     android.util.Log.d("SessionManager", "LoginResponse saved: token=${response.result.token}")
-                    navigate(R.id.profileFragment)
+                    navigate(R.id.homeFragment)
                 } else {
                     Log.d("Auth", "Login response: ${response}")
                     binding.etError.text = "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."

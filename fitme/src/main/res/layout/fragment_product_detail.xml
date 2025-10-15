@@ -148,7 +148,6 @@
                 android:text="Add to cart"
                 android:backgroundTint="@android:color/black"
                 android:textColor="@android:color/white" />
-
         <Button
                 android:id="@+id/btnBuyNow"
                 android:layout_width="0dp"

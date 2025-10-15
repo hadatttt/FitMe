@@ -12,7 +12,7 @@ class ProductAdapter : BaseRecyclerViewAdapter<Product, ItemProductBinding>() {
         binding.tvProductName.text = item.productName
         val imageUrl = item.mainImageUrl
         if (!imageUrl.isNullOrBlank()) {
-            Glide.with(binding.root.context) // Lấy context từ view gốc của binding
+            Glide.with(binding.root.context)
                 .load(imageUrl)
                 .placeholder(R.drawable.ic_splash)
                 .error(R.drawable.ic_splash)
