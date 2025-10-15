@@ -115,24 +115,24 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             }
 
             // --- 2. Lấy và hiển thị SẢN PHẨM (phần thêm mới) ---
-            mainRepository.getProducts(token) { products: List<com.pbl6.fitme.model.Product>? ->
-                activity?.runOnUiThread {
-                    if (products != null) {
-                        // Giả sử RecyclerView cho sản phẩm có id là rvItems
-                        binding.rvNewItems.layoutManager =
-                            androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2) // Hiển thị dạng lưới 2 cột
-                        binding.rvNewItems.adapter =
-                            ProductAdapter(products) { product ->
-                                val bundle = android.os.Bundle().apply {
-                                    putString("productId", product.productId.toString())
-                                }
-                                navigate(R.id.productDetailFragment, bundle)
-                            }
-                    } else {
-                        Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
+//            mainRepository.getProducts(token) { products: List<com.pbl6.fitme.model.Product>? ->
+//                activity?.runOnUiThread {
+//                    if (products != null) {
+//                        // Giả sử RecyclerView cho sản phẩm có id là rvItems
+//                        binding.rvNewItems.layoutManager =
+//                            androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2) // Hiển thị dạng lưới 2 cột
+//                        binding.rvNewItems.adapter =
+//                            ProductAdapter(products) { product ->
+//                                val bundle = android.os.Bundle().apply {
+//                                    putString("productId", product.productId.toString())
+//                                }
+//                                navigate(R.id.productDetailFragment, bundle)
+//                            }
+//                    } else {
+//                        Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
+//                    }
+//                }
+//            }
 
         } else {
             // Gộp chung thông báo khi chưa đăng nhập

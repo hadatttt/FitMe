@@ -1,11 +1,12 @@
 package com.pbl6.fitme.product
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.fragment.app.Fragment
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -13,191 +14,193 @@ import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentProductDetailBinding
 import com.pbl6.fitme.model.Product
 import com.pbl6.fitme.model.ProductVariant
+import com.pbl6.fitme.session.SessionManager
+import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
+import hoang.dqm.codebase.base.activity.popBackStack
+import hoang.dqm.codebase.utils.singleClick
 
-class ProductDetailFragment : Fragment() {
+class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, ProductDetailViewModel>() {
 
-    private var _binding: FragmentProductDetailBinding? = null
-    private val binding get() = _binding!!
+    private lateinit var imageAdapter: ProductImageAdapter
+    private lateinit var colorAdapter: ColorAdapter
+    private lateinit var sizeAdapter: SizeAdapter
 
-    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
-    private var product: Product? = null
+    private var currentProduct: Product? = null
+    private var selectedColor: String? = null
+    private var selectedSize: String? = null
     private var selectedVariant: ProductVariant? = null
-    private var selectedQuantity: Int = 1
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        _binding = FragmentProductDetailBinding.inflate(inflater, container, false)
-        return binding.root
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         hideToolbar()
-        setupListeners()
-        loadProduct()
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-    private fun hideToolbar() {
-        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
-        toolbar.visibility = View.GONE
-    }
-    private fun setupListeners() {
-        // Initially disable actions until a variant is present/selected
-        binding.btnAddToCart.isEnabled = false
-        binding.btnBuyNow.isEnabled = false
+    override fun initView() {
+        imageAdapter = ProductImageAdapter()
+        binding.rvImg.apply {
+            adapter = imageAdapter
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            setHasFixedSize(true)
+        }
 
-        binding.btnAddToCart.setOnClickListener {
-            if (selectedVariant == null) {
-                android.widget.Toast.makeText(requireContext(), "Vui lòng chọn biến thể", android.widget.Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
-            if (token.isNullOrBlank()) {
-                android.widget.Toast.makeText(requireContext(), "Vui lòng đăng nhập để thêm vào giỏ hàng", android.widget.Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            val req = com.pbl6.fitme.model.AddCartRequest(selectedVariant!!.variantId, selectedQuantity)
-            mainRepository.addToCart(token, req) { success ->
-                activity?.runOnUiThread {
-                    if (success) {
-                        android.widget.Toast.makeText(requireContext(), "Đã thêm vào giỏ hàng", android.widget.Toast.LENGTH_SHORT).show()
-                        navigate(R.id.cartFragment)
-                    } else {
-                        android.widget.Toast.makeText(requireContext(), "Thêm vào giỏ hàng thất bại", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                }
+        colorAdapter = ColorAdapter(emptyList()) { color ->
+            selectedColor = color
+            updateSelectedVariant()
+        }
+        binding.rvColor.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        binding.rvColor.adapter = colorAdapter
+
+        sizeAdapter = SizeAdapter(emptyList()) { size ->
+            selectedSize = size
+            updateSelectedVariant()
+        }
+        binding.rvSize.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        binding.rvSize.adapter = sizeAdapter
+    }
+
+    override fun initListener() {
+        binding.ivBack.singleClick { popBackStack() }
+
+        binding.btnAddToCart.setOnClickListener(this)
+        binding.btnBuyNow.setOnClickListener(this)
+        binding.btnFavorite.setOnClickListener(this)
+
+        viewModel.product.observe { product ->
+            Log.d("ProductDetailFragment", "API Product Detail Response: $product")
+            product?.let {
+                currentProduct = it
+                populateUI(it)
             }
         }
 
-        binding.btnBuyNow.setOnClickListener {
-            if (selectedVariant == null || product == null) {
-                android.widget.Toast.makeText(requireContext(), "Vui lòng chọn biến thể", android.widget.Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            // Navigate to checkout with buy-now payload (do not add to cart)
-            val bundle = android.os.Bundle().apply {
-                putString("buy_now_product_id", product!!.productId.toString())
-                putString("buy_now_variant_id", selectedVariant!!.variantId.toString())
-                putInt("buy_now_quantity", selectedQuantity)
-            }
-            navigate(R.id.checkoutFragment, bundle)
-        }
-
-        binding.btnFavorite.setOnClickListener {
-            // add to wishlist
-            val prod = product ?: return@setOnClickListener
-            val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
-            if (token.isNullOrBlank()) {
-                android.widget.Toast.makeText(requireContext(), "Vui lòng đăng nhập để thêm wishlist", android.widget.Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            val req = com.pbl6.fitme.model.AddWishlistRequest(prod.productId)
-            mainRepository.addToWishlist(token, req) { success ->
-                activity?.runOnUiThread {
-                    if (success) {
-                        android.widget.Toast.makeText(requireContext(), "Đã thêm vào wishlist", android.widget.Toast.LENGTH_SHORT).show()
-                        navigate(R.id.wishlistFragment)
-                    } else {
-                        android.widget.Toast.makeText(requireContext(), "Thêm vào wishlist thất bại", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                }
+        viewModel.onAddToCartSuccess.observe { success ->
+            if (success) {
+                Toast.makeText(requireContext(), "Đã thêm vào giỏ hàng", Toast.LENGTH_SHORT).show()
+                navigate(R.id.cartFragment)
             }
         }
 
-        // Quantity controls (detail page) — use findViewById to be resilient to binding generation timing
-        try {
-            val btnPlus = binding.root.findViewById<android.view.View>(R.id.btnPlusDetail)
-            val btnMinus = binding.root.findViewById<android.view.View>(R.id.btnMinusDetail)
-            val tvQty = binding.root.findViewById<TextView>(R.id.tvQtyDetail)
+        viewModel.onBuyNowSuccess.observe { success ->
+            if (success) navigate(R.id.checkoutFragment)
+        }
 
-            btnPlus?.setOnClickListener {
-                val max = selectedVariant?.stockQuantity ?: Int.MAX_VALUE
-                if (selectedQuantity < max) {
-                    selectedQuantity += 1
-                    tvQty?.text = selectedQuantity.toString()
-                }
+        viewModel.onAddToWishlistSuccess.observe { success ->
+            if (success) {
+                Toast.makeText(requireContext(), "Đã thêm vào wishlist", Toast.LENGTH_SHORT).show()
+                navigate(R.id.wishlistFragment)
             }
-            btnMinus?.setOnClickListener {
-                if (selectedQuantity > 1) {
-                    selectedQuantity -= 1
-                    tvQty?.text = selectedQuantity.toString()
-                }
+        }
+
+        viewModel.errorMessage.observe { message ->
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
+        // Quantity +/- wiring: ensure always-updated quantity shown in tvQtyDetail
+        val tvQty = binding.root.findViewById<TextView>(R.id.tvQtyDetail)
+        val btnPlus = binding.root.findViewById<View>(R.id.btnPlusDetail)
+        val btnMinus = binding.root.findViewById<View>(R.id.btnMinusDetail)
+
+        btnPlus?.setOnClickListener {
+            val current = tvQty?.text.toString().toIntOrNull() ?: 1
+            val max = selectedVariant?.stockQuantity ?: 99
+            if (current < max) {
+                tvQty?.text = (current + 1).toString()
+            } else {
+                Toast.makeText(requireContext(), "Đã đạt giới hạn tồn kho", Toast.LENGTH_SHORT).show()
             }
-        } catch (_: Exception) { }
+        }
+
+        btnMinus?.setOnClickListener {
+            val current = tvQty?.text.toString().toIntOrNull() ?: 1
+            if (current > 1) {
+                tvQty?.text = (current - 1).toString()
+            }
+        }
     }
 
-    private fun loadProduct() {
+    override fun initData() {
         val productId = arguments?.getString("productId") ?: return
-        val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
         if (token.isNullOrBlank()) {
-            android.widget.Toast.makeText(requireContext(), "Vui lòng đăng nhập để xem chi tiết", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Vui lòng đăng nhập để xem chi tiết", Toast.LENGTH_SHORT).show()
+            return
+        }
+        viewModel.fetchProductById(token, productId)
+    }
+
+    override fun onSingleClickFrag(v: View) {
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
+        if (token.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show()
             return
         }
 
-        mainRepository.getProductById(token, productId) { p ->
-            activity?.runOnUiThread {
-                if (p == null) {
-                    android.widget.Toast.makeText(requireContext(), "Không lấy được thông tin sản phẩm", android.widget.Toast.LENGTH_SHORT).show()
-                    return@runOnUiThread
-                }
-                product = p
-                populateUI(p)
+        when (v.id) {
+            R.id.btnAddToCart -> {
+                val qty = binding.root.findViewById<TextView>(R.id.tvQtyDetail)?.text.toString().toIntOrNull() ?: 1
+                selectedVariant?.let { viewModel.addToCart(token, it.variantId, qty) }
+                    ?: Toast.makeText(requireContext(), "Vui lòng chọn màu và size", Toast.LENGTH_SHORT).show()
+            }
+            R.id.btnBuyNow -> {
+                val qty = binding.root.findViewById<TextView>(R.id.tvQtyDetail)?.text.toString().toIntOrNull() ?: 1
+                selectedVariant?.let {
+                    val bundle = Bundle().apply {
+                        putString("buy_now_product_id", currentProduct?.productId.toString())
+                        putString("buy_now_variant_id", it.variantId.toString())
+                        putInt("buy_now_quantity", qty)
+                    }
+                    navigate(R.id.checkoutFragment, bundle)
+                } ?: Toast.makeText(requireContext(), "Vui lòng chọn màu và size", Toast.LENGTH_SHORT).show()
+            }
+            R.id.btnFavorite -> {
+                currentProduct?.let { viewModel.addToWishlist(token, it.productId) }
             }
         }
     }
 
     private fun populateUI(p: Product) {
-        // main image
-        val imgUrl = p.mainImageUrl
-        if (!imgUrl.isNullOrBlank()) {
-            Glide.with(binding.imgProduct.context).load(imgUrl).into(binding.imgProduct)
-        }
+        val imageUrls = p.images.map { it.imageUrl }
+        imageAdapter.setList(imageUrls)
 
+        binding.tvProductName.text = p.productName
         binding.tvDescription.text = p.description ?: ""
-        // set product name if exists
-        try {
-            val nameView = binding.root.findViewById<TextView>(R.id.tvProductName)
-            nameView?.text = p.productName
-        } catch (_: Exception) { }
 
-        // default price: first variant and enable actions when variant exists
         if (p.variants.isNotEmpty()) {
-            selectedVariant = p.variants[0]
-            binding.tvPrice.text = String.format("$%.2f", selectedVariant?.price)
-            binding.btnAddToCart.isEnabled = true
-            binding.btnBuyNow.isEnabled = true
-            // init quantity UI
-            selectedQuantity = 1
-            try {
-                val tvQty = binding.root.findViewById<TextView>(R.id.tvQtyDetail)
-                tvQty?.text = selectedQuantity.toString()
-            } catch (_: Exception) { }
-        } else {
-            binding.btnAddToCart.isEnabled = false
-            binding.btnBuyNow.isEnabled = false
-        }
+            val colors = p.variants.map { it.color }.distinct()
+            val sizes = p.variants.map { it.size }.distinct()
 
-        // variants list
-        val adapter = VariantAdapter(p.variants) { variant ->
-            selectedVariant = variant
-            binding.tvPrice.text = String.format("$%.2f", variant.price)
-            // enable actions when user explicitly selects a variant
-            binding.btnAddToCart.isEnabled = true
-            binding.btnBuyNow.isEnabled = true
+            colorAdapter.updateData(colors)
+            sizeAdapter.updateData(sizes)
+
+            selectedColor = colors.firstOrNull()
+            selectedSize = sizes.firstOrNull()
+            updateSelectedVariant()
         }
-        binding.rvVariations.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        binding.rvVariations.adapter = adapter
     }
 
-    // Simple adapter for variant selection
-    class VariantAdapter(private val items: List<ProductVariant>, private val onSelect: (ProductVariant) -> Unit) :
-        RecyclerView.Adapter<VariantAdapter.VH>() {
+    private fun updateSelectedVariant() {
+        val variants = currentProduct?.variants ?: return
+        val variant = variants.find { it.color == selectedColor && it.size == selectedSize }
+        if (variant != null) {
+            selectedVariant = variant
+            binding.tvPrice.text = String.format("$%.2f", variant.price)
+        }
+    }
 
-        private var selectedPos = RecyclerView.NO_POSITION
+    private fun hideToolbar() {
+        activity?.findViewById<View>(R.id.toolbar)?.visibility = View.GONE
+    }
+
+    class ColorAdapter(private var items: List<String>, private val onSelect: (String) -> Unit) :
+        RecyclerView.Adapter<ColorAdapter.VH>() {
+
+        private var selectedPos = if (items.isNotEmpty()) 0 else RecyclerView.NO_POSITION
+
+        fun updateData(newItems: List<String>) {
+            items = newItems
+            selectedPos = if (items.isNotEmpty()) 0 else RecyclerView.NO_POSITION
+            notifyDataSetChanged()
+        }
 
         inner class VH(view: View) : RecyclerView.ViewHolder(view) {
             val txt: TextView = view.findViewById(R.id.tvVariation)
@@ -209,23 +212,58 @@ class ProductDetailFragment : Fragment() {
         }
 
         override fun onBindViewHolder(holder: VH, position: Int) {
-            val variant = items[position]
-            holder.txt.text = "${variant.color} - ${variant.size}"
-            // visual highlight
-            if (position == selectedPos) {
-                holder.txt.setBackgroundResource(R.drawable.bg_button)
-            } else {
-                holder.txt.setBackgroundResource(R.drawable.bg_bluelight)
-            }
+            val color = items[position]
+            holder.txt.text = color
+            holder.txt.setBackgroundResource(
+                if (position == selectedPos) R.drawable.bg_selected_variant else R.drawable.bg_outer_circle
+            )
 
             holder.itemView.setOnClickListener {
-                val pos = holder.adapterPosition
-                if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
                 val prev = selectedPos
-                selectedPos = pos
+                selectedPos = holder.adapterPosition
                 notifyItemChanged(prev)
                 notifyItemChanged(selectedPos)
-                onSelect(items[pos])
+                onSelect(items[selectedPos])
+            }
+        }
+
+        override fun getItemCount() = items.size
+    }
+
+    // Adapter cho Size
+    class SizeAdapter(private var items: List<String>, private val onSelect: (String) -> Unit) :
+        RecyclerView.Adapter<SizeAdapter.VH>() {
+
+        private var selectedPos = if (items.isNotEmpty()) 0 else RecyclerView.NO_POSITION
+
+        fun updateData(newItems: List<String>) {
+            items = newItems
+            selectedPos = if (items.isNotEmpty()) 0 else RecyclerView.NO_POSITION
+            notifyDataSetChanged()
+        }
+
+        inner class VH(view: View) : RecyclerView.ViewHolder(view) {
+            val txt: TextView = view.findViewById(R.id.tvVariation)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+            val v = LayoutInflater.from(parent.context).inflate(R.layout.item_variant, parent, false)
+            return VH(v)
+        }
+
+        override fun onBindViewHolder(holder: VH, position: Int) {
+            val size = items[position]
+            holder.txt.text = size
+            holder.txt.setBackgroundResource(
+                if (position == selectedPos) R.drawable.bg_selected_variant else R.drawable.bg_outer_circle
+            )
+
+            holder.itemView.setOnClickListener {
+                val prev = selectedPos
+                selectedPos = holder.adapterPosition
+                notifyItemChanged(prev)
+                notifyItemChanged(selectedPos)
+                onSelect(items[selectedPos])
             }
         }
 

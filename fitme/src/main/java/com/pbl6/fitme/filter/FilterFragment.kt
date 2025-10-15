@@ -167,7 +167,7 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() 
 
             Toast.makeText(requireContext(), "Filters cleared", Toast.LENGTH_SHORT).show()
             // Clear any displayed results as well
-            binding.rvItems.adapter = com.pbl6.fitme.profile.ProductAdapter(emptyList())
+//            binding.rvItems.adapter = com.pbl6.fitme.profile.ProductAdapter(emptyList())
             binding.rvItems.visibility = View.GONE
         }
 
@@ -233,8 +233,8 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() 
                     // Show results in the fragment's RecyclerView (reuse rvItems)
                     if (filtered.isEmpty()) {
                         Toast.makeText(requireContext(), "No products match filters", Toast.LENGTH_SHORT).show()
-                        // show empty adapter
-                        binding.rvItems.adapter = com.pbl6.fitme.profile.ProductAdapter(emptyList())
+//                        // show empty adapter
+//                        binding.rvItems.adapter = com.pbl6.fitme.profile.ProductAdapter(emptyList())
                         binding.rvItems.visibility = View.GONE
                     } else {
                         // Apply sorting
@@ -264,12 +264,12 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() 
                         }
 
                         binding.rvItems.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2)
-                        binding.rvItems.adapter = com.pbl6.fitme.profile.ProductAdapter(sorted) { product ->
-                            val bundle = android.os.Bundle().apply {
-                                putString("productId", product.productId.toString())
-                            }
-                            navigate(R.id.productDetailFragment, bundle)
-                        }
+//                        binding.rvItems.adapter = com.pbl6.fitme.profile.ProductAdapter(sorted) { product ->
+//                            val bundle = android.os.Bundle().apply {
+//                                putString("productId", product.productId.toString())
+//                            }
+//                            navigate(R.id.productDetailFragment, bundle)
+//                        }
                         binding.rvItems.visibility = View.VISIBLE
                     }
                 }
