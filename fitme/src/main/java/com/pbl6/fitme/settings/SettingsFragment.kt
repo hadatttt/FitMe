@@ -76,7 +76,7 @@ class SettingsFragment : Fragment() {
             .setPositiveButton("Yes") { _, _ ->
                 // TODO: Handle logout logic, e.g. clear token, navigate to Login
                 Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show()
-                navigate(R.id.loginFragment)
+                navigate(R.id.splashFragment)
             }
             .setNegativeButton("Cancel", null)
             .show()

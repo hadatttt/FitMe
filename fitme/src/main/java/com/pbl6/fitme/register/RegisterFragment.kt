@@ -120,7 +120,7 @@ class RegisterFragment : BaseFragment<FragmentRegisterBinding, RegisterViewModel
         )
         authRepository.register(registerRequest) { response ->
             if (response != null ) {
-                Log.d("Auth", "Register response: $response")
+                Toast.makeText(requireContext(), "Đăng ký thành công!", Toast.LENGTH_SHORT).show()
                 navigate(R.id.loginFragment)
             } else {
                 Log.d("Auth", "Register response: $response")

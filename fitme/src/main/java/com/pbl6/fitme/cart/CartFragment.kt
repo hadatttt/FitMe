@@ -111,11 +111,13 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
         }
         binding.btnCheckout.singleClick {
             if (cartItems.isNotEmpty()) {
+                // Pass variant ids as strings to avoid index mismatch after reload
+                val variantIds = ArrayList<String>()
+                cartItems.forEach { ci -> variantIds.add(ci.variantId.toString()) }
                 val bundle = Bundle().apply {
-                    // Nếu cần truyền sang CheckoutFragment thì truyền index hoặc vị trí các sản phẩm (Int)
-                    putIntegerArrayList("cart_item_indices", ArrayList(cartItems.indices.toList()))
+                    putStringArrayList("cart_variant_ids", variantIds)
                 }
-                navigate(R.id.checkoutFragment, bundle)
+               navigate(R.id.checkoutFragment, bundle)
             }
         }
 

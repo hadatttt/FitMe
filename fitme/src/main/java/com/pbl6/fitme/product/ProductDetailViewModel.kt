@@ -1,5 +1,6 @@
 package com.pbl6.fitme.product
 
+import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import com.pbl6.fitme.model.AddCartRequest
 import com.pbl6.fitme.model.AddWishlistRequest
@@ -33,8 +34,8 @@ class ProductDetailViewModel : BaseViewModel() {
         }
     }
 
-    fun addToCart(token: String, variantId: UUID) {
-        val request = AddCartRequest(variantId, 1)
+    fun addToCart(token: String, variantId: UUID, quantity: Int = 1) {
+        val request = AddCartRequest(variantId, quantity)
         mainRepository.addToCart(token, request) { success ->
             if (success) {
                 onAddToCartSuccess.postValue(true)
@@ -44,8 +45,8 @@ class ProductDetailViewModel : BaseViewModel() {
         }
     }
 
-    fun buyNow(token: String, variantId: UUID) {
-        val request = AddCartRequest(variantId, 1)
+    fun buyNow(token: String, variantId: UUID, quantity: Int = 1) {
+        val request = AddCartRequest(variantId, quantity)
         mainRepository.addToCart(token, request) { success ->
             if (success) {
                 onBuyNowSuccess.postValue(true)
@@ -54,7 +55,7 @@ class ProductDetailViewModel : BaseViewModel() {
             }
         }
     }
-
+    var getAccessToken: ((Context) -> String?)? = null
     fun addToWishlist(token: String, productId: UUID) {
         val request = AddWishlistRequest(productId)
         mainRepository.addToWishlist(token, request) { success ->

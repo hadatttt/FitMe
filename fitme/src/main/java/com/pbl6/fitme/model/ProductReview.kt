@@ -1,5 +1,6 @@
 package com.pbl6.fitme.model
 
+import java.io.Serializable
 import java.util.UUID
 
 data class ProductReview(
@@ -10,4 +11,4 @@ data class ProductReview(
     val updatedAt: String?,
     val productId: UUID,
     val profileId: UUID
-)
+): Serializable

@@ -1,5 +1,6 @@
 package com.pbl6.fitme.model
 
+import java.io.Serializable
 import java.util.UUID
 
 // Product model with images and reviews as typed objects
@@ -16,7 +17,7 @@ data class Product(
     val images: List<ProductImage> = emptyList(),
     val variants: List<ProductVariant> = emptyList(),
     val reviews: List<ProductReview> = emptyList()
-) {
+): Serializable {
     // convenience property returning the main image url or first image
     val mainImageUrl: String?
         get() = images.firstOrNull { it.isMain == true }?.imageUrl ?: images.firstOrNull()?.imageUrl

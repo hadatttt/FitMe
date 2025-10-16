@@ -1,125 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/productDetailLayout"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/productDetailLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/white">
 
-    <!-- Product Image -->
-    <!-- Product Image -->
-    <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvImg"
+    <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollView"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:scaleType="centerCrop"
-            app:layout_constraintBottom_toTopOf="@id/layoutInfo"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-    <ImageView
-
-            android:id="@+id/iv_back"
-            android:layout_width="@dimen/_40sdp"
-            android:layout_height="@dimen/_40sdp"
-            android:padding="@dimen/_7sdp"
-            android:src="@drawable/ic_back"
-            android:layout_marginStart="@dimen/_10sdp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:background="@drawable/bg_circle_blue"/>
-    <!-- Page Indicator -->
-    <LinearLayout
-        android:id="@+id/layoutIndicator"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@id/imgProduct"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="8dp">
-
-    </LinearLayout>
-
-    <!-- Product Info -->
-    <LinearLayout
-            android:id="@+id/layoutInfo"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
+            app:layout_constraintBottom_toTopOf="@id/layoutButtons"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/layoutButtons"
->
-
-        <!-- Product Name -->
-        <TextView
-                android:id="@+id/tvProductName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Product name"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:maxLines="2"
-                android:ellipsize="end" />
-
-        <!-- Price -->
-        <TextView
-                android:id="@+id/tvPrice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="$17,00"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-        <!-- Description -->
-        <TextView
-                android:id="@+id/tvDescription"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit..."
-                android:textSize="14sp" />
-
-        <!-- Variations -->
-        <TextView
-                android:id="@+id/tv_size"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="Size"
-                android:textStyle="bold" />
+            android:fillViewport="true">
 
         <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="4dp">
-
-        </LinearLayout>
-
-        <!-- Variations Images -->
-        <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvSize"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/_50sdp"
-
-                android:orientation="horizontal" />
-        <TextView
-                android:id="@+id/tv_color"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="Color"
-                android:textStyle="bold" />
-        <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvColor"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/_50sdp"
-                android:orientation="horizontal" />
-    </LinearLayout>
+                android:orientation="vertical"
+                android:descendantFocusability="blocksDescendants">
 
-    <!-- Bottom Buttons -->
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvImg"
+                    android:layout_width="match_parent"
+                    android:layout_height="350dp"
+                    android:scaleType="centerCrop" />
+
+            <LinearLayout
+                    android:id="@+id/layoutInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                <TextView
+                        android:id="@+id/tvProductName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Product name"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:ellipsize="end" />
+
+                <TextView
+                        android:id="@+id/tvPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="$17,00"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                <TextView
+                        android:id="@+id/tvDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit..."
+                        android:textSize="14sp" />
+
+                <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="4dp">
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <View
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:background="#F5F5F5" />
+
+            <TextView
+                    android:id="@+id/tvRelatedTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Có thể bạn cũng thích"
+                    android:padding="16dp"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/black"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvRelatedProducts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="16dp"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    android:orientation="horizontal"
+                    tools:listitem="@layout/item_product"
+                    android:nestedScrollingEnabled="false" /> </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+
     <LinearLayout
             android:id="@+id/layoutButtons"
             android:layout_width="0dp"
@@ -129,16 +109,16 @@
             android:weightSum="3"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
-
-        <ImageButton
-                android:id="@+id/btnFavorite"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="0.5"
-                android:src="@drawable/ic_heart_blue"
-                android:backgroundTint="@android:color/white"
-                android:background="?attr/selectableItemBackgroundBorderless" />
+            app:layout_constraintEnd_toEndOf="parent"
+            android:background="@android:color/white"
+            android:elevation="4dp"> <ImageButton
+            android:id="@+id/btnFavorite"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="0.5"
+            android:src="@drawable/ic_heart_blue"
+            android:backgroundTint="@android:color/white"
+            android:background="?attr/selectableItemBackgroundBorderless" />
 
         <Button
                 android:id="@+id/btnAddToCart"
@@ -148,6 +128,7 @@
                 android:text="Add to cart"
                 android:backgroundTint="@android:color/black"
                 android:textColor="@android:color/white" />
+
         <Button
                 android:id="@+id/btnBuyNow"
                 android:layout_width="0dp"
@@ -157,6 +138,15 @@
                 android:backgroundTint="@color/blue2"
                 android:textColor="@android:color/white" />
     </LinearLayout>
-
+    <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/iv_back"
+            android:layout_width="@dimen/_40sdp"
+            android:layout_height="@dimen/_40sdp"
+            android:padding="@dimen/_7sdp"
+            android:src="@drawable/ic_back"
+            android:layout_marginStart="@dimen/_10sdp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:background="@drawable/bg_circle_blue"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
