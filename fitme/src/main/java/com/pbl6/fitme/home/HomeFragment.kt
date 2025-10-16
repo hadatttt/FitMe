@@ -98,6 +98,8 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
             hideToolbar()
             popBackStack()
         }
+        binding.searchView.singleClick {
+        }
         binding.ivCamera.singleClick {
             requestCameraPermission.launch(android.Manifest.permission.CAMERA)
         }
