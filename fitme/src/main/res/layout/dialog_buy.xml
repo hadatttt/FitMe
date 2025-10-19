@@ -140,7 +140,7 @@
     </LinearLayout>
 
     <Button
-            android:id="@+id/btnAddToCartSheet"
+            android:id="@+id/btnBuyNowSheet"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Mua ngay"

@@ -264,20 +264,21 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() 
                         }
 
                         binding.rvItems.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2)
-//                        binding.rvItems.adapter = com.pbl6.fitme.profile.ProductAdapter(sorted) { product ->
-//                            val bundle = android.os.Bundle().apply {
-//                                putString("productId", product.productId.toString())
-//                            }
-//                            navigate(R.id.productDetailFragment, bundle)
-//                        }
+                        // Create and populate the product adapter so results are displayed
+                        val productAdapter = com.pbl6.fitme.profile.ProductAdapter()
+                        productAdapter.setOnClickItemRecyclerView { product, _ ->
+                            val bundle = android.os.Bundle().apply {
+                                putString("productId", product.productId.toString())
+                            }
+                            navigate(R.id.productDetailFragment, bundle)
+                        }
+                        productAdapter.setList(sorted)
+                        binding.rvItems.adapter = productAdapter
                         binding.rvItems.visibility = View.VISIBLE
                     }
                 }
             }
-
         }
-
-
     }
     // ===== Toolbar Helpers =====
     private fun highlightSelectedTab(selectedId: Int) {

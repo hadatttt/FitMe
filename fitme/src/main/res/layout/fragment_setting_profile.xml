@@ -49,7 +49,7 @@
                 android:layout_gravity="bottom|end"
                 android:background="@drawable/bg_circle_blue"
                 android:src="@drawable/ic_edit"
-                app:tint="@android:color/white"/>
+                />
     </FrameLayout>
 
     <!-- Name -->

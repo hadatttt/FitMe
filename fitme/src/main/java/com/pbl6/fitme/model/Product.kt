@@ -21,4 +21,8 @@ data class Product(
     // convenience property returning the main image url or first image
     val mainImageUrl: String?
         get() = images.firstOrNull { it.isMain == true }?.imageUrl ?: images.firstOrNull()?.imageUrl
+
+    // convenience property returning the lowest variant price if available
+    val minPrice: Double?
+        get() = variants.minByOrNull { it.price }?.price
 }

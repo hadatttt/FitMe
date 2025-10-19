@@ -1,0 +1,11 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="rectangle">
+    <!-- nền trắng -->
+    <solid android:color="@android:color/white" />
+
+    <!-- viền chỉ ở phía dưới -->
+    <stroke android:color="@color/red" android:width="2dp" />
+
+    <!-- Trick: chỉ viền dưới bằng cách thêm padding và đặt <size> -->
+    <padding android:bottom="-2dp" />
+</shape>

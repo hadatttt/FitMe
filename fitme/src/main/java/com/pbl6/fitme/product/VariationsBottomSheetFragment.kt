@@ -13,6 +13,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.pbl6.fitme.R
 import com.pbl6.fitme.model.Product
 import com.pbl6.fitme.model.ProductVariant
+import hoang.dqm.codebase.base.activity.navigate
 import java.io.Serializable
 
 class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
@@ -37,7 +38,7 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
     private lateinit var rvSize: RecyclerView
     private lateinit var rvColor: RecyclerView
     private lateinit var btnCloseSheet: ImageButton
-    private lateinit var btnAddToCartSheet: Button
+    private lateinit var btnBuyNowSheet: Button
     private lateinit var btnMinus: ImageButton
     private lateinit var btnPlus: ImageButton
     private lateinit var tvQty: TextView
@@ -82,7 +83,7 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
         rvSize = view.findViewById(R.id.rvSize)
         rvColor = view.findViewById(R.id.rvColor)
         btnCloseSheet = view.findViewById(R.id.btnCloseSheet)
-        btnAddToCartSheet = view.findViewById(R.id.btnAddToCartSheet)
+        btnBuyNowSheet = view.findViewById(R.id.btnBuyNowSheet)
         btnMinus = view.findViewById(R.id.btnMinusDetail)
         btnPlus = view.findViewById(R.id.btnPlusDetail)
         tvQty = view.findViewById(R.id.tvQtyDetail)
@@ -110,26 +111,32 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
             dismiss() // Đóng dialog
         }
 
-        btnAddToCartSheet.setOnClickListener {
+        btnBuyNowSheet.setOnClickListener {
             if (selectedVariant == null) {
                 Toast.makeText(context, "Vui lòng chọn màu và size", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // Lấy token từ ViewModel (hoặc SessionManager nếu bạn muốn)
+            // Lấy token: ưu tiên ViewModel (nếu được gán), nếu không có thì dùng SessionManager
             val token = viewModel.getAccessToken?.let { it1 -> it1(requireContext()) }
+                ?: com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
             if (token.isNullOrBlank()) {
                 Toast.makeText(context, "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // Gọi hàm addToCart từ ViewModel
-            selectedVariant?.let {
-                // TODO: Lấy số lượng từ tvQty và truyền vào viewModel
+            // Điều hướng trực tiếp tới Checkout với payload buy-now (product id, variant id, quantity)
+            selectedVariant?.let { variant ->
                 val quantity = tvQty.text.toString().toIntOrNull() ?: 1
-                viewModel.addToCart(token, it.variantId, quantity) // Giả sử hàm addToCart nhận quantity
+                val bundle = android.os.Bundle().apply {
+                    putString("buy_now_product_id", currentProduct?.productId.toString())
+                    putString("buy_now_variant_id", variant.variantId.toString())
+                    putInt("buy_now_quantity", quantity)
+                }
+                // Sử dụng extension navigate trên Activity
+                activity?.navigate(R.id.checkoutFragment, bundle)
             }
-            dismiss() // Đóng dialog sau khi thêm
+            dismiss() // Đóng dialog
         }
 
         btnPlus.setOnClickListener {

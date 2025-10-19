@@ -1,0 +1,59 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <!-- Icon cảnh báo -->
+    <ImageView
+            android:src="@drawable/sad"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginBottom="15dp" />
+
+    <!-- Tiêu đề -->
+    <TextView
+            android:text="Are you sure you want to logout?"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    <!-- Mô tả -->
+    <TextView
+            android:text="You will need to log in again to continue"
+            android:gravity="center"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    <!-- Nút bấm -->
+    <LinearLayout
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        <Button
+                android:id="@+id/btnCancel"
+                android:text="Cancel"
+                android:layout_marginEnd="10dp"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@android:color/black"
+                android:textColor="@android:color/white"/>
+
+        <Button
+                android:id="@+id/btnLogout"
+                android:text="Logout"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@android:color/holo_red_dark"
+                android:textColor="@android:color/white"/>
+    </LinearLayout>
+</LinearLayout>

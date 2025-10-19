@@ -21,14 +21,14 @@
 
         <!-- Avatar -->
         <ImageView
-            android:id="@+id/imgAvatar"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginRight="@dimen/_30sdp"
-            android:src="@drawable/image"
-            android:scaleType="centerCrop"
-            android:background="@drawable/bg_circle_while"
-            android:layout_weight="1"/>
+                android:id="@+id/imgAvatar"
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:layout_marginRight="@dimen/_30sdp"
+                android:src="@drawable/image"
+                android:scaleType="centerCrop"
+                android:background="@drawable/bg_circle_while"
+                android:layout_weight="1" />
 
         <!-- My Activity -->
         <Button
@@ -116,6 +116,142 @@
                     android:src="@drawable/ic_next"
                     android:layout_marginStart="@dimen/_10sdp"
                     android:background="@drawable/bg_circle_blue"/>
+
+            </LinearLayout>
+
+            <!-- Thanh trên cùng -->
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="8dp">
+
+                <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_filter" />
+
+                <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Your order"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:paddingStart="8dp"
+                        android:textColor="#000000" />
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Detail >"
+                        android:textSize="14sp"
+                        android:textColor="#666666" />
+
+            </LinearLayout>
+
+            <!-- Hàng biểu tượng -->
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:paddingTop="8dp">
+
+        <!-- Mục 1 -->
+        <LinearLayout
+                        android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/ll_status_confirming"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                    <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/ic_confirm" />
+
+                    <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Confirming"
+                            android:textSize="12sp"
+                            android:paddingTop="4dp"/>
+                </LinearLayout>
+
+        <!-- Mục 2 -->
+        <LinearLayout
+                        android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/ll_status_packing"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                    <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/ic_wait_get_order" />
+
+                    <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Packing"
+                            android:textSize="12sp"
+                            android:paddingTop="4dp"/>
+                </LinearLayout>
+
+        <!-- Mục 3 -->
+        <LinearLayout
+                        android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/ll_status_delivering"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                    <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/ic_delivery" />
+
+                    <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Delivering"
+                            android:textSize="12sp"
+                            android:paddingTop="4dp"/>
+                </LinearLayout>
+
+        <!-- Mục 4 với badge đỏ -->
+        <FrameLayout
+                        android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/ll_status_received"
+                        android:layout_weight="1"
+                        android:foregroundGravity="center">
+
+                    <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                        <ImageView
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:src="@drawable/ic_reveive" />
+
+                        <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Received"
+                                android:textSize="12sp"
+                                android:paddingTop="4dp"/>
+                    </LinearLayout>
+                </FrameLayout>
 
             </LinearLayout>
 

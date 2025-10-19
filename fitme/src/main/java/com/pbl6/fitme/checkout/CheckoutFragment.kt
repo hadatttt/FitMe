@@ -14,6 +14,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     private var shippingFee: Double = 0.0
     private lateinit var checkoutProductAdapter: CheckoutProductAdapter
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+    private var dataLoaded: Boolean = false
 
     private var productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product> = emptyMap()
     private var variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant> = emptyMap()
@@ -31,13 +32,22 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
     }
 
+    override fun onResume() {
+        super.onResume()
+        // If we returned from edit screens and no data is present, reload
+        val hasItems = binding.rvCart.adapter?.itemCount ?: 0
+        if (!dataLoaded || hasItems == 0) {
+            initData()
+        }
+    }
+
     override fun initListener() {
         // Nút Pay
         binding.btnEditAddress.singleClick {
-
+            navigate(R.id.shippingAddressFragment)
         }
         binding.btnEditContact.singleClick {
-
+            navigate(R.id.contactInforFragment)
         }
         binding.btnEditPayment.singleClick {
 
@@ -147,6 +157,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                 checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                 binding.rvCart.adapter = checkoutProductAdapter
                                 checkoutProductAdapter.submitList(cartItems)
+                                dataLoaded = true
                                 val unified = createUnifiedVariantMap()
                                 total = cartItems.sumOf { cartItem ->
                                     val variant = unified[cartItem.variantId]
@@ -194,6 +205,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                                 checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                                 binding.rvCart.adapter = checkoutProductAdapter
                                                 checkoutProductAdapter.submitList(cartItems)
+                                                    dataLoaded = true
                                                 val unified = createUnifiedVariantMap()
                                                 total = cartItems.sumOf { cartItem ->
                                                     val variant = unified[cartItem.variantId]
@@ -209,6 +221,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                 checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                 binding.rvCart.adapter = checkoutProductAdapter
                                 checkoutProductAdapter.submitList(cartItems)
+                                                dataLoaded = true
                                         val unified = createUnifiedVariantMap()
                                         total = cartItems.sumOf { cartItem ->
                                             val variant = unified[cartItem.variantId]
@@ -228,6 +241,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                     checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                     binding.rvCart.adapter = checkoutProductAdapter
                                     checkoutProductAdapter.submitList(cartItems)
+                                        dataLoaded = true
                                     val unified = createUnifiedVariantMap()
                                     total = cartItems.sumOf { cartItem ->
                                         val variant = unified[cartItem.variantId]
@@ -244,6 +258,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                     checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                     binding.rvCart.adapter = checkoutProductAdapter
                                     checkoutProductAdapter.submitList(cartItems)
+                                        dataLoaded = true
                                     total = cartItems.sumOf { cartItem ->
                                         val variant = variantMap[cartItem.variantId]
                                         (variant?.price ?: 0.0) * cartItem.quantity

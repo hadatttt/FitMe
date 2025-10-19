@@ -60,9 +60,9 @@ class SettingsFragment : Fragment() {
 
     private fun handleItemClick(item: SettingOption) {
         when (item.title) {
-            "Profile" -> navigate(R.id.profileFragment)
-//            "Shipping Address" -> navigate(R.id.action_settings_to_shipping)
-//            "Payment methods" -> navigate(R.id.action_settings_to_payment)
+            "Profile" -> navigate(R.id.SettingProfileFragment)
+            "Shipping Address" -> navigate(R.id.shippingAddressFragment)
+//            "Payment methods" -> navigate(R.id.contactInforFragment)
 //            "Terms and Conditions" -> navigate(R.id.action_settings_to_terms)
 //            "About Slada" -> navigate(R.id.action_settings_to_about)
             "Logout" -> showLogoutDialog()
@@ -70,16 +70,23 @@ class SettingsFragment : Fragment() {
         }
     }
     private fun showLogoutDialog() {
-        android.app.AlertDialog.Builder(requireContext())
-            .setTitle("Logout")
-            .setMessage("Are you sure you want to log out?")
-            .setPositiveButton("Yes") { _, _ ->
-                // TODO: Handle logout logic, e.g. clear token, navigate to Login
-                Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show()
-                navigate(R.id.splashFragment)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        // Inflate custom logout dialog layout
+        val dlgView = layoutInflater.inflate(R.layout.dialog_logout, null)
+        val dlg = android.app.AlertDialog.Builder(requireContext()).create()
+        dlg.setView(dlgView)
+        val btnCancel = dlgView.findViewById<android.widget.Button>(R.id.btnCancel)
+        val btnLogout = dlgView.findViewById<android.widget.Button>(R.id.btnLogout)
+
+        btnCancel.setOnClickListener { dlg.dismiss() }
+        btnLogout.setOnClickListener {
+            // Clear saved session and navigate to splash/login
+            com.pbl6.fitme.session.SessionManager.getInstance().clearSession(requireContext())
+            dlg.dismiss()
+            Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show()
+            navigate(R.id.splashFragment)
+        }
+
+        dlg.show()
     }
     override fun onDestroyView() {
         super.onDestroyView()

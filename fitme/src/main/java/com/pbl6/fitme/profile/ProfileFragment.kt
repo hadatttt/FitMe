@@ -77,6 +77,24 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             highlightSelectedTab(R.id.person_id)
 
         }
+
+        // Order status clicks -> navigate to OrdersFragment with status
+        binding.root.findViewById<View>(R.id.ll_status_confirming)?.singleClick {
+            val bundle = android.os.Bundle().apply { putString("order_status", "confirming") }
+            navigate(R.id.ordersFragment, bundle)
+        }
+        binding.root.findViewById<View>(R.id.ll_status_packing)?.singleClick {
+            val bundle = android.os.Bundle().apply { putString("order_status", "packing") }
+            navigate(R.id.ordersFragment, bundle)
+        }
+        binding.root.findViewById<View>(R.id.ll_status_delivering)?.singleClick {
+            val bundle = android.os.Bundle().apply { putString("order_status", "delivering") }
+            navigate(R.id.ordersFragment, bundle)
+        }
+        binding.root.findViewById<View>(R.id.ll_status_received)?.singleClick {
+            val bundle = android.os.Bundle().apply { putString("order_status", "received") }
+            navigate(R.id.ordersFragment, bundle)
+        }
     }
 
     override fun initData() {

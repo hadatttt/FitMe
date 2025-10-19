@@ -14,6 +14,8 @@ import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentHomeBinding
 import com.pbl6.fitme.profile.CategoryAdapter
 import com.pbl6.fitme.profile.ProductAdapter
+import com.pbl6.fitme.model.Product
+import android.widget.SearchView
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.onBackPressed
@@ -48,6 +50,8 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         setupRecyclerViews()
     }
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+    private var allProducts: List<Product> = emptyList()
+    private lateinit var productAdapter: ProductAdapter
 
     private fun setupRecyclerViews() {
         val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
@@ -68,7 +72,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
                 }
             }
 
-            val productAdapter = ProductAdapter()
+            productAdapter = ProductAdapter()
             binding.rvItems.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2)
             binding.rvItems.adapter = productAdapter
             productAdapter.setOnClickItemRecyclerView { product, _ ->
@@ -81,6 +85,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
                 activity?.runOnUiThread {
                     if (products != null) {
                         Log.d("HomeFragment", "API Products Response: $products")
+                        allProducts = products
                         productAdapter.setList(products)
                     } else {
                         Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
@@ -98,12 +103,36 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
             hideToolbar()
             popBackStack()
         }
-        binding.searchView.singleClick {
-        }
+        // SearchView: filter products as user types
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                filterProducts(query ?: "")
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                filterProducts(newText ?: "")
+                return true
+            }
+        })
         binding.ivCamera.singleClick {
             requestCameraPermission.launch(android.Manifest.permission.CAMERA)
         }
         binding.ivFilter.singleClick {
+            // show a popup menu with sorting options
+            val popup = android.widget.PopupMenu(requireContext(), binding.ivFilter)
+            popup.menu.add(0, 1, 0, "Name A -> Z")
+            popup.menu.add(0, 2, 1, "Price low -> high")
+            popup.menu.add(0, 3, 2, "Price high -> low")
+            popup.setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
+                    1 -> sortByNameAsc()
+                    2 -> sortByPriceAsc()
+                    3 -> sortByPriceDesc()
+                }
+                true
+            }
+            popup.show()
         }
         binding.tvAllItems.singleClick {
         }
@@ -148,6 +177,37 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
     private fun openCamera() {
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         cameraLauncher.launch(intent)
+    }
+
+    private fun sortByNameAsc() {
+        val sorted = allProducts.sortedBy { it.productName?.lowercase() }
+        allProducts = sorted
+        productAdapter.setList(sorted)
+    }
+
+    private fun sortByPriceAsc() {
+        val sorted = allProducts.sortedBy { it.minPrice ?: Double.MAX_VALUE }
+        allProducts = sorted
+        productAdapter.setList(sorted)
+    }
+
+    private fun sortByPriceDesc() {
+        val sorted = allProducts.sortedByDescending { it.minPrice ?: Double.MIN_VALUE }
+        allProducts = sorted
+        productAdapter.setList(sorted)
+    }
+
+    private fun filterProducts(query: String) {
+        val q = query.trim().lowercase()
+        if (q.isEmpty()) {
+            productAdapter.setList(allProducts)
+            return
+        }
+        val filtered = allProducts.filter { p ->
+            val name = try { p.productName ?: "" } catch (e: Exception) { "" }
+            name.lowercase().contains(q)
+        }
+        productAdapter.setList(filtered)
     }
     // ===== Dummy Data =====
 
