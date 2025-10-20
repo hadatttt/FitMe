@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentProductDetailBinding
 import com.pbl6.fitme.model.Product
+import com.pbl6.fitme.model.Review
 import com.pbl6.fitme.profile.CategoryAdapter
 import com.pbl6.fitme.profile.ProductAdapter
 import com.pbl6.fitme.session.SessionManager
@@ -20,7 +21,7 @@ import hoang.dqm.codebase.utils.singleClick
 class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, ProductDetailViewModel>() {
 
     private lateinit var imageAdapter: ProductImageAdapter
-
+    private lateinit var reviewAdapter: ReviewAdapter
     private var currentProduct: Product? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -90,6 +91,7 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             return
         }
         viewModel.fetchProductById(token, productId)
+        fetchProductReviews(token, productId)
     }
 
     override fun onSingleClickFrag(v: View) {
@@ -138,7 +140,24 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
         }
     }
 
-
+  fun fetchProductReviews(token: String, productId: String) {
+        // Sử dụng reviewRepo bạn đã khai báo
+        reviewRepo.getReviewsByProduct(token, productId) { reviews: List<Review>? ->
+            // Luôn cập nhật UI trên Main Thread
+            activity?.runOnUiThread {
+                if (reviews != null && reviews.isNotEmpty()) {
+                    Log.d("HomeFragment", "API Products Response: $reviews")
+                    binding.rvReviews.visibility = View.VISIBLE
+                    binding.tvNoReviews.visibility = View.GONE
+                    reviewAdapter.setList(reviews) // Cập nhật data cho adapter
+                } else {
+                    Log.d("HomeFragment", "API Products Response: $reviews")
+                    binding.rvReviews.visibility = View.GONE
+                    binding.tvNoReviews.visibility = View.VISIBLE
+                }
+            }
+        }
+    }
     private fun populateUI(p: Product) {
         imageAdapter.setList(p.images.map { it.imageUrl })
         binding.tvProductName.text = p.productName
@@ -152,11 +171,13 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
         activity?.findViewById<View>(R.id.toolbar)?.visibility = View.GONE
     }
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+    private val reviewRepo = com.pbl6.fitme.repository.ReviewRepository()
     private fun setupRecyclerViews() {
         val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
 
         if (!token.isNullOrBlank()) {
 
+            // --- Setup Related Products (Giữ nguyên) ---
             val productAdapter = ProductAdapter()
             binding.rvRelatedProducts.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2)
             binding.rvRelatedProducts.adapter = productAdapter
@@ -177,8 +198,16 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
                 }
             }
 
+            // --- 🔽 MỚI: Setup Review Adapter ---
+            // Gán cho biến class, không tạo biến local
+            reviewAdapter = ReviewAdapter()
+            binding.rvReviews.apply {
+                adapter = reviewAdapter
+                layoutManager = LinearLayoutManager(requireContext())
+                isNestedScrollingEnabled = false
+            }
+
         } else {
-            // Gộp chung thông báo khi chưa đăng nhập
             Toast.makeText(requireContext(), "Vui lòng đăng nhập để xem dữ liệu", Toast.LENGTH_LONG).show()
         }
     }

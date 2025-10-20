@@ -70,12 +70,38 @@
                 </LinearLayout>
 
             </LinearLayout>
-
             <View
                     android:layout_width="match_parent"
                     android:layout_height="8dp"
                     android:background="#F5F5F5" />
+            <TextView
+                    android:id="@+id/tvReviewTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Đánh giá sản phẩm"
+                    android:padding="16dp"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/black"/>
 
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvReviews"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    android:orientation="vertical"
+                    tools:listitem="@layout/item_review"
+                    tools:itemCount="3"
+                    android:nestedScrollingEnabled="false" />
+
+            <TextView
+                    android:visibility="gone"
+                    android:id="@+id/tvNoReviews"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Chưa có đánh giá nào."
+                    android:padding="16dp"
+                    android:gravity="center" />
             <TextView
                     android:id="@+id/tvRelatedTitle"
                     android:layout_width="match_parent"
@@ -96,7 +122,9 @@
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     android:orientation="horizontal"
                     tools:listitem="@layout/item_product"
-                    android:nestedScrollingEnabled="false" /> </LinearLayout>
+                    android:nestedScrollingEnabled="false" />
+
+        </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
 

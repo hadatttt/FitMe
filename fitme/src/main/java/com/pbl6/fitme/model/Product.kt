@@ -16,7 +16,7 @@ data class Product(
     val isActive: Boolean,
     val images: List<ProductImage> = emptyList(),
     val variants: List<ProductVariant> = emptyList(),
-    val reviews: List<ProductReview> = emptyList()
+    val reviews: List<Review> = emptyList()
 ): Serializable {
     // convenience property returning the main image url or first image
     val mainImageUrl: String?

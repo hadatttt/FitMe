@@ -5,6 +5,8 @@ import com.pbl6.fitme.network.AuthApiService
 import com.pbl6.fitme.network.ApiClient
 import com.pbl6.fitme.network.LoginRequest
 import com.pbl6.fitme.network.LoginResponse
+import com.pbl6.fitme.network.LogoutRequest
+import com.pbl6.fitme.network.LogoutResponse
 import com.pbl6.fitme.network.RegisterRequest
 import com.pbl6.fitme.network.RegisterResponse
 import retrofit2.Call
@@ -44,6 +46,25 @@ class AuthRepository {
             }
             override fun onFailure(call: Call<RegisterResponse>, t: Throwable) {
                 Log.e("AuthRepository", "Network failure: ${t.localizedMessage}", t)
+                onResult(null)
+            }
+        })
+    }
+    fun logout(token: String, onResult: (LogoutResponse?) -> Unit) {
+        val request = LogoutRequest(token)
+        authApi.logout(request).enqueue(object : Callback<LogoutResponse> {
+            override fun onResponse(call: Call<LogoutResponse>, response: Response<LogoutResponse>) {
+                if (response.isSuccessful) {
+                    Log.d("AuthRepository", "Logout success: ${response.body()?.message}")
+                    onResult(response.body())
+                } else {
+                    Log.e("AuthRepository", "Logout failed: ${response.code()} - ${response.message()}")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<LogoutResponse>, t: Throwable) {
+                Log.e("AuthRepository", "Logout network failure: ${t.localizedMessage}", t)
                 onResult(null)
             }
         })

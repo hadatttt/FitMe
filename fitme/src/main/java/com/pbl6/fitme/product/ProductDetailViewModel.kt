@@ -45,6 +45,7 @@ class ProductDetailViewModel : BaseViewModel() {
         }
     }
 
+
     fun buyNow(token: String, variantId: UUID, quantity: Int = 1) {
         val request = AddCartRequest(variantId, quantity)
         mainRepository.addToCart(token, request) { success ->

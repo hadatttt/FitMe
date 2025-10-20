@@ -70,7 +70,6 @@ class SettingsFragment : Fragment() {
         }
     }
     private fun showLogoutDialog() {
-        // Inflate custom logout dialog layout
         val dlgView = layoutInflater.inflate(R.layout.dialog_logout, null)
         val dlg = android.app.AlertDialog.Builder(requireContext()).create()
         dlg.setView(dlgView)
@@ -79,7 +78,6 @@ class SettingsFragment : Fragment() {
 
         btnCancel.setOnClickListener { dlg.dismiss() }
         btnLogout.setOnClickListener {
-            // Clear saved session and navigate to splash/login
             com.pbl6.fitme.session.SessionManager.getInstance().clearSession(requireContext())
             dlg.dismiss()
             Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show()
