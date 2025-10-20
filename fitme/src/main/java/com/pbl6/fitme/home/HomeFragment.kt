@@ -57,7 +57,6 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
 
         if (!token.isNullOrBlank()) {
-            // --- 1. Lấy và hiển thị DANH MỤC (đã có) ---
             mainRepository.getCategories(token) { categories: List<Category>? ->
                 activity?.runOnUiThread {
                     if (categories != null) {

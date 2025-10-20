@@ -15,6 +15,7 @@ class MainRepository {
     private val wishlistApi = ApiClient.retrofit.create(WishlistApiService::class.java)
     private val variantApi = ApiClient.retrofit.create(ProductVariantApiService::class.java)
     private val productImageApi = ApiClient.retrofit.create(ProductImageApiService::class.java)
+    private val reviewApi = ApiClient.retrofit.create(ReviewApiService::class.java)
 
     // 🧩 Lấy danh sách biến thể sản phẩm
     fun getProductVariants(onResult: (List<ProductVariant>?) -> Unit) {
@@ -68,7 +69,6 @@ class MainRepository {
                         val products = respList.map { pr ->
                             // Convert image string urls into ProductImage objects with placeholder ids
                             val images = pr.images.mapIndexed { idx, url ->
-                                // We don't have image ids from BE's simplified response, use index-based negative ids
                                 ProductImage(
                                     imageId = idx.toLong() * -1,
                                     createdAt = null,
@@ -101,8 +101,7 @@ class MainRepository {
                                 season = pr.season,
                                 isActive = pr.isActive,
                                 images = images,
-                                variants = variants,
-                                reviews = emptyList()
+                                variants = variants
                             )
                         }
 
@@ -166,8 +165,7 @@ class MainRepository {
                         season = pr.season,
                         isActive = pr.isActive,
                         images = images,
-                        variants = variants,
-                        reviews = emptyList()
+                        variants = variants
                     )
 
                     onResult(product)
@@ -236,7 +234,6 @@ class MainRepository {
                 if (response.isSuccessful) {
                     onResult(true)
                 } else {
-                    // log details for debugging
                     try {
                         val body = response.errorBody()?.string()
                         android.util.Log.e("MainRepository", "addToCart failed code=${response.code()} body=$body")
