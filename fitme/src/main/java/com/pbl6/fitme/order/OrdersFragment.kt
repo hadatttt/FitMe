@@ -2,11 +2,14 @@ package com.pbl6.fitme.order
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentOrdersBinding
 import com.pbl6.fitme.model.Order
 import com.pbl6.fitme.model.OrderItem
+import com.pbl6.fitme.model.OrderStatus
+import com.pbl6.fitme.model.ShippingAddress
 import com.pbl6.fitme.repository.MainRepository
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.popBackStack
@@ -22,7 +25,62 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
         // setup header back
         binding.ivBack.setOnClickListener { popBackStack() }
         hideToolbar()
-        binding.recyclerOrders.layoutManager = LinearLayoutManager(requireContext())
+        
+        // Setup RecyclerView
+        binding.recyclerOrders.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            val adapterInstance = OrdersAdapter().apply {
+                setOrderStatusChangeListener(object : OrdersAdapter.OrderStatusChangeListener {
+                    override fun onOrderStatusChanged(orderId: String, newStatus: String) {
+                        // Update just the specific order in our list
+                        currentOrders = currentOrders.map { order ->
+                            if (order.orderId == orderId) {
+                                // Just update the status field and let other fields use their defaults or existing values
+                                Order(
+                                    orderId = order.orderId,
+                                    userEmail = order.userEmail ?: "",
+                                    userId = order.userId,
+                                    orderDate = order.orderDate,
+                                    createdAt = order.createdAt,
+                                    updatedAt = order.updatedAt,
+                                    status = newStatus,
+                                    orderStatus = newStatus,
+                                    shippingAddressId = order.shippingAddressId ?: "",
+                                    shippingAddress = order.shippingAddress ?: ShippingAddress(),
+                                    couponId = "",  // Use empty string as default since it's non-null
+                                    orderItems = order.orderItems ?: emptyList(),
+                                    items = order.items ?: emptyList(),
+                                    subtotal = order.subtotal ?: 0.0,
+                                    totalAmount = order.totalAmount ?: 0.0,
+                                    discountAmount = order.discountAmount ?: 0.0,
+                                    shippingFee = order.shippingFee ?: 0.0,
+                                    orderNotes = order.orderNotes ?: ""
+                                )
+                            } else {
+                                order
+                            }
+                        }
+                        // Update UI
+                        updateTabCounts()
+                        displayOrders(currentOrders, currentStatus)
+                        
+                        android.util.Log.d("OrdersFragment", "Updated order $orderId to status $newStatus")
+                    }
+                })
+            }
+            adapter = adapterInstance
+            android.util.Log.d("OrdersFragment", "RecyclerView adapter initialized: ${adapterInstance::class.java.simpleName}")
+        }
+        
+        // Set click listeners for tabs
+            binding.apply {
+                tvTabPending.singleClick { loadOrders(OrderStatus.PENDING) }
+                tvTabConfirmed.singleClick { loadOrders(OrderStatus.CONFIRMED) }
+                tvTabProcessing.singleClick { loadOrders(OrderStatus.PROCESSING) }
+                tvTabShipped.singleClick { loadOrders(OrderStatus.SHIPPED) }
+                tvTabDelivered.singleClick { loadOrders(OrderStatus.DELIVERED) }
+                tvTabCancelled.singleClick { loadOrders(OrderStatus.CANCELLED) }
+            }
     }
 
     override fun initListener() {
@@ -30,100 +88,155 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
 
     }
 
+    private var currentOrders: List<Order> = emptyList()
+    private var currentStatus: OrderStatus = OrderStatus.PENDING
+
     override fun initData() {
-        val status = arguments?.getString("order_status") ?: "all"
-        binding.apply {
-            // Set title according to status
-            // (Fragment layout has static title; we can optionally set a subtitle)
+        val initialStatus = arguments?.getString("order_status")?.let { value ->
+            OrderStatus.values().find { it.value == value }
+        } ?: OrderStatus.PENDING
+        
+        // Load all orders first
+        val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+        val email = com.pbl6.fitme.session.SessionManager.getInstance().getUserEmail(requireContext())
+        
+        if (token.isNullOrBlank() || email.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "Please login to view orders", Toast.LENGTH_SHORT).show()
+            return
         }
 
-        // TODO: Replace with real API call. For now, show mocked orders.
-        val mocked = createMockOrders()
+        // Show loading state
+        binding.recyclerOrders.visibility = View.GONE
+        binding.emptyViewOrder.visibility = View.GONE
 
-        // Compute counts for each status
-        val counts = mocked.groupingBy { it.orderStatus.lowercase() }.eachCount()
-
-        fun labelWithCount(base: String, key: String) = "$base (${counts[key] ?: 0})"
-
-        binding.tvTabPending.text = labelWithCount("Confirming", "confirming")
-        binding.tvTabPacking.text = labelWithCount("Packing", "packing")
-        binding.tvTabProcessing.text = labelWithCount("Delivery", "delivering")
-        binding.tvTabDelivered.text = labelWithCount("Received", "received")
-        binding.tvTabReturned.text = labelWithCount("Returned", "returned")
-        binding.tvTabCancelled.text = labelWithCount("Cancelled", "cancelled")
-
-        // Convert incoming status names from ProfileFragment to internal keys
-        val initialKey = when (status.lowercase()) {
-            "confirming" -> "confirming"
-            "packing" -> "packing"
-            "delivering" -> "delivering"
-            "received" -> "received"
-            else -> "all"
+        // Get all orders first
+        mainRepo.getOrdersByUser(token, email, null) { allOrders -> 
+            activity?.runOnUiThread {
+                if (!allOrders.isNullOrEmpty()) {
+                    currentOrders = allOrders
+                    // Update all tab counts first
+                    updateTabCounts()
+                    // Then display orders for initial status
+                    displayOrders(allOrders, initialStatus)
+                } else {
+                    showEmptyState()
+                }
+            }
         }
-
-        var currentKey = initialKey
-
-        fun applyFilter(key: String) {
-            currentKey = key
-            val filtered = if (key == "all") mocked else mocked.filter { it.orderStatus.equals(key, ignoreCase = true) }
-            val adapter = OrdersAdapter()
-            adapter.setList(filtered)
-            binding.recyclerOrders.adapter = adapter
-            // update tab visuals
-            selectTab(key)
-            // update empty / list visibility
-            updateOrderView()
-        }
-
-        // Tab click listeners
-        binding.tvTabPending.singleClick { applyFilter("confirming")     }
-        binding.tvTabPacking.singleClick { applyFilter("packing") }
-        binding.tvTabProcessing.singleClick { applyFilter("delivering") }
-        binding.tvTabDelivered.singleClick { applyFilter("received") }
-        binding.tvTabReturned.singleClick { applyFilter("returned") }
-        binding.tvTabCancelled.singleClick { applyFilter("cancelled") }
-
-        // Apply initial filter
-        applyFilter(currentKey)
     }
 
-    private fun selectTab(key: String) {
-        val selectedBg = resources.getColor(android.R.color.holo_blue_light, null)
-        val selectedText = resources.getColor(android.R.color.black, null)
-        val normalBg = android.R.color.transparent
-        val normalText = resources.getColor(android.R.color.black, null)
-
-        fun apply(tvKey: String, tv: View) {
-            val isSelected = (tvKey == key)
-            tv.setBackgroundColor(if (isSelected) selectedBg else resources.getColor(normalBg, null))
-            if (tv is android.widget.TextView) tv.setTextColor(if (isSelected) selectedText else normalText)
+    private fun loadOrders(status: OrderStatus) {
+        currentStatus = status
+        // Filter from cached orders if available
+        if (currentOrders.isNotEmpty()) {
+            displayOrders(currentOrders, status)
+            return
         }
 
-        apply("confirming", binding.tvTabPending)
-        apply("packing", binding.tvTabPacking)
-        apply("delivering", binding.tvTabProcessing)
-        apply("received", binding.tvTabDelivered)
-        apply("returned", binding.tvTabReturned)
-        apply("cancelled", binding.tvTabCancelled)
+        // If no cached orders, load from API
+        val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+        val email = com.pbl6.fitme.session.SessionManager.getInstance().getUserEmail(requireContext())
+        
+        if (token.isNullOrBlank() || email.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "Please login to view orders", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Show loading state
+        binding.recyclerOrders.visibility = View.GONE
+        binding.emptyViewOrder.visibility = View.GONE
+
+        // Get all orders
+        mainRepo.getOrdersByUser(token, email, null) { orders -> 
+            activity?.runOnUiThread {
+                if (!orders.isNullOrEmpty()) {
+                    android.util.Log.d("OrdersFragment", "Loaded orders count=${orders.size} sampleStatuses=${orders.map { it.status ?: it.orderStatus }}")
+                    currentOrders = orders
+                    // Use consolidated display method
+                    displayOrders(orders, status)
+                } else {
+                    android.util.Log.d("OrdersFragment", "No orders returned for user=$email")
+                    showEmptyState()
+                }
+            }
+        }
     }
 
-    private fun createMockOrders(): List<Order> {
-        // Create simple mock orders; in real app call repository.getOrders(token, ...)
-        val item = OrderItem(orderItemId = java.util.UUID.randomUUID(), quantity = 1, totalPrice = 50.0, unitPrice = 50.0, orderId = java.util.UUID.randomUUID(), variantId = java.util.UUID.randomUUID())
-        val o1 = Order(orderId = java.util.UUID.randomUUID(), createdAt = "2025-10-01T10:00:00Z", orderStatus = "confirming", totalAmount = 50.0, updatedAt = "2025-10-01T10:00:00Z", userId = java.util.UUID.randomUUID(), items = listOf(item))
-        val o2 = Order(orderId = java.util.UUID.randomUUID(), createdAt = "2025-10-03T10:00:00Z", orderStatus = "confirming", totalAmount = 120.0, updatedAt = "2025-10-03T10:00:00Z", userId = java.util.UUID.randomUUID(), items = listOf(item))
-        val o3 = Order(orderId = java.util.UUID.randomUUID(), createdAt = "2025-10-05T10:00:00Z", orderStatus = "delivering", totalAmount = 200.0, updatedAt = "2025-10-05T10:00:00Z", userId = java.util.UUID.randomUUID(), items = listOf(item))
-        val o4 = Order(orderId = java.util.UUID.randomUUID(), createdAt = "2025-10-07T10:00:00Z", orderStatus = "received", totalAmount = 80.0, updatedAt = "2025-10-07T10:00:00Z", userId = java.util.UUID.randomUUID(), items = listOf(item))
-        return listOf(o1, o2, o3, o4)
+    private fun displayOrders(orders: List<Order>, status: OrderStatus) {
+        currentStatus = status
+        currentOrders = orders
+
+        val filteredOrders = orders.filter { order ->
+            val s = (order.status ?: order.orderStatus ?: "")
+            s.equals(status.name, ignoreCase = true) || s.equals(status.value, ignoreCase = true)
+        }
+
+        updateOrdersList(filteredOrders)
+        selectTab(status)
     }
-    private fun updateOrderView() {
-        val count = binding.recyclerOrders.adapter?.itemCount ?: 0
-        if (count == 0) {
-            binding.recyclerOrders.visibility = View.GONE
-            binding.emptyViewOrder.visibility = View.VISIBLE
+
+    private fun updateOrdersList(orders: List<Order>) {
+        (binding.recyclerOrders.adapter as? OrdersAdapter)?.apply {
+            setList(orders)
+        }
+        android.util.Log.d("OrdersFragment", "updateOrdersList called, ordersToShow=${orders.size}, adapterCount=${binding.recyclerOrders.adapter?.itemCount}")
+
+        if (orders.isEmpty()) {
+            showEmptyState()
         } else {
             binding.recyclerOrders.visibility = View.VISIBLE
             binding.emptyViewOrder.visibility = View.GONE
+        }
+    }
+
+    private fun showEmptyState() {
+        binding.recyclerOrders.visibility = View.GONE
+        binding.emptyViewOrder.visibility = View.VISIBLE
+    }
+
+    private fun updateTabCounts() {
+        fun getCount(status: OrderStatus) = currentOrders.count { order ->
+            val s = (order.status ?: order.orderStatus ?: "")
+            s.equals(status.name, ignoreCase = true) || s.equals(status.value, ignoreCase = true)
+        }
+
+        binding.apply {
+            tvTabPending.text = "PENDING (${getCount(OrderStatus.PENDING)})"
+            tvTabConfirmed.text = "CONFIRMED (${getCount(OrderStatus.CONFIRMED)})"
+            tvTabProcessing.text = "PROCESSING (${getCount(OrderStatus.PROCESSING)})"
+            tvTabShipped.text = "SHIPPED (${getCount(OrderStatus.SHIPPED)})"
+            tvTabDelivered.text = "DELIVERED (${getCount(OrderStatus.DELIVERED)})"
+            tvTabCancelled.text = "CANCELLED (${getCount(OrderStatus.CANCELLED)})"
+        }
+    }
+
+    private fun selectTab(selectedStatus: OrderStatus) {
+        binding.apply {
+            val views = listOf(
+                tvTabPending,
+                tvTabConfirmed,
+                tvTabProcessing,
+                tvTabShipped,
+                tvTabDelivered,
+                tvTabCancelled
+            )
+            
+            views.forEach { textView ->
+                val isSelected = when(textView) {
+                    tvTabPending -> selectedStatus == OrderStatus.PENDING
+                    tvTabConfirmed -> selectedStatus == OrderStatus.CONFIRMED
+                    tvTabProcessing -> selectedStatus == OrderStatus.PROCESSING
+                    tvTabShipped -> selectedStatus == OrderStatus.SHIPPED
+                    tvTabDelivered -> selectedStatus == OrderStatus.DELIVERED
+                    tvTabCancelled -> selectedStatus == OrderStatus.CANCELLED
+                    else -> false
+                }
+                
+                textView.setBackgroundResource(
+                    if (isSelected) R.drawable.bg_selected_tab
+                    else android.R.color.transparent
+                )
+            }
         }
     }
     private fun hideToolbar() {

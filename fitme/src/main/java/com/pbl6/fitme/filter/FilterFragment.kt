@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentFilterBinding
 import com.pbl6.fitme.home.HomeMainViewModel
-import Category
+import com.pbl6.fitme.model.Category
 import android.util.Log
 import com.pbl6.fitme.profile.CategoryAdapter
 import hoang.dqm.codebase.base.activity.BaseFragment

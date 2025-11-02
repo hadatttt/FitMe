@@ -1,5 +1,5 @@
 package com.pbl6.fitme.network
-import Category
+import com.pbl6.fitme.model.Category
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Header

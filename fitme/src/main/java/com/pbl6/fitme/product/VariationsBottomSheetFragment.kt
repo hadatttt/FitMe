@@ -61,6 +61,9 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
             dismiss()
             return
         }
+        
+        android.util.Log.d("VariationsBottomSheet", "Product loaded: id=${currentProduct?.productId}")
+        android.util.Log.d("VariationsBottomSheet", "Available variants: ${currentProduct?.variants?.map { "${it.color}/${it.size}" }}")
 
         // Ánh xạ Views
         bindViews(view)
@@ -117,6 +120,17 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
                 return@setOnClickListener
             }
 
+            // Double check variant exists in product
+            val existingVariant = currentProduct?.variants?.find { it.variantId == selectedVariant?.variantId }
+            if (existingVariant == null) {
+                android.util.Log.e("VariationsBottomSheet", "Selected variant ${selectedVariant?.variantId} not found in product variants")
+                Toast.makeText(context, "Lỗi chọn sản phẩm, vui lòng thử lại", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Validate variant data
+            android.util.Log.d("VariationsBottomSheet", "Validating variant: id=${existingVariant.variantId} color=${existingVariant.color} size=${existingVariant.size} stock=${existingVariant.stockQuantity}")
+
             // Lấy token: ưu tiên ViewModel (nếu được gán), nếu không có thì dùng SessionManager
             val token = viewModel.getAccessToken?.let { it1 -> it1(requireContext()) }
                 ?: com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
@@ -124,17 +138,33 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
                 Toast.makeText(context, "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            
+            android.util.Log.d("VariationsBottomSheet", "Token: ${token.take(10)}...")
 
             // Điều hướng trực tiếp tới Checkout với payload buy-now (product id, variant id, quantity)
             selectedVariant?.let { variant ->
                 val quantity = tvQty.text.toString().toIntOrNull() ?: 1
+                val productIdStr = currentProduct?.productId?.toString() ?: ""
+                val variantIdStr = variant.variantId.toString()
+                android.util.Log.d("VariationsBottomSheet", "BuyNow navigate: productId=$productIdStr variantId=$variantIdStr qty=$quantity")
                 val bundle = android.os.Bundle().apply {
-                    putString("buy_now_product_id", currentProduct?.productId.toString())
-                    putString("buy_now_variant_id", variant.variantId.toString())
+                    putString("buy_now_product_id", productIdStr)
+                    putString("buy_now_variant_id", variantIdStr)
                     putInt("buy_now_quantity", quantity)
+                    // pass selected size and color so Checkout can render quickly
+                    putString("buy_now_size", selectedSize)
+                    putString("buy_now_color", selectedColor)
+                    // additionally pass visible product info (price, name, image) to avoid extra fetch
+                    try {
+                        putDouble("buy_now_price", variant.price)
+                        putInt("buy_now_stock", variant.stockQuantity)  // Thêm stock để kiểm tra giới hạn
+                    } catch (_: Exception) { putDouble("buy_now_price", 0.0) }
+                    putString("buy_now_product_name", currentProduct?.productName ?: "")
+                    putString("buy_now_image_url", currentProduct?.mainImageUrl ?: "")
                 }
-                // Sử dụng extension navigate trên Activity
-                activity?.navigate(R.id.checkoutFragment, bundle)
+                // Điều hướng trực tiếp tới Checkout sử dụng NavController (đảm bảo bundle được truyền)
+                navigate(R.id.checkoutFragment, bundle)
+                
             }
             dismiss() // Đóng dialog
         }
@@ -184,37 +214,46 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
     // --- SAO CHÉP LOGIC TỪ ProductDetailFragment SANG ---
 
     private fun onColorSelected(color: String) {
+        android.util.Log.d("VariationsBottomSheet", "Color selected: $color")
         selectedColor = color
         val variants = currentProduct?.variants ?: return
         val availableSizes = variants.filter { it.color == color }.map { it.size }.distinct()
+        android.util.Log.d("VariationsBottomSheet", "Available sizes for color $color: $availableSizes")
         sizeAdapter.updateAvailable(availableSizes)
         if (selectedSize !in availableSizes) {
             selectedSize = availableSizes.firstOrNull()
+            android.util.Log.d("VariationsBottomSheet", "Auto-selecting first available size: $selectedSize")
             sizeAdapter.setSelected(selectedSize)
         }
         updatePriceAndVariant()
     }
 
     private fun onSizeSelected(size: String) {
+        android.util.Log.d("VariationsBottomSheet", "Size selected: $size")
         selectedSize = size
         val variants = currentProduct?.variants ?: return
         val availableColors = variants.filter { it.size == size }.map { it.color }.distinct()
+        android.util.Log.d("VariationsBottomSheet", "Available colors for size $size: $availableColors")
         colorAdapter.updateAvailable(availableColors)
         if (selectedColor !in availableColors) {
             selectedColor = availableColors.firstOrNull()
+            android.util.Log.d("VariationsBottomSheet", "Auto-selecting first available color: $selectedColor")
             colorAdapter.setSelected(selectedColor)
         }
         updatePriceAndVariant()
     }
 
     private fun updatePriceAndVariant() {
+        android.util.Log.d("VariationsBottomSheet", "Updating variant: color=$selectedColor size=$selectedSize")
         val variant = currentProduct?.variants?.find { it.color == selectedColor && it.size == selectedSize }
         if (variant != null) {
             selectedVariant = variant
+            android.util.Log.d("VariationsBottomSheet", "Selected variant: id=${variant.variantId} price=${variant.price} stock=${variant.stockQuantity}")
             tvPriceSheet.text = variant.price.toString() // Định dạng tiền tệ
             tvStockSheet.text = "Kho: ${variant.stockQuantity}"
         } else {
             selectedVariant = null
+            android.util.Log.d("VariationsBottomSheet", "No variant found for color=$selectedColor size=$selectedSize")
             tvPriceSheet.text = "Không có sẵn"
             tvStockSheet.text = "Kho: 0"
         }

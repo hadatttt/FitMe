@@ -112,12 +112,21 @@
             android:name="com.pbl6.fitme.order.OrdersFragment"
             android:label="Orders"
             tools:layout="@layout/fragment_orders">
+        <action
+            android:id="@+id/action_ordersFragment_to_orderDetailFragment"
+            app:destination="@id/orderDetailFragment" />
+        <action
+            android:id="@+id/action_ordersFragment_to_checkoutFragment"
+            app:destination="@id/checkoutFragment" />
     </fragment>
-<!--    <fragment-->
-<!--            android:id="@+id/orderDetailFragment"-->
-<!--            android:name="com.pbl6.fitme.order.OrderDetailFragment"-->
-<!--            android:label="Order Detail"-->
-<!--            tools:layout="@layout/fragment_order_detail">-->
-<!--    </fragment>-->
+    <fragment
+            android:id="@+id/orderDetailFragment"
+            android:name="com.pbl6.fitme.order.OrderDetailFragment"
+            android:label="Order Detail"
+            tools:layout="@layout/fragment_order_detail">
+        <argument
+            android:name="order_id"
+            app:argType="string" />
+    </fragment>
 
 </navigation>

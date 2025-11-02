@@ -1,6 +1,6 @@
 package com.pbl6.fitme.home
 
-import Category
+import com.pbl6.fitme.model.Category
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
@@ -57,6 +57,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
 
         if (!token.isNullOrBlank()) {
+            // --- 1. Lấy và hiển thị DANH MỤC (đã có) ---
             mainRepository.getCategories(token) { categories: List<Category>? ->
                 activity?.runOnUiThread {
                     if (categories != null) {

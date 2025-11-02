@@ -1,6 +1,13 @@
 package com.pbl6.fitme.checkout
 
 import android.view.View
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import com.pbl6.fitme.model.Order
+import com.pbl6.fitme.model.OrderItem
+import com.pbl6.fitme.session.SessionManager
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.model.CartItem
@@ -16,33 +23,62 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
     private var dataLoaded: Boolean = false
 
+    private enum class PaymentMethod {
+        CARD, VNPAY, COD
+    }
+
+    private var selectedPaymentMethod: PaymentMethod = PaymentMethod.CARD
+
     private var productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product> = emptyMap()
     private var variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant> = emptyMap()
     private var cartItems: List<CartItem> = emptyList()
 
     override fun initView() {
-        // Hiện toolbar
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
 
-        // Highlight tab cart
         highlightSelectedTab(R.id.cart_id)
 
-    // Setup RecyclerView
-    binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
+        checkoutProductAdapter = CheckoutProductAdapter(emptyMap(), emptyMap())
+        binding.rvCart.adapter = checkoutProductAdapter
+
+        try {
+            binding.txtPaymentMethod.text = when (selectedPaymentMethod) {
+                PaymentMethod.CARD -> "Card"
+                PaymentMethod.VNPAY -> "VNPay"
+                PaymentMethod.COD -> "Cash on Delivery"
+            }
+        } catch (_: Exception) { }
     }
 
     override fun onResume() {
         super.onResume()
-        // If we returned from edit screens and no data is present, reload
         val hasItems = binding.rvCart.adapter?.itemCount ?: 0
         if (!dataLoaded || hasItems == 0) {
             initData()
         }
+
+        viewModel.getCurrentOrderId()?.let { orderId ->
+            val token = SessionManager.getInstance().getAccessToken(requireContext())
+            if (!token.isNullOrBlank()) {
+                mainRepository.getOrderById(token, orderId.toString()) { order ->
+                    activity?.runOnUiThread {
+                        if (order != null) {
+                            viewModel.clearCurrentOrderId()
+                            try {
+                                val bundle = android.os.Bundle()
+                                bundle.putString("order_id", order.orderId ?: "")
+                                navigate(R.id.orderDetailFragment, bundle)
+                            } catch (_: Exception) { }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun initListener() {
-        // Nút Pay
         binding.btnEditAddress.singleClick {
             navigate(R.id.shippingAddressFragment)
         }
@@ -50,13 +86,154 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             navigate(R.id.contactInforFragment)
         }
         binding.btnEditPayment.singleClick {
-
+            showPaymentMethodDialog()
         }
+
         binding.btnCheckout.singleClick {
-            // TODO: xử lý thanh toán
+            val token = SessionManager.getInstance().getAccessToken(requireContext())
+            if (token.isNullOrBlank()) {
+                Toast.makeText(requireContext(), "You must be logged in to checkout", Toast.LENGTH_LONG).show()
+                return@singleClick
+            }
+
+            if (cartItems.isEmpty()) {
+                Toast.makeText(requireContext(), "No items to checkout", Toast.LENGTH_SHORT).show()
+                return@singleClick
+            }
+
+            if (binding.txtShippingAddress.text.isNullOrBlank()) {
+                Toast.makeText(requireContext(), "Please add a shipping address", Toast.LENGTH_LONG).show()
+                return@singleClick
+            }
+
+            binding.btnCheckout.isEnabled = false
+
+            val loginResponse = SessionManager.getInstance().getLoginResponse(requireContext())
+            val userEmail = loginResponse?.result?.email?.takeIf { !it.isNullOrBlank() }
+                ?: SessionManager.getInstance().getUserEmail(requireContext())
+            if (userEmail.isNullOrBlank()) {
+                binding.btnCheckout.isEnabled = true
+                Toast.makeText(requireContext(), "Missing user email. Please log in again.", Toast.LENGTH_LONG).show()
+                return@singleClick
+            }
+
+            val recipientNameFromSession = SessionManager.getInstance().getRecipientName(requireContext())
+                ?.takeIf { it.isNotBlank() }
+            val fallbackRecipient = SessionManager.getInstance().getUserEmail(requireContext())
+                ?.substringBefore("@")
+            val recipient = recipientNameFromSession ?: fallbackRecipient ?: "Customer"
+
+            val shippingAddress = com.pbl6.fitme.model.ShippingAddress(
+                addressId = "",
+                userId = "",
+                recipientName = recipient,
+                phone = "",
+                addressLine1 = binding.txtShippingAddress?.text?.toString() ?: "",
+                addressLine2 = "",
+                city = "",
+                stateProvince = "",
+                postalCode = "",
+                country = "Vietnam",
+                isDefault = false,
+                addressType = "SHIPPING"
+            )
+
+            if (shippingAddress.addressLine1.isBlank()) {
+                binding.btnCheckout.isEnabled = true
+                Toast.makeText(requireContext(), "Please add a shipping address", Toast.LENGTH_LONG).show()
+                return@singleClick
+            }
+
+            val unified = createUnifiedVariantMap()
+            val orderItems = cartItems.map { ci ->
+                val v = unified[ci.variantId]
+                val price = v?.price ?: 0.0
+                OrderItem(
+                    productId = v?.productId?.toString() ?: "",
+                    quantity = ci.quantity,
+                    unitPrice = price,
+                    color = v?.color,
+                    size = v?.size,
+                    variantId = null,
+                    productName = null,
+                    variantDetails = null,
+                    totalPrice = null,
+                    productImageUrl = null
+                )
+            }
+
+            val subtotal = total
+            val shippingMoney = shippingFee
+            val discount = 0.0
+            val totalAmount = total + shippingFee
+
+            val order = Order(
+                userEmail = userEmail,
+                shippingAddressId = "",
+                shippingAddress = shippingAddress,
+                couponId = "",
+                orderItems = orderItems,
+                subtotal = subtotal,
+                totalAmount = totalAmount,
+                discountAmount = discount,
+                shippingFee = shippingMoney,
+                orderNotes = ""
+            )
+
+            mainRepository.createOrder(token, order) { createdOrder ->
+                activity?.runOnUiThread {
+                    if (createdOrder == null) {
+                        binding.btnCheckout.isEnabled = true
+                        Toast.makeText(requireContext(), "Failed to create order", Toast.LENGTH_LONG).show()
+                        return@runOnUiThread
+                    }
+
+                    when (selectedPaymentMethod) {
+                        PaymentMethod.VNPAY -> {
+                            mainRepository.createVNPayPayment(
+                                token,
+                                createdOrder.orderId?.toString() ?: "",
+                                userEmail
+                            ) { vnResp ->
+                                activity?.runOnUiThread {
+                                    binding.btnCheckout.isEnabled = true
+                                    if (vnResp?.paymentUrl.isNullOrBlank()) {
+                                        Toast.makeText(requireContext(), "Failed to start VNPay", Toast.LENGTH_LONG).show()
+                                    } else {
+                                        try {
+                                            val uuid = createdOrder.orderId?.let { java.util.UUID.fromString(it) }
+                                            viewModel.setCurrentOrderId(uuid)
+                                        } catch (_: Exception) { }
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(vnResp!!.paymentUrl))
+                                        startActivity(intent)
+                                    }
+                                }
+                            }
+                        }
+
+                        PaymentMethod.COD -> {
+                            binding.btnCheckout.isEnabled = true
+                            Toast.makeText(requireContext(), "Order placed successfully (COD)", Toast.LENGTH_LONG).show()
+                            try {
+                                // Chuyển đến trang Orders với trạng thái pending
+                                val bundle = android.os.Bundle()
+                                bundle.putString("order_status", "confirming") // Trạng thái pending/confirming
+                                navigate(R.id.ordersFragment, bundle)
+                            } catch (e: Exception) {
+                                android.util.Log.e("CheckoutFragment", "Failed to navigate to orders list", e)
+                            }
+                        }
+
+                        PaymentMethod.CARD -> {
+                            binding.btnCheckout.isEnabled = true
+                            Toast.makeText(requireContext(), "Card payment not implemented", Toast.LENGTH_LONG).show()
+                            // Thêm navigation tương tự cho card payment nếu implement sau này
+                        }
+                    }
+                }
+            }
         }
 
-        // RadioGroup shipping
         binding.rgShippingOptions.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
                 R.id.rbStandard -> {
@@ -73,37 +250,31 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             updateTotalPrice()
         }
 
-        // ===== Toolbar click =====
-        requireActivity().findViewById<View>(R.id.home_id).singleClick {
-            highlightSelectedTab(R.id.home_id)
-            navigate(R.id.homeFragment)
-        }
-        requireActivity().findViewById<View>(R.id.wish_id).singleClick {
-            highlightSelectedTab(R.id.wish_id)
-            navigate(R.id.wishlistFragment)
-        }
-        requireActivity().findViewById<View>(R.id.filter_id).singleClick {
-            highlightSelectedTab(R.id.filter_id)
-            navigate(R.id.filterFragment)
-        }
-        requireActivity().findViewById<View>(R.id.cart_id).singleClick {
-            highlightSelectedTab(R.id.cart_id)
-            navigate(R.id.cartFragment)
-        }
-        requireActivity().findViewById<View>(R.id.person_id).singleClick {
-            highlightSelectedTab(R.id.person_id)
-            navigate(R.id.profileFragment)
+        // Toolbar navigation
+        val tabIds = listOf(
+            R.id.home_id to R.id.homeFragment,
+            R.id.wish_id to R.id.wishlistFragment,
+            R.id.filter_id to R.id.filterFragment,
+            R.id.cart_id to R.id.cartFragment,
+            R.id.person_id to R.id.profileFragment
+        )
+
+        tabIds.forEach { (tabId, dest) ->
+            requireActivity().findViewById<View>(tabId).singleClick {
+                highlightSelectedTab(tabId)
+                navigate(dest)
+            }
         }
     }
 
     override fun initData() {
         // Use arguments to support buy-now flow
         val args = arguments
-    val buyProductId = args?.getString("buy_now_product_id")
-    val buyVariantId = args?.getString("buy_now_variant_id")
-    val buyQuantity = args?.getInt("buy_now_quantity") ?: 1
-    val cartIndices = args?.getIntegerArrayList("cart_item_indices")
-    val cartVariantIds = args?.getStringArrayList("cart_variant_ids")
+        val buyProductId = args?.getString("buy_now_product_id")
+        val buyVariantId = args?.getString("buy_now_variant_id")
+        val buyQuantity = args?.getInt("buy_now_quantity") ?: 1
+        val cartIndices = args?.getIntegerArrayList("cart_item_indices")
+        val cartVariantIds = args?.getStringArrayList("cart_variant_ids")
 
         // Load products and variants then decide whether we show cart items or buy-now item
         val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
@@ -205,7 +376,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                                 checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                                 binding.rvCart.adapter = checkoutProductAdapter
                                                 checkoutProductAdapter.submitList(cartItems)
-                                                    dataLoaded = true
+                                                dataLoaded = true
                                                 val unified = createUnifiedVariantMap()
                                                 total = cartItems.sumOf { cartItem ->
                                                     val variant = unified[cartItem.variantId]
@@ -221,12 +392,12 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                 checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                 binding.rvCart.adapter = checkoutProductAdapter
                                 checkoutProductAdapter.submitList(cartItems)
-                                                dataLoaded = true
-                                        val unified = createUnifiedVariantMap()
-                                        total = cartItems.sumOf { cartItem ->
-                                            val variant = unified[cartItem.variantId]
-                                            (variant?.price ?: 0.0) * cartItem.quantity
-                                        }
+                                dataLoaded = true
+                                val unified = createUnifiedVariantMap()
+                                total = cartItems.sumOf { cartItem ->
+                                    val variant = unified[cartItem.variantId]
+                                    (variant?.price ?: 0.0) * cartItem.quantity
+                                }
                                 updateTotalPrice()
                             }
                         } else if (cartIndices != null && cartIndices.isNotEmpty()) {
@@ -241,7 +412,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                     checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                     binding.rvCart.adapter = checkoutProductAdapter
                                     checkoutProductAdapter.submitList(cartItems)
-                                        dataLoaded = true
+                                    dataLoaded = true
                                     val unified = createUnifiedVariantMap()
                                     total = cartItems.sumOf { cartItem ->
                                         val variant = unified[cartItem.variantId]
@@ -258,7 +429,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                     checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                     binding.rvCart.adapter = checkoutProductAdapter
                                     checkoutProductAdapter.submitList(cartItems)
-                                        dataLoaded = true
+                                    dataLoaded = true
                                     total = cartItems.sumOf { cartItem ->
                                         val variant = variantMap[cartItem.variantId]
                                         (variant?.price ?: 0.0) * cartItem.quantity
@@ -276,11 +447,10 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     private fun updateTotalPrice() {
         val finalTotal = total + shippingFee
         binding.txtTotal.text = "Total $${String.format("%.2f", finalTotal)}"
+        binding.rvCart.visibility = View.VISIBLE
+        dataLoaded = true
     }
 
-    // Build a unified variant map that includes variants from the global variant endpoint
-    // and variants nested inside each Product (from productMap). This ensures we can
-    // resolve a variant even if the global variant list didn't include it.
     private fun createUnifiedVariantMap(): Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant> {
         val unified = variantMap.toMutableMap()
         productMap.values.forEach { product ->
@@ -289,6 +459,38 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             }
         }
         return unified
+    }
+
+    private fun showPaymentMethodDialog() {
+        val options = arrayOf("Card", "VNPay", "Cash on Delivery")
+        val checkedItem = when (selectedPaymentMethod) {
+            PaymentMethod.CARD -> 0
+            PaymentMethod.VNPAY -> 1
+            PaymentMethod.COD -> 2
+        }
+
+        var tempSelection = selectedPaymentMethod
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Select payment method")
+            .setSingleChoiceItems(options, checkedItem) { _, which ->
+                tempSelection = when (which) {
+                    0 -> PaymentMethod.CARD
+                    1 -> PaymentMethod.VNPAY
+                    else -> PaymentMethod.COD
+                }
+            }
+            .setPositiveButton("OK") { dialog, _ ->
+                selectedPaymentMethod = tempSelection
+                binding.txtPaymentMethod.text = when (selectedPaymentMethod) {
+                    PaymentMethod.CARD -> "Card"
+                    PaymentMethod.VNPAY -> "VNPay"
+                    PaymentMethod.COD -> "Cash on Delivery"
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun highlightSelectedTab(selectedId: Int) {

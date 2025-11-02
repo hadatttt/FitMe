@@ -28,6 +28,29 @@
             app:layout_constraintTop_toBottomOf="@id/tvTitle"
             app:layout_constraintStart_toStartOf="parent" />
 
+
+    <!-- Recipient Name -->
+    <TextView
+            android:id="@+id/tvRecipientLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Recipient Name"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp"
+            app:layout_constraintTop_toBottomOf="@id/tvSubTitle"
+            app:layout_constraintStart_toStartOf="parent" />
+
+    <EditText
+            android:id="@+id/etRecipientName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_outer_circle"
+            android:hint="Recipient Name"
+            android:padding="12dp"
+            app:layout_constraintTop_toBottomOf="@id/tvRecipientLabel"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- Email -->
     <TextView
             android:id="@+id/tvAddressLabel"
@@ -35,8 +58,8 @@
             android:layout_height="wrap_content"
             android:text="Email"
             android:textStyle="bold"
-            android:layout_marginTop="20dp"
-            app:layout_constraintTop_toBottomOf="@id/tvSubTitle"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/etRecipientName"
             app:layout_constraintStart_toStartOf="parent" />
 
     <EditText

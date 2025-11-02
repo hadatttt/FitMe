@@ -13,9 +13,19 @@ import com.pbl6.fitme.model.CartItem
 import com.bumptech.glide.Glide
 
 class CheckoutProductAdapter(
-    private val variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant>,
-    private val productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product>
+    private var variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant>,
+    private var productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product>
 ) : ListAdapter<CartItem, CheckoutProductAdapter.VH>(DiffCallback()) {
+
+    fun updateData(
+        newVariantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant>,
+        newProductMap: Map<java.util.UUID, com.pbl6.fitme.model.Product>
+    ) {
+        variantMap = newVariantMap
+        productMap = newProductMap
+        // data for items may have changed; ask the adapter to rebind visible views
+        notifyDataSetChanged()
+    }
 
     inner class VH(view: View) : RecyclerView.ViewHolder(view) {
         val txtProductName: TextView = view.findViewById(R.id.tvProductName)
@@ -48,6 +58,7 @@ class CheckoutProductAdapter(
             Glide.with(holder.imgProduct.context)
                 .load(imageUrl)
                 .placeholder(R.drawable.ic_splash)
+                .error(R.drawable.ic_splash)
                 .into(holder.imgProduct)
         } else {
             holder.imgProduct.setImageResource(R.drawable.ic_splash)
