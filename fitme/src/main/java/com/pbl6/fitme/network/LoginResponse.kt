@@ -10,5 +10,6 @@ data class TokenResult(
     val token: String,
     val refreshToken: String,
     val expiryTime: String,
-    val refreshTokenExpiryTime: String
+    val refreshTokenExpiryTime: String,
+    val email: String? = null
 )

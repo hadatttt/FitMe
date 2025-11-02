@@ -1,6 +1,6 @@
 package com.pbl6.fitme.product
 
-import Category
+import com.pbl6.fitme.model.Category
 import android.os.Bundle
 import android.util.Log
 import android.view.View

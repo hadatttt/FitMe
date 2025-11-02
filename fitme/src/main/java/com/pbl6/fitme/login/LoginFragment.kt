@@ -43,6 +43,9 @@ class LoginFragment : BaseFragment<FragmentLoginBinding, LoginViewmodel>() {
             authRepository.login(email, password) { response ->
                 if (response != null && response.result?.token?.isNotEmpty() == true) {
                     SessionManager.getInstance().saveLoginResponse(requireContext(), response)
+                    // Persist the entered email separately so code can access it even when
+                    // the backend token payload doesn't include email.
+                    SessionManager.getInstance().saveUserEmail(requireContext(), email)
                     android.util.Log.d("SessionManager", "LoginResponse saved: token=${response.result.token}")
                     navigate(R.id.homeFragment)
                 } else {

@@ -11,10 +11,10 @@ import retrofit2.http.Header
 
 interface CartApiService {
     @GET("cart/items")
-    fun getCartItems(): Call<List<CartItem>>
+    fun getCartItems(): Call<BaseResponse<List<CartItem>>>
 
     @GET("cart/items/{id}")
-    fun getCartItem(@Path("id") id: String): Call<CartItem>
+    fun getCartItem(@Path("id") id: String): Call<BaseResponse<CartItem>>
 
     @POST("cart/items")
     fun addToCart(@Header("Authorization") token: String, @Body req: AddCartRequest): Call<Void>

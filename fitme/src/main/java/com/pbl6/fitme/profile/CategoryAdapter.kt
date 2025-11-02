@@ -1,6 +1,5 @@
 package com.pbl6.fitme.profile
 
-import Category
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,6 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
+import com.pbl6.fitme.model.Category
 
 class CategoryAdapter(
     private var categories: List<Category>,

@@ -24,6 +24,13 @@
             android:textStyle="bold"
             android:textColor="#000000"
             android:layout_marginBottom="5dp" />
+            
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
 
         <!-- Shipping Address -->
         <LinearLayout
@@ -95,12 +102,19 @@
                     android:textStyle="bold"
                     android:textSize="14sp"
                     android:textColor="#000000" />
-
+                <TextView
+                        android:id="@+id/txtRecipientName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Recipient Name: LeLe"
+                        android:textSize="13sp"
+                        android:textColor="#555555"
+                        android:layout_marginTop="4dp" />
                 <TextView
                     android:id="@+id/txtPhone"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0704407803"
+                    android:text="Phone: 0704407803"
                     android:textSize="13sp"
                     android:textColor="#555555"
                     android:layout_marginTop="4dp" />
@@ -108,7 +122,7 @@
                     android:id="@+id/txtEmail"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="myle15082004@gmail.com"
+                    android:text="Email: myle15082004@gmail.com"
                     android:textSize="13sp"
                     android:textColor="#555555"
                     android:layout_marginTop="4dp" />
@@ -193,6 +207,7 @@
                 android:textStyle="bold"
                 android:layout_weight="1" />
             <TextView
+                android:id="@+id/txtPaymentMethod"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Card"

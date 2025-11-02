@@ -19,7 +19,14 @@ class ContactInforFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.btnSave.setOnClickListener { popBackStack() }
+        binding.btnSave.setOnClickListener {
+            val recipient = binding.etRecipientName.text?.toString()?.trim() ?: ""
+            if (recipient.isNotBlank()) {
+                com.pbl6.fitme.session.SessionManager.getInstance().saveRecipientName(requireContext(), recipient)
+            }
+            // optionally save email/phone here as well
+            popBackStack()
+        }
     }
 
     override fun onDestroyView() {

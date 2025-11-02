@@ -57,33 +57,33 @@
             <TextView
                     style="@style/TabStyle"
                     android:id="@+id/tv_tab_pending"
-                    android:text="Chờ xác nhận" />
+                    android:text="PENDING" />
 
             <TextView
                     style="@style/TabStyle"
-                    android:id="@+id/tv_tab_packing"
-                    android:text="Chờ lấy hàng" />
+                    android:id="@+id/tv_tab_confirmed"
+                    android:text="CONFIRMED" />
 
             <TextView
                     style="@style/TabStyle"
                     android:id="@+id/tv_tab_processing"
-                    android:text="Chờ giao hàng" />
+                    android:text="PROCESSING" />
+
+            <TextView
+                    style="@style/TabStyle"
+                    android:id="@+id/tv_tab_shipped"
+                    android:text="SHIPPED" />
 
             <TextView
                     style="@style/TabStyle"
                     android:id="@+id/tv_tab_delivered"
-                    android:text="Đã giao" />
+                    android:text="DELIVERED" />
 
-            <TextView
-                    style="@style/TabStyle"
-                    android:id="@+id/tv_tab_returned"
-                    android:text="Trả hàng" />
 
             <TextView
                     style="@style/TabStyle"
                     android:id="@+id/tv_tab_cancelled"
-                    android:text="Đã huỷ"
-                    android:textColor="@color/red" />
+                    android:text="CANCELLED" />
         </LinearLayout>
     </HorizontalScrollView>
 

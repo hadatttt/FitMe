@@ -4,4 +4,13 @@
     <color name="white">#FFFFFFFF</color>
     <color name="maincolor">#004BFE</color>
     <color name="red">#FF1100</color>
+    <!-- Status colors used in OrderDetailFragment -->
+    <color name="status_pending">#FFA500</color>
+    <color name="status_confirmed">#4CAF50</color>
+    <color name="status_processing">#2196F3</color>
+    <color name="status_shipped">#9C27B0</color>
+    <color name="status_delivered">#4CAF50</color>
+    <color name="status_cancelled">#F44336</color>
+    <!-- fallback primary color alias -->
+    <color name="primary">#004BFE</color>
 </resources>

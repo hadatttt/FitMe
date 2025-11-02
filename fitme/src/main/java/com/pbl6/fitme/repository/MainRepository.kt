@@ -1,8 +1,28 @@
 package com.pbl6.fitme.repository
 
-import Category
-import com.pbl6.fitme.model.*
-import com.pbl6.fitme.network.*
+import android.util.Log
+import com.pbl6.fitme.model.AddCartRequest
+import com.pbl6.fitme.model.AddWishlistRequest
+import com.pbl6.fitme.network.BaseResponse
+import com.pbl6.fitme.model.CartItem
+import com.pbl6.fitme.model.Category
+import com.pbl6.fitme.model.Order
+import com.pbl6.fitme.model.OrderStatus
+import com.pbl6.fitme.model.Product
+import com.pbl6.fitme.model.ProductImage
+import com.pbl6.fitme.model.ProductResponse
+import com.pbl6.fitme.model.ProductVariant
+import com.pbl6.fitme.model.VNPayResponse
+import com.pbl6.fitme.model.WishlistItem
+import com.pbl6.fitme.network.ApiClient
+import com.pbl6.fitme.network.CartApiService
+import com.pbl6.fitme.network.CategoryApiService
+import com.pbl6.fitme.network.OrderApiService
+import com.pbl6.fitme.network.ProductApiService
+import com.pbl6.fitme.network.ProductImageApiService
+import com.pbl6.fitme.network.ProductVariantApiService
+import com.pbl6.fitme.network.ReviewApiService
+import com.pbl6.fitme.network.WishlistApiService
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -16,18 +36,22 @@ class MainRepository {
     private val variantApi = ApiClient.retrofit.create(ProductVariantApiService::class.java)
     private val productImageApi = ApiClient.retrofit.create(ProductImageApiService::class.java)
     private val reviewApi = ApiClient.retrofit.create(ReviewApiService::class.java)
+    private val orderApi = ApiClient.retrofit.create(OrderApiService::class.java)
 
     // 🧩 Lấy danh sách biến thể sản phẩm
     fun getProductVariants(onResult: (List<ProductVariant>?) -> Unit) {
-        variantApi.getProductVariants().enqueue(object : Callback<List<ProductVariant>> {
-            override fun onResponse(
-                call: Call<List<ProductVariant>>,
-                response: Response<List<ProductVariant>>
-            ) {
-                onResult(response.body())
+        variantApi.getProductVariants().enqueue(object : Callback<BaseResponse<List<ProductVariant>>> {
+            override fun onResponse(call: Call<BaseResponse<List<ProductVariant>>>, response: Response<BaseResponse<List<ProductVariant>>>) {
+                if (response.isSuccessful) {
+                    onResult(response.body()?.result)
+                } else {
+                    Log.e("MainRepository", "getProductVariants failed: ${response.code()}")
+                    onResult(null)
+                }
             }
 
-            override fun onFailure(call: Call<List<ProductVariant>>, t: Throwable) {
+            override fun onFailure(call: Call<BaseResponse<List<ProductVariant>>>, t: Throwable) {
+                Log.e("MainRepository", "getProductVariants network error", t)
                 onResult(null)
             }
         })
@@ -36,10 +60,16 @@ class MainRepository {
     fun getProductImages(onResult: (List<ProductImage>?) -> Unit) {
         productImageApi.getProductImages().enqueue(object : Callback<List<ProductImage>> {
             override fun onResponse(call: Call<List<ProductImage>>, response: Response<List<ProductImage>>) {
-                onResult(response.body())
+                if (response.isSuccessful) {
+                    onResult(response.body())
+                } else {
+                    Log.e("MainRepository", "getProductImages failed: ${response.code()}")
+                    onResult(null)
+                }
             }
 
             override fun onFailure(call: Call<List<ProductImage>>, t: Throwable) {
+                Log.e("MainRepository", "getProductImages network error", t)
                 onResult(null)
             }
         })
@@ -57,11 +87,11 @@ class MainRepository {
     fun getProducts(token: String, onResult: (List<Product>?) -> Unit) {
         val bearerToken = "Bearer $token"
         productApi.getProducts(bearerToken)
-            .enqueue(object : Callback<BaseResponse<List<com.pbl6.fitme.model.ProductResponse>>> {
+            .enqueue(object : Callback<BaseResponse<List<ProductResponse>>> {
 
                 override fun onResponse(
-                    call: Call<BaseResponse<List<com.pbl6.fitme.model.ProductResponse>>>,
-                    response: Response<BaseResponse<List<com.pbl6.fitme.model.ProductResponse>>>
+                    call: Call<BaseResponse<List<ProductResponse>>>,
+                    response: Response<BaseResponse<List<ProductResponse>>>
                 ) {
                     if (response.isSuccessful) {
                         val respList = response.body()?.result ?: emptyList()
@@ -111,19 +141,24 @@ class MainRepository {
                     }
                 }
 
-                override fun onFailure(call: Call<BaseResponse<List<com.pbl6.fitme.model.ProductResponse>>>, t: Throwable) {
+
+                override fun onFailure(
+                    call: Call<BaseResponse<List<ProductResponse>>>,
+                    t: Throwable
+                ) {
+                    Log.e("MainRepository", "getProducts network error", t)
                     onResult(null)
                 }
             })
     }
-    
+
     // Lấy chi tiết 1 product theo id
     fun getProductById(token: String, id: String, onResult: (Product?) -> Unit) {
         val bearer = "Bearer $token"
-        productApi.getProductById(bearer, id).enqueue(object : Callback<BaseResponse<com.pbl6.fitme.model.ProductResponse>> {
+        productApi.getProductById(bearer, id).enqueue(object : Callback<BaseResponse<ProductResponse>> {
             override fun onResponse(
-                call: Call<BaseResponse<com.pbl6.fitme.model.ProductResponse>>,
-                response: Response<BaseResponse<com.pbl6.fitme.model.ProductResponse>>
+                call: Call<BaseResponse<ProductResponse>>,
+                response: Response<BaseResponse<ProductResponse>>
             ) {
                 if (response.isSuccessful) {
                     val pr = response.body()?.result
@@ -174,7 +209,7 @@ class MainRepository {
                 }
             }
 
-            override fun onFailure(call: Call<BaseResponse<com.pbl6.fitme.model.ProductResponse>>, t: Throwable) {
+            override fun onFailure(call: Call<BaseResponse<ProductResponse>>, t: Throwable) {
                 onResult(null)
             }
         })
@@ -201,26 +236,35 @@ class MainRepository {
     }
 
     fun getCartItems(onResult: (List<CartItem>?) -> Unit) {
-        cartApi.getCartItems().enqueue(object : Callback<List<CartItem>> {
-            override fun onResponse(call: Call<List<CartItem>>, response: Response<List<CartItem>>) {
-                onResult(response.body())
+        cartApi.getCartItems().enqueue(object : Callback<BaseResponse<List<CartItem>>> {
+            override fun onResponse(call: Call<BaseResponse<List<CartItem>>>, response: Response<BaseResponse<List<CartItem>>>) {
+                if (response.isSuccessful) {
+                    onResult(response.body()?.result)
+                } else {
+                    Log.e("MainRepository", "getCartItems failed: ${response.code()}")
+                    onResult(null)
+                }
             }
 
-            override fun onFailure(call: Call<List<CartItem>>, t: Throwable) {
+            override fun onFailure(call: Call<BaseResponse<List<CartItem>>>, t: Throwable) {
+                Log.e("MainRepository", "getCartItems network error", t)
                 onResult(null)
             }
         })
     }
     fun getWishlistItems(onResult: (List<WishlistItem>?) -> Unit) {
         wishlistApi.getWishlistItems().enqueue(object : Callback<List<WishlistItem>> {
-            override fun onResponse(
-                call: Call<List<WishlistItem>>,
-                response: Response<List<WishlistItem>>
-            ) {
-                onResult(response.body())
+            override fun onResponse(call: Call<List<WishlistItem>>, response: Response<List<WishlistItem>>) {
+                if (response.isSuccessful) {
+                    onResult(response.body())
+                } else {
+                    Log.e("MainRepository", "getWishlistItems failed: ${response.code()}")
+                    onResult(null)
+                }
             }
 
             override fun onFailure(call: Call<List<WishlistItem>>, t: Throwable) {
+                Log.e("MainRepository", "getWishlistItems network error", t)
                 onResult(null)
             }
         })
@@ -229,14 +273,18 @@ class MainRepository {
     // Add variant to cart
     fun addToCart(token: String, req: com.pbl6.fitme.model.AddCartRequest, onResult: (Boolean) -> Unit) {
         val bearer = "Bearer $token"
+        android.util.Log.d("MainRepository", "Adding to cart: variantId=${req.variantId} quantity=${req.quantity}")
         cartApi.addToCart(bearer, req).enqueue(object : Callback<Void> {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
                 if (response.isSuccessful) {
+                    android.util.Log.d("MainRepository", "Successfully added to cart")
                     onResult(true)
                 } else {
                     try {
                         val body = response.errorBody()?.string()
                         android.util.Log.e("MainRepository", "addToCart failed code=${response.code()} body=$body")
+                        android.util.Log.e("MainRepository", "Request URL: ${call.request().url}")
+                        android.util.Log.e("MainRepository", "Request headers: ${call.request().headers}")
                     } catch (ex: Exception) {
                         android.util.Log.e("MainRepository", "addToCart failed code=${response.code()} (error reading body)")
                     }
@@ -269,10 +317,132 @@ class MainRepository {
                 }
             }
 
+
+
             override fun onFailure(call: Call<Void>, t: Throwable) {
                 android.util.Log.e("MainRepository", "addToWishlist network failure", t)
                 onResult(false)
             }
         })
     }
+
+    // Create an order on the backend
+    fun createOrder(token: String, order: Order, onResult: (Order?) -> Unit) {
+        val bearer = "Bearer $token"
+        android.util.Log.d("MainRepository", "Creating order: items=${order.orderItems.map { "${it.variantId}:${it.quantity}" }}")
+        android.util.Log.d("MainRepository", "Order details: userEmail=${order.userEmail}, shipping=${order.shippingAddress}")
+
+        orderApi.createOrder(bearer, order).enqueue(object : Callback<BaseResponse<Order>> {
+            override fun onResponse(call: Call<BaseResponse<Order>>, response: Response<BaseResponse<Order>>) {
+                if (response.isSuccessful) {
+                    android.util.Log.d("MainRepository", "Order created successfully")
+                    onResult(response.body()?.result)
+                } else {
+                    try {
+                        val errorBody = response.errorBody()?.string()
+                        android.util.Log.e("MainRepository", "createOrder failed: ${response.code()}")
+                        android.util.Log.e("MainRepository", "Error response: $errorBody")
+                        android.util.Log.e("MainRepository", "Request URL: ${call.request().url}")
+                        android.util.Log.e("MainRepository", "Request: email=${order.userEmail}")
+                        android.util.Log.e("MainRepository", "Request: items=${order.orderItems.size}")
+                        android.util.Log.e("MainRepository", "Request: total=${order.totalAmount}")
+                        android.util.Log.e("MainRepository", "Request: shipping=${order.shippingAddress}")
+                    } catch (ex: Exception) {
+                        android.util.Log.e("MainRepository", "Error reading error response", ex)
+                    }
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<BaseResponse<Order>>, t: Throwable) {
+                android.util.Log.e("MainRepository", "createOrder network error", t)
+                onResult(null)
+            }
+        })
+    }
+
+    // Create VNPay payment URL for the given order
+    fun createVNPayPayment(token: String, orderId: String, userEmail: String, onResult: (VNPayResponse?) -> Unit) {
+        val bearer = "Bearer $token"
+        orderApi.createVNPayPayment(bearer, orderId, userEmail).enqueue(object : Callback<BaseResponse<VNPayResponse>> {
+            override fun onResponse(call: Call<BaseResponse<VNPayResponse>>, response: Response<BaseResponse<VNPayResponse>>) {
+                if (response.isSuccessful) {
+                    onResult(response.body()?.result)
+                } else {
+                    android.util.Log.e("MainRepository", "createVNPayPayment failed: ${response.code()}")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<BaseResponse<VNPayResponse>>, t: Throwable) {
+                android.util.Log.e("MainRepository", "createVNPayPayment network error", t)
+                onResult(null)
+            }
+        })
+    }
+
+    // Get order details by ID
+    fun getOrderById(token: String, orderId: String, onResult: (Order?) -> Unit) {
+        val bearer = "Bearer $token"
+        orderApi.getOrderById(bearer, orderId).enqueue(object : Callback<BaseResponse<Order>> {
+            override fun onResponse(call: Call<BaseResponse<Order>>, response: Response<BaseResponse<Order>>) {
+                if (response.isSuccessful) {
+                    onResult(response.body()?.result)
+                } else {
+                    android.util.Log.e("MainRepository", "getOrderById failed: ${response.code()}")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<BaseResponse<Order>>, t: Throwable) {
+                android.util.Log.e("MainRepository", "getOrderById network error", t)
+                onResult(null)
+            }
+            })
+        }
+
+        // Get orders by user email and optional status 
+        fun getOrdersByUser(token: String, email: String, status: OrderStatus?, onResult: (List<Order>?) -> Unit) {
+            // Log parameters for debugging server 400 responses
+            android.util.Log.d("MainRepository", "getOrdersByUser called. email='$email' status='${status?.name}' tokenPresent=${!token.isNullOrBlank()}")
+
+            val bearer = "Bearer $token"
+            // Send enum name (UPPERCASE) so backend receives PENDING, PROCESSING, etc.
+            orderApi.getOrdersByUser(bearer, email, status?.name).enqueue(object : Callback<BaseResponse<List<Order>>> {
+                override fun onResponse(call: Call<BaseResponse<List<Order>>>, response: Response<BaseResponse<List<Order>>>) {
+                    if (response.isSuccessful) {
+                        onResult(response.body()?.result)
+                    } else {
+                        android.util.Log.e("MainRepository", "getOrdersByUser failed: ${response.code()} - body=${response.errorBody()?.string()}")
+                        onResult(null)
+                    }
+                }
+
+                override fun onFailure(call: Call<BaseResponse<List<Order>>>, t: Throwable) {
+                    android.util.Log.e("MainRepository", "getOrdersByUser network error", t)
+                    onResult(null)
+                }
+            })
+        }
+
+        // Update order status
+        fun updateOrderStatus(token: String, orderId: String, newStatus: OrderStatus, onResult: (Boolean) -> Unit) {
+            val bearer = "Bearer $token"
+            orderApi.updateOrderStatus(bearer, orderId, newStatus.name).enqueue(object : Callback<BaseResponse<Order>> {
+                override fun onResponse(call: Call<BaseResponse<Order>>, response: Response<BaseResponse<Order>>) {
+                    if (response.isSuccessful) {
+                        android.util.Log.d("MainRepository", "Order status updated successfully")
+                        onResult(true)
+                    } else {
+                        android.util.Log.e("MainRepository", "updateOrderStatus failed: ${response.code()}")
+                        onResult(false)
+                    }
+                }
+
+                override fun onFailure(call: Call<BaseResponse<Order>>, t: Throwable) {
+                    android.util.Log.e("MainRepository", "updateOrderStatus network error", t)
+                    onResult(false)
+                }
+            })
+        }
 }

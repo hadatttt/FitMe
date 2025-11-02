@@ -7,8 +7,8 @@ import retrofit2.http.Path
 
 interface ProductVariantApiService {
     @GET("product-variants")
-    fun getProductVariants(): Call<List<ProductVariant>>
+    fun getProductVariants(): Call<BaseResponse<List<ProductVariant>>>
 
     @GET("product-variants/{id}")
-    fun getProductVariantById(@Path("id") id: String): Call<ProductVariant>
+    fun getProductVariantById(@Path("id") id: String): Call<BaseResponse<ProductVariant>>
 }

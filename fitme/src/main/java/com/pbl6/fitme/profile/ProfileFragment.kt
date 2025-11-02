@@ -1,6 +1,6 @@
 package com.pbl6.fitme.profile
 
-import Category
+import com.pbl6.fitme.model.Category
 import android.util.Log
 import android.view.View
 import android.widget.Toast
