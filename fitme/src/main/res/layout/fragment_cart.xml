@@ -54,7 +54,7 @@
                     android:id="@+id/txtShippingAddress"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="26, Duong So 2, Thao Dien Ward, An Phu, District 2, Ho Chi Minh city"
+                    android:text=""
                     android:textSize="13sp"
                     android:textColor="#555555"
                     android:layout_marginTop="4dp" />
@@ -108,7 +108,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="16dp"
-        android:layout_marginBottom="40dp"
+        android:layout_marginBottom="56dp"
         android:gravity="center_vertical"
         android:background="@android:color/white"
         android:elevation="4dp"

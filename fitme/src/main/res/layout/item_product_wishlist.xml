@@ -66,11 +66,11 @@
             android:gravity="center_vertical">
 
             <TextView
+                    android:background="@drawable/bg_bluelight_circle"
                 android:id="@+id/btnColor"
                 android:layout_width="50dp"
                 android:layout_height="30dp"
                 android:text="Pink"
-                android:background="#E5EBFC"
                 android:gravity="center"
                 />
 
@@ -79,7 +79,6 @@
                 android:layout_width="50dp"
                 android:layout_height="30dp"
                 android:text="M"
-                android:background="#E5EBFC"
                 android:gravity="center"
                 android:layout_margin="5dp"/>
         </LinearLayout>

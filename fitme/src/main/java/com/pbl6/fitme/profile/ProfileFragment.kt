@@ -42,17 +42,10 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             navigate(R.id.cartFragment)
         }
         // ===== Button trong Profile =====
-        binding.btnMyActivity.singleClick {
-        }
         binding.btnSetting.singleClick {
             navigate(R.id.settingsFragment)
         }
-        binding.btnNotification.singleClick {
-        }
-        binding.btnVoucher.singleClick {
-        }
-        binding.ivSeeAllNewItems.singleClick {
-        }
+
         binding.ivSeeAllNotification.singleClick {
         }
 
@@ -122,9 +115,9 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             mainRepository.getCategories(token) { categories: List<Category>? ->
                 activity?.runOnUiThread {
                     if (categories != null) {
-                        binding.rvStories.layoutManager =
+                        binding.rvTopProducts.layoutManager =
                             androidx.recyclerview.widget.LinearLayoutManager(requireContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
-                        binding.rvStories.adapter =
+                        binding.rvTopProducts.adapter =
                             CategoryAdapter(categories) { /* no-op selection */ }
                     } else {
                         Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()

@@ -24,10 +24,10 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     private var dataLoaded: Boolean = false
 
     private enum class PaymentMethod {
-        CARD, VNPAY, COD
+        MOMO, VNPAY, COD
     }
 
-    private var selectedPaymentMethod: PaymentMethod = PaymentMethod.CARD
+    private var selectedPaymentMethod: PaymentMethod = PaymentMethod.COD
 
     private var productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product> = emptyMap()
     private var variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant> = emptyMap()
@@ -45,38 +45,38 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
 
         try {
             binding.txtPaymentMethod.text = when (selectedPaymentMethod) {
-                PaymentMethod.CARD -> "Card"
+                PaymentMethod.MOMO -> "MOMO"
                 PaymentMethod.VNPAY -> "VNPay"
                 PaymentMethod.COD -> "Cash on Delivery"
             }
         } catch (_: Exception) { }
     }
 
-    override fun onResume() {
-        super.onResume()
-        val hasItems = binding.rvCart.adapter?.itemCount ?: 0
-        if (!dataLoaded || hasItems == 0) {
-            initData()
-        }
-
-        viewModel.getCurrentOrderId()?.let { orderId ->
-            val token = SessionManager.getInstance().getAccessToken(requireContext())
-            if (!token.isNullOrBlank()) {
-                mainRepository.getOrderById(token, orderId.toString()) { order ->
-                    activity?.runOnUiThread {
-                        if (order != null) {
-                            viewModel.clearCurrentOrderId()
-                            try {
-                                val bundle = android.os.Bundle()
-                                bundle.putString("order_id", order.orderId ?: "")
-                                navigate(R.id.orderDetailFragment, bundle)
-                            } catch (_: Exception) { }
-                        }
-                    }
-                }
-            }
-        }
-    }
+//    override fun onResume() {
+//        super.onResume()
+//        val hasItems = binding.rvCart.adapter?.itemCount ?: 0
+//        if (!dataLoaded || hasItems == 0) {
+//            initData()
+//        }
+//
+//        viewModel.getCurrentOrderId()?.let { orderId ->
+//            val token = SessionManager.getInstance().getAccessToken(requireContext())
+//            if (!token.isNullOrBlank()) {
+//                mainRepository.getOrderById(token, orderId.toString()) { order ->
+//                    activity?.runOnUiThread {
+//                        if (order != null) {
+//                            viewModel.clearCurrentOrderId()
+//                            try {
+//                                val bundle = android.os.Bundle()
+//                                bundle.putString("order_id", order.orderId ?: "")
+//                                navigate(R.id.orderDetailFragment, bundle)
+//                            } catch (_: Exception) { }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     override fun initListener() {
         binding.btnEditAddress.singleClick {
@@ -189,6 +189,10 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                     }
 
                     when (selectedPaymentMethod) {
+                        PaymentMethod.MOMO -> {
+
+                        }
+
                         PaymentMethod.VNPAY -> {
                             mainRepository.createVNPayPayment(
                                 token,
@@ -215,19 +219,12 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                             binding.btnCheckout.isEnabled = true
                             Toast.makeText(requireContext(), "Order placed successfully (COD)", Toast.LENGTH_LONG).show()
                             try {
-                                // Chuyển đến trang Orders với trạng thái pending
                                 val bundle = android.os.Bundle()
                                 bundle.putString("order_status", "confirming") // Trạng thái pending/confirming
                                 navigate(R.id.ordersFragment, bundle)
                             } catch (e: Exception) {
                                 android.util.Log.e("CheckoutFragment", "Failed to navigate to orders list", e)
                             }
-                        }
-
-                        PaymentMethod.CARD -> {
-                            binding.btnCheckout.isEnabled = true
-                            Toast.makeText(requireContext(), "Card payment not implemented", Toast.LENGTH_LONG).show()
-                            // Thêm navigation tương tự cho card payment nếu implement sau này
                         }
                     }
                 }
@@ -337,8 +334,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                 updateTotalPrice()
                             }
                         } else if (cartVariantIds != null && cartVariantIds.isNotEmpty()) {
-                            // User navigated from Cart -> Checkout with explicit variant ids
-                            // Build temporary CartItems from provided variant ids
                             val list = mutableListOf<com.pbl6.fitme.model.CartItem>()
                             val productIdsToFetch = mutableSetOf<java.util.UUID>()
                             cartVariantIds.forEach { vidStr ->
@@ -361,7 +356,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                             cartItems = list
 
                             if (productIdsToFetch.isNotEmpty() && !token.isNullOrBlank()) {
-                                // fetch missing products, then set adapter
                                 val fetchedList = mutableListOf<com.pbl6.fitme.model.Product>()
                                 var remaining = productIdsToFetch.size
                                 productIdsToFetch.forEach { pid ->
@@ -464,7 +458,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     private fun showPaymentMethodDialog() {
         val options = arrayOf("Card", "VNPay", "Cash on Delivery")
         val checkedItem = when (selectedPaymentMethod) {
-            PaymentMethod.CARD -> 0
+            PaymentMethod.MOMO -> 0
             PaymentMethod.VNPAY -> 1
             PaymentMethod.COD -> 2
         }
@@ -475,7 +469,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             .setTitle("Select payment method")
             .setSingleChoiceItems(options, checkedItem) { _, which ->
                 tempSelection = when (which) {
-                    0 -> PaymentMethod.CARD
+                    0 -> PaymentMethod.MOMO
                     1 -> PaymentMethod.VNPAY
                     else -> PaymentMethod.COD
                 }
@@ -483,7 +477,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             .setPositiveButton("OK") { dialog, _ ->
                 selectedPaymentMethod = tempSelection
                 binding.txtPaymentMethod.text = when (selectedPaymentMethod) {
-                    PaymentMethod.CARD -> "Card"
+                    PaymentMethod.MOMO -> "MOMO"
                     PaymentMethod.VNPAY -> "VNPay"
                     PaymentMethod.COD -> "Cash on Delivery"
                 }

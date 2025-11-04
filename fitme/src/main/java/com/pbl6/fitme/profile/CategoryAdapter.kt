@@ -7,6 +7,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.pbl6.fitme.R
 import com.pbl6.fitme.model.Category
 
@@ -21,7 +22,6 @@ class CategoryAdapter(
     inner class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val img: ImageView = itemView.findViewById(R.id.imgItem)
         val name: TextView = itemView.findViewById(R.id.txtName)
-        val container: FrameLayout = itemView.findViewById(R.id.container)
 
         init {
             itemView.setOnClickListener {
@@ -45,17 +45,19 @@ class CategoryAdapter(
     override fun onBindViewHolder(holder: CategoryViewHolder, position: Int) {
         val category = categories[position]
         holder.name.text = category.categoryName
-        // Nếu có trường imageUrl, dùng Glide/Picasso để load ảnh
-        // Glide.with(holder.img.context).load(category.imageUrl).into(holder.img)
-        // Hiện tại dùng ảnh tạm
-        holder.img.setImageResource(R.drawable.ic_splash)
+
+        Glide.with(holder.itemView.context)
+            .load(category.imageUrl)
+            .into(holder.img)
 
         if (position == selectedPosition) {
-            holder.container.setBackgroundResource(R.drawable.bg_bluelight_circle)
+            holder.img.setBackgroundResource(R.drawable.bg_selected)
         } else {
-            holder.container.setBackgroundResource(R.drawable.bg_outer_circle)
+            holder.img.setBackgroundResource(R.drawable.bg_outer_circle)
         }
     }
+
+
 
     override fun getItemCount(): Int = categories.size
 

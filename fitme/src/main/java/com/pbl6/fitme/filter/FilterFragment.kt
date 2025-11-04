@@ -209,12 +209,12 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() 
                         val okCategory = selectedCategory == null || p.categoryName.equals(selectedCategory, ignoreCase = true)
 
                         // Gender filter (assume product.gender exists in model - fallback to true if not present)
-                        val productGender = try { p.gender?.trim()?.lowercase() } catch (_: Exception) { null }
-                        val okGender = selectedGender == null || (productGender != null && productGender == selectedGender)
-
-                        // Season filter (assume product.season exists in model)
-                        val productSeason = try { p.season?.trim()?.lowercase() } catch (_: Exception) { null }
-                        val okSeason = selectedSeason == null || (productSeason != null && productSeason == selectedSeason)
+//                        val productGender = try { p.gender?.trim()?.lowercase() } catch (_: Exception) { null }
+//                        val okGender = selectedGender == null || (productGender != null && productGender == selectedGender)
+//
+//                        // Season filter (assume product.season exists in model)
+//                        val productSeason = try { p.season?.trim()?.lowercase() } catch (_: Exception) { null }
+//                        val okSeason = selectedSeason == null || (productSeason != null && productSeason == selectedSeason)
 
                         // Price filter: at least one variant in price range
                         val okPrice = p.variants.any { v -> v.price >= minPrice && v.price <= maxPrice }
@@ -227,7 +227,7 @@ class FilterFragment : BaseFragment<FragmentFilterBinding, HomeMainViewModel>() 
                             else -> p.variants.any { v -> (v.color ?: "").trim().lowercase() == selectedColor && (v.size ?: "").trim().uppercase() == selectedSize }
                         }
 
-                        okCategory && okGender && okSeason && okPrice && okColorSize
+                        okCategory && okPrice && okColorSize
                     }
 
                     // Show results in the fragment's RecyclerView (reuse rvItems)

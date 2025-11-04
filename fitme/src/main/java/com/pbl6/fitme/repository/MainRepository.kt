@@ -122,13 +122,10 @@ class MainRepository {
 
                             Product(
                                 productId = pr.productId,
-                                createdAt = pr.createdAt,
                                 productName = pr.productName,
                                 description = pr.description,
                                 categoryName = pr.categoryName,
                                 brandName = pr.brandName,
-                                gender = pr.gender,
-                                season = pr.season,
                                 isActive = pr.isActive,
                                 images = images,
                                 variants = variants
@@ -152,7 +149,6 @@ class MainRepository {
             })
     }
 
-    // Lấy chi tiết 1 product theo id
     fun getProductById(token: String, id: String, onResult: (Product?) -> Unit) {
         val bearer = "Bearer $token"
         productApi.getProductById(bearer, id).enqueue(object : Callback<BaseResponse<ProductResponse>> {
