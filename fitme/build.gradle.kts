@@ -1,6 +1,7 @@
-plugins {
+-plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -40,34 +41,33 @@ android {
 }
 
 dependencies {
-    implementation(project(":app"))
+    // Firebase
     // Android
-    api(libs.androidx.core.ktx)
-    api(libs.androidx.appcompat)
-    api(libs.material)
-    api(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation("com.google.android.gms:play-services-auth:20.5.0")
-    implementation("com.google.android.gms:play-services-maps:18.1.0")
-    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.work.runtime.ktx) // Từ TOML (2.11.0)
+    // Cập nhật Google Play Services
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
     // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
-
     // Navigation
-    api(libs.androidx.navigation.fragment.ktx)
-    api(libs.androidx.navigation.ui.ktx)
-
-    // Coroutines
-
-    // Utils
-
-    api(libs.permissionx)
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
+    // Other
+    implementation(libs.permissionx)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    // Test
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit) // 1.3.0 từ TOML
+    androidTestImplementation(libs.androidx.espresso.core) // 3.7.0 từ TOML
+    // Module dependency
+    implementation(project(":hoang.dqm.codebase"))
 }

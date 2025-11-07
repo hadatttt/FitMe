@@ -2,4 +2,16 @@
     <string name="app_name">Fit Me</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string-array name="daily_notification_messages">
+        <item>✏️ Your hero is waiting—draw them back into action!</item>
+        <item>🌀 A new maze has opened. Can you escape faster than your rivals?</item>
+        <item>🎨 Sketch. Play. Win. Jump back in now!</item>
+        <item>⚡ Your opponent is moving—draw your way to victory!</item>
+        <item>🚪 The maze won’t solve itself. Ready to escape?</item>
+        <item>🖌️ Create your champion and conquer the labyrinth!</item>
+        <item>🎮 The game is on! Outdraw and outplay your rivals today.</item>
+        <item>🧩 Every line you draw leads closer to freedom—continue now!</item>
+        <item>🔥 Your rivals are escaping… will you let them win?</item>
+        <item>🕹️ Draw your path. Play your story. Start now!</item>
+    </string-array>
 </resources>

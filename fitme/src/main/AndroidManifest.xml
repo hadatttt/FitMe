@@ -39,6 +39,13 @@
                     android:host="payment"
                     android:scheme="fitme" />
             </intent-filter>
+            <service
+                    android:name=".service.AppFirebaseMessagingService"
+                    android:exported="false">
+                <intent-filter>
+                    <action android:name="com.google.firebase.MESSAGING_EVENT" />
+                </intent-filter>
+            </service>
         </activity>
         <meta-data
                 android:name="com.google.android.geo.API_KEY"
