@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+apply(plugin = "com.google.gms.google-services")
+
 android {
     namespace = "com.pbl6.fitme"
     compileSdk = 36
@@ -70,4 +72,10 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    // Firebase Cloud Messaging
+    implementation(platform("com.google.firebase:firebase-bom:32.3.1"))
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("androidx.work:work-runtime-ktx:2.8.1")
+
 }
