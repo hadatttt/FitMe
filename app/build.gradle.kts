@@ -35,6 +35,7 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
 }
 
 dependencies {
@@ -54,4 +55,5 @@ dependencies {
     api(libs.androidx.media3.exoplayer.v131)
     // Utils
     api(libs.permissionx)
+
 }
