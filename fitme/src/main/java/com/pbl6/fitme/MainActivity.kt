@@ -1,17 +1,20 @@
 package com.pbl6.fitme
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.fragment.NavHostFragment
+import com.google.firebase.FirebaseApp
 import com.pbl6.fitme.session.SessionManager
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        FirebaseApp.initializeApp(applicationContext)
+        Log.d("FCM", "Init OK")
         // Bật Edge-to-Edge
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
