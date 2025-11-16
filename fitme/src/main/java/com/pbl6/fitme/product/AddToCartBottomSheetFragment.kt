@@ -115,10 +115,10 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
                 return@setOnClickListener
             }
 
-            // CHỈ GỌI AddToCart
+            // CHỈ GỌI AddToCart (với fallback lưu local nếu network thất bại)
             selectedVariant?.let {
                 val quantity = tvQty.text.toString().toIntOrNull() ?: 1
-                viewModel.addToCart(token, it.variantId, quantity)
+                viewModel.addToCart(requireContext(), token, it.variantId, quantity)
             }
             dismiss()
         }

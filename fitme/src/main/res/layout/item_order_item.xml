@@ -26,6 +26,18 @@
             android:layout_marginStart="8dp" />
 
         <TextView
+            android:id="@+id/txtVariant"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Size: S, Color: Blue"
+            app:layout_constraintStart_toEndOf="@id/img"
+            app:layout_constraintTop_toBottomOf="@id/txtName"
+            app:layout_constraintEnd_toStartOf="@id/txtPrice"
+            android:layout_marginStart="8dp"
+            android:textSize="12sp"
+            android:textColor="#666" />
+
+        <TextView
             android:id="@+id/txtQty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -41,5 +53,14 @@
             android:text="$0.00"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/txtName" />
+
+        <TextView
+            android:id="@+id/txtTotalPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$0.00"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/txtPrice"
+            android:textStyle="bold" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

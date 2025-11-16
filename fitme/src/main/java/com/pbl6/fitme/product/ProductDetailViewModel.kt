@@ -34,32 +34,43 @@ class ProductDetailViewModel : BaseViewModel() {
         }
     }
 
-    fun addToCart(token: String, variantId: UUID, quantity: Int = 1) {
+    /**
+     * Adds an item to cart. Gets or creates cartId from session, then calls repo.
+     * Falls back to local storage if network fails.
+     */
+    fun addToCart(context: android.content.Context, token: String, variantId: java.util.UUID, quantity: Int = 1) {
         val request = AddCartRequest(variantId, quantity)
-        mainRepository.addToCart(token, request) { success ->
+        val cartId = com.pbl6.fitme.session.SessionManager.getInstance().getOrCreateCartId(context).toString()
+        mainRepository.addToCart(context, token, cartId, request) { success ->
             if (success) {
                 onAddToCartSuccess.postValue(true)
             } else {
-                errorMessage.postValue("Thêm vào giỏ hàng thất bại")
+                // Fallback: store locally and treat as success for UX
+                try {
+                    com.pbl6.fitme.session.SessionManager.getInstance().addLocalCartItem(context, variantId, quantity)
+                    onAddToCartSuccess.postValue(true)
+                } catch (ex: Exception) {
+                    errorMessage.postValue("Thêm vào giỏ hàng thất bại")
+                }
             }
         }
     }
 
 
-    fun buyNow(token: String, variantId: UUID, quantity: Int = 1) {
-        val request = AddCartRequest(variantId, quantity)
-        mainRepository.addToCart(token, request) { success ->
-            if (success) {
-                onBuyNowSuccess.postValue(true)
-            } else {
-                errorMessage.postValue("Không thể đặt hàng")
-            }
-        }
-    }
+//    fun buyNow(token: String, variantId: UUID, quantity: Int = 1) {
+//        val request = AddCartRequest(variantId, quantity)
+//        mainRepository.addToCart(token, request) { success ->
+//            if (success) {
+//                onBuyNowSuccess.postValue(true)
+//            } else {
+//                errorMessage.postValue("Không thể đặt hàng")
+//            }
+//        }
+//    }
     var getAccessToken: ((Context) -> String?)? = null
-    fun addToWishlist(token: String, productId: UUID) {
+    fun addToWishlist(token: String, userId: String?, productId: UUID) {
         val request = AddWishlistRequest(productId)
-        mainRepository.addToWishlist(token, request) { success ->
+        mainRepository.addToWishlist(token, userId, request) { success ->
             if (success) {
                 onAddToWishlistSuccess.postValue(true)
             } else {

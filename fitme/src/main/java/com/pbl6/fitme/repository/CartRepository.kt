@@ -12,12 +12,13 @@ class CartRepository {
     private var token: String? = null
     private val cartApiService = ApiClient.retrofit.create(CartApiService::class.java)
 
-    fun getCart(onResult: (List<CartItem>?) -> Unit) {
-        cartApiService.getCartItems().enqueue(object : Callback<BaseResponse<List<CartItem>>> {
-            override fun onResponse(call: Call<BaseResponse<List<CartItem>>>, response: Response<BaseResponse<List<CartItem>>>) {
-                onResult(response.body()?.result)
+    fun getCart(token: String, cartId: String, onResult: (List<CartItem>?) -> Unit) {
+        val bearerToken = "Bearer $token"
+        cartApiService.getCartItems(bearerToken, cartId).enqueue(object : Callback<List<CartItem>> {
+            override fun onResponse(call: Call<List<CartItem>>, response: Response<List<CartItem>>) {
+                onResult(response.body())
             }
-            override fun onFailure(call: Call<BaseResponse<List<CartItem>>>, t: Throwable) {
+            override fun onFailure(call: Call<List<CartItem>>, t: Throwable) {
                 onResult(null)
             }
         })

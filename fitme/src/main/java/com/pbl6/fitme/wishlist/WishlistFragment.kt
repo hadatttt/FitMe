@@ -4,6 +4,7 @@ import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pbl6.fitme.R
+import com.pbl6.fitme.session.SessionManager
 import com.pbl6.fitme.databinding.FragmentWishlistBinding
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
@@ -31,7 +32,8 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
             LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false)
 
         // Lấy dữ liệu wishlist từ API
-        wishlistRepository.getWishlist { result ->
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
+        wishlistRepository.getWishlist(token) { result ->
             wishlistItems.clear()
             if (result != null) {
                 wishlistItems.addAll(result)

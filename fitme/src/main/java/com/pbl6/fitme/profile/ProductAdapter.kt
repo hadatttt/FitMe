@@ -12,7 +12,7 @@ import java.util.Locale
 class ProductAdapter : BaseRecyclerViewAdapter<Product, ItemProductBinding>() {
 
     override fun bindData(binding: ItemProductBinding, item: Product, position: Int) {
-        binding.tvProductName.text = item.productName
+        binding.tvProductNameHome.text = item.productName
         // Show the lowest variant price if available
         val min = item.minPrice
         binding.tvProductPrice.text = if (min != null) {

@@ -33,14 +33,37 @@ class MainRepository {
     private val categoryApi = ApiClient.retrofit.create(CategoryApiService::class.java)
     private val cartApi = ApiClient.retrofit.create(CartApiService::class.java)
     private val wishlistApi = ApiClient.retrofit.create(WishlistApiService::class.java)
+    private val userApi = ApiClient.retrofit.create(com.pbl6.fitme.network.UserApiService::class.java)
     private val variantApi = ApiClient.retrofit.create(ProductVariantApiService::class.java)
     private val productImageApi = ApiClient.retrofit.create(ProductImageApiService::class.java)
     private val reviewApi = ApiClient.retrofit.create(ReviewApiService::class.java)
     private val orderApi = ApiClient.retrofit.create(OrderApiService::class.java)
 
+    // Create shopping cart for newly registered user
+    fun createCartForNewUser(userId: String, onResult: (String?) -> Unit) {
+        cartApi.createCartForUser(userId).enqueue(object : Callback<com.pbl6.fitme.network.ShoppingCartResponse> {
+            override fun onResponse(call: Call<com.pbl6.fitme.network.ShoppingCartResponse>, response: Response<com.pbl6.fitme.network.ShoppingCartResponse>) {
+                if (response.isSuccessful) {
+                    val cartId = response.body()?.cartId
+                    Log.d("MainRepository", "Shopping cart created for user: cartId=$cartId")
+                    onResult(cartId)
+                } else {
+                    Log.e("MainRepository", "Failed to create cart: ${response.code()}")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<com.pbl6.fitme.network.ShoppingCartResponse>, t: Throwable) {
+                Log.e("MainRepository", "createCartForNewUser network error", t)
+                onResult(null)
+            }
+        })
+    }
+
     // 🧩 Lấy danh sách biến thể sản phẩm
-    fun getProductVariants(onResult: (List<ProductVariant>?) -> Unit) {
-        variantApi.getProductVariants().enqueue(object : Callback<BaseResponse<List<ProductVariant>>> {
+    fun getProductVariants(token: String, onResult: (List<ProductVariant>?) -> Unit) {
+        val bearerToken = "Bearer $token"
+        variantApi.getProductVariants(bearerToken).enqueue(object : Callback<BaseResponse<List<ProductVariant>>> {
             override fun onResponse(call: Call<BaseResponse<List<ProductVariant>>>, response: Response<BaseResponse<List<ProductVariant>>>) {
                 if (response.isSuccessful) {
                     onResult(response.body()?.result)
@@ -210,6 +233,50 @@ class MainRepository {
             }
         })
     }
+
+    // Fetch user profile by email and save userId (profileId) into SessionManager
+    // Note: UserResponse.userId is actually the profileId (not accountId), which is needed for wishlist operations
+    fun fetchAndStoreUserId(token: String?, email: String?, onResult: (String?) -> Unit) {
+        if (token.isNullOrBlank() || email.isNullOrBlank()) {
+            android.util.Log.w("MainRepository", "fetchAndStoreUserId: token or email is blank")
+            onResult(null)
+            return
+        }
+        android.util.Log.d("MainRepository", "fetchAndStoreUserId: calling GET users/user-profile/$email")
+        val bearer = "Bearer $token"
+        userApi.getUserProfileByEmail(bearer, email!!).enqueue(object : retrofit2.Callback<BaseResponse<com.pbl6.fitme.model.UserResponse>> {
+            override fun onResponse(call: retrofit2.Call<BaseResponse<com.pbl6.fitme.model.UserResponse>>, response: retrofit2.Response<BaseResponse<com.pbl6.fitme.model.UserResponse>>) {
+                if (response.isSuccessful) {
+                    try {
+                        val user = response.body()?.result
+                        val profileId = user?.userId  // UserResponse.userId is actually profileId from backend
+                        android.util.Log.d("MainRepository", "fetchAndStoreUserId response SUCCESS")
+                        android.util.Log.d("MainRepository", "  - user?.userId=$profileId (this is profileId)")
+                        android.util.Log.d("MainRepository", "  - user?.email=${user?.email}")
+                        android.util.Log.d("MainRepository", "  - user?.fullName=${user?.fullName}")
+                        android.util.Log.d("MainRepository", "  - full user object=$user")
+                        onResult(profileId)
+                    } catch (ex: Exception) {
+                        android.util.Log.e("MainRepository", "fetchAndStoreUserId parse failed", ex)
+                        onResult(null)
+                    }
+                } else {
+                    try {
+                        val body = response.errorBody()?.string()
+                        android.util.Log.e("MainRepository", "fetchAndStoreUserId failed code=${response.code()} body=$body")
+                    } catch (ex: Exception) {
+                        android.util.Log.e("MainRepository", "fetchAndStoreUserId failed code=${response.code()}")
+                    }
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: retrofit2.Call<BaseResponse<com.pbl6.fitme.model.UserResponse>>, t: Throwable) {
+                android.util.Log.e("MainRepository", "fetchAndStoreUserId network failure", t)
+                onResult(null)
+            }
+        })
+    }
     fun getCategories(token: String, onResult: (List<Category>?) -> Unit) {
         val bearerToken = "Bearer $token"
         categoryApi.getCategories(bearerToken)
@@ -231,47 +298,36 @@ class MainRepository {
             })
     }
 
-    fun getCartItems(onResult: (List<CartItem>?) -> Unit) {
-        cartApi.getCartItems().enqueue(object : Callback<BaseResponse<List<CartItem>>> {
-            override fun onResponse(call: Call<BaseResponse<List<CartItem>>>, response: Response<BaseResponse<List<CartItem>>>) {
+    fun getCartItems(token: String, cartId: String, onResult: (List<CartItem>?) -> Unit) {
+        val bearerToken = "Bearer $token"
+        cartApi.getCartItems(bearerToken, cartId).enqueue(object : Callback<List<CartItem>> {
+            override fun onResponse(call: Call<List<CartItem>>, response: Response<List<CartItem>>) {
                 if (response.isSuccessful) {
-                    onResult(response.body()?.result)
+                    onResult(response.body())
                 } else {
                     Log.e("MainRepository", "getCartItems failed: ${response.code()}")
                     onResult(null)
                 }
             }
 
-            override fun onFailure(call: Call<BaseResponse<List<CartItem>>>, t: Throwable) {
+            override fun onFailure(call: Call<List<CartItem>>, t: Throwable) {
                 Log.e("MainRepository", "getCartItems network error", t)
                 onResult(null)
             }
         })
     }
     fun getWishlistItems(onResult: (List<WishlistItem>?) -> Unit) {
-        wishlistApi.getWishlistItems().enqueue(object : Callback<List<WishlistItem>> {
-            override fun onResponse(call: Call<List<WishlistItem>>, response: Response<List<WishlistItem>>) {
-                if (response.isSuccessful) {
-                    onResult(response.body())
-                } else {
-                    Log.e("MainRepository", "getWishlistItems failed: ${response.code()}")
-                    onResult(null)
-                }
-            }
-
-            override fun onFailure(call: Call<List<WishlistItem>>, t: Throwable) {
-                Log.e("MainRepository", "getWishlistItems network error", t)
-                onResult(null)
-            }
-        })
+        // This method now requires a wishlistId. Keep a stub implementation to avoid breaking callers.
+        Log.e("MainRepository", "getWishlistItems called without wishlistId - not supported")
+        onResult(null)
     }
 
-    // Add variant to cart
-    fun addToCart(token: String, req: com.pbl6.fitme.model.AddCartRequest, onResult: (Boolean) -> Unit) {
-        val bearer = "Bearer $token"
-        android.util.Log.d("MainRepository", "Adding to cart: variantId=${req.variantId} quantity=${req.quantity}")
-        cartApi.addToCart(bearer, req).enqueue(object : Callback<Void> {
-            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+    // Add variant to cart (uses session cartId)
+    fun addToCart(context: android.content.Context, token: String, cartId: String, req: com.pbl6.fitme.model.AddCartRequest, onResult: (Boolean) -> Unit) {
+        android.util.Log.d("MainRepository", "Adding to cart: cartId=$cartId variantId=${req.variantId} quantity=${req.quantity}")
+        val bearerToken = "Bearer $token"
+        cartApi.addOrUpdateCartItem(bearerToken, cartId, req).enqueue(object : Callback<com.pbl6.fitme.model.CartItem> {
+            override fun onResponse(call: Call<com.pbl6.fitme.model.CartItem>, response: Response<com.pbl6.fitme.model.CartItem>) {
                 if (response.isSuccessful) {
                     android.util.Log.d("MainRepository", "Successfully added to cart")
                     onResult(true)
@@ -280,47 +336,113 @@ class MainRepository {
                         val body = response.errorBody()?.string()
                         android.util.Log.e("MainRepository", "addToCart failed code=${response.code()} body=$body")
                         android.util.Log.e("MainRepository", "Request URL: ${call.request().url}")
-                        android.util.Log.e("MainRepository", "Request headers: ${call.request().headers}")
                     } catch (ex: Exception) {
-                        android.util.Log.e("MainRepository", "addToCart failed code=${response.code()} (error reading body)")
+                        android.util.Log.e("MainRepository", "addToCart failed code=${response.code()}")
                     }
                     onResult(false)
                 }
             }
 
-            override fun onFailure(call: Call<Void>, t: Throwable) {
+            override fun onFailure(call: Call<com.pbl6.fitme.model.CartItem>, t: Throwable) {
                 android.util.Log.e("MainRepository", "addToCart network failure", t)
                 onResult(false)
             }
         })
     }
 
-    // Add product to wishlist
-    fun addToWishlist(token: String, req: com.pbl6.fitme.model.AddWishlistRequest, onResult: (Boolean) -> Unit) {
+    // Add product to wishlist (ensures header uses profileId)
+    fun addToWishlist(
+        token: String,
+        profileId: String?, // must be profileId from UserProfile
+        req: AddWishlistRequest,
+        onResult: (Boolean) -> Unit
+    ) {
         val bearer = "Bearer $token"
-        wishlistApi.addToWishlist(bearer, req).enqueue(object : Callback<Void> {
-            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+
+        if (profileId.isNullOrBlank()) {
+            Log.e("MainRepository", "Cannot add to wishlist: profileId is null or blank")
+            onResult(false)
+            return
+        }
+
+        Log.d("MainRepository", "addToWishlist: using profileId=$profileId")
+
+        // 1) Fetch existing wishlists for the user
+        wishlistApi.getWishlistsByUser(bearer, profileId).enqueue(object : Callback<List<com.pbl6.fitme.model.WishlistDto>> {
+            override fun onResponse(
+                call: Call<List<com.pbl6.fitme.model.WishlistDto>>,
+                response: Response<List<com.pbl6.fitme.model.WishlistDto>>
+            ) {
                 if (response.isSuccessful) {
-                    onResult(true)
-                } else {
-                    try {
-                        val body = response.errorBody()?.string()
-                        android.util.Log.e("MainRepository", "addToWishlist failed code=${response.code()} body=$body")
-                    } catch (ex: Exception) {
-                        android.util.Log.e("MainRepository", "addToWishlist failed code=${response.code()} (error reading body)")
+                    val wishlists = response.body() ?: emptyList()
+                    if (wishlists.isNotEmpty()) {
+                        // Use first wishlist
+                        val wishlistId = wishlists[0].wishlistId.toString()
+                        addItemToWishlist(bearer, wishlistId, req, onResult)
+                    } else {
+                        // No wishlist: create one first
+                        val wishlistReq = com.pbl6.fitme.model.WishlistRequest(name = "My Wishlist")
+                        wishlistApi.createWishlist(profileId, bearer, wishlistReq)
+                            .enqueue(object : Callback<com.pbl6.fitme.model.WishlistDto> {
+                                override fun onResponse(
+                                    call: Call<com.pbl6.fitme.model.WishlistDto>,
+                                    response: Response<com.pbl6.fitme.model.WishlistDto>
+                                ) {
+                                    if (response.isSuccessful) {
+                                        val createdWishlistId = response.body()?.wishlistId?.toString()
+                                        if (!createdWishlistId.isNullOrBlank()) {
+                                            addItemToWishlist(bearer, createdWishlistId, req, onResult)
+                                        } else {
+                                            Log.e("MainRepository", "createWishlist returned empty wishlistId")
+                                            onResult(false)
+                                        }
+                                    } else {
+                                        Log.e("MainRepository", "createWishlist failed code=${response.code()} body=${response.errorBody()?.string()}")
+                                        onResult(false)
+                                    }
+                                }
+
+                                override fun onFailure(call: Call<com.pbl6.fitme.model.WishlistDto>, t: Throwable) {
+                                    Log.e("MainRepository", "createWishlist network failure", t)
+                                    onResult(false)
+                                }
+                            })
                     }
+                } else {
+                    Log.e("MainRepository", "getWishlistsByUser failed code=${response.code()} body=${response.errorBody()?.string()}")
                     onResult(false)
                 }
             }
 
-
-
-            override fun onFailure(call: Call<Void>, t: Throwable) {
-                android.util.Log.e("MainRepository", "addToWishlist network failure", t)
+            override fun onFailure(call: Call<List<com.pbl6.fitme.model.WishlistDto>>, t: Throwable) {
+                Log.e("MainRepository", "getWishlistsByUser network failure", t)
                 onResult(false)
             }
         })
     }
+
+    // Helper to add item to wishlist by wishlistId
+    private fun addItemToWishlist(
+        bearer: String,
+        wishlistId: String,
+        req: AddWishlistRequest,
+        onResult: (Boolean) -> Unit
+    ) {
+        wishlistApi.addItemToWishlist(bearer, wishlistId, req).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                onResult(response.isSuccessful)
+                if (!response.isSuccessful) {
+                    Log.e("MainRepository", "addItemToWishlist failed code=${response.code()} body=${response.errorBody()?.string()}")
+                }
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                Log.e("MainRepository", "addItemToWishlist network failure", t)
+                onResult(false)
+            }
+        })
+    }
+
 
     // Create an order on the backend
     fun createOrder(token: String, order: Order, onResult: (Order?) -> Unit) {
@@ -363,7 +485,10 @@ class MainRepository {
         orderApi.createVNPayPayment(bearer, orderId, userEmail).enqueue(object : Callback<BaseResponse<VNPayResponse>> {
             override fun onResponse(call: Call<BaseResponse<VNPayResponse>>, response: Response<BaseResponse<VNPayResponse>>) {
                 if (response.isSuccessful) {
-                    onResult(response.body()?.result)
+                    val body = response.body()
+                    // Backend may return the payload under `result` or `data`.
+                    val payload = body?.result ?: body?.data
+                    onResult(payload)
                 } else {
                     android.util.Log.e("MainRepository", "createVNPayPayment failed: ${response.code()}")
                     onResult(null)
@@ -375,6 +500,35 @@ class MainRepository {
                 onResult(null)
             }
         })
+    }
+
+    // Handle VNPay callback query params by calling backend endpoint
+    fun handleVNPayCallback(
+        vnpResponseCode: String,
+        vnpOrderInfo: String,
+        vnpTransactionStatus: String,
+        vnpTransactionNo: String?,
+        vnpPayDate: String?,
+        onResult: (VNPayResponse?) -> Unit
+    ) {
+        orderApi.handleVNPayCallback(vnpResponseCode, vnpOrderInfo, vnpTransactionStatus, vnpTransactionNo, vnpPayDate)
+            .enqueue(object : Callback<BaseResponse<VNPayResponse>> {
+                override fun onResponse(call: Call<BaseResponse<VNPayResponse>>, response: Response<BaseResponse<VNPayResponse>>) {
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        val payload = body?.result ?: body?.data
+                        onResult(payload)
+                    } else {
+                        android.util.Log.e("MainRepository", "handleVNPayCallback failed: ${response.code()}")
+                        onResult(null)
+                    }
+                }
+
+                override fun onFailure(call: Call<BaseResponse<VNPayResponse>>, t: Throwable) {
+                    android.util.Log.e("MainRepository", "handleVNPayCallback network error", t)
+                    onResult(null)
+                }
+            })
     }
 
     // Get order details by ID

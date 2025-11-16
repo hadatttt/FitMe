@@ -37,16 +37,21 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
                 activity?.runOnUiThread {
                     productMap = products?.associateBy { it.productId } ?: emptyMap()
 
-                    mainRepository.getProductVariants { variants: List<com.pbl6.fitme.model.ProductVariant>? ->
+                    mainRepository.getProductVariants(token ?: "") { variants: List<com.pbl6.fitme.model.ProductVariant>? ->
                         activity?.runOnUiThread {
                             variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
 
                             // Use CartRepository to fetch cart items
-                            cartRepository.getCart { items: List<com.pbl6.fitme.model.CartItem>? ->
+                            val cartId = com.pbl6.fitme.session.SessionManager.getInstance().getOrCreateCartId(requireContext()).toString()
+                            cartRepository.getCart(token ?: "", cartId) { items: List<com.pbl6.fitme.model.CartItem>? ->
                                 activity?.runOnUiThread {
                                     cartItems.clear()
+                                    // If server cart is unavailable, fall back to local items
+                                    val fallback = com.pbl6.fitme.session.SessionManager.getInstance().getLocalCartItems(requireContext())
                                     if (items != null) {
                                         cartItems.addAll(items)
+                                    } else if (fallback != null) {
+                                        cartItems.addAll(fallback)
                                     }
 
                                     cartAdapter = CartProductAdapter(

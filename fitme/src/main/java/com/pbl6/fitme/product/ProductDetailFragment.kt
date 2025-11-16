@@ -112,7 +112,11 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
                 showVariationsSheet()
             }
             R.id.btnFavorite -> {
-                currentProduct?.let { viewModel.addToWishlist(token, it.productId) }
+                currentProduct?.let {
+                    val userId = com.pbl6.fitme.session.SessionManager.getInstance().getUserId(requireContext())?.toString()
+                    android.util.Log.d("ProductDetailFragment", "Add to wishlist: userId=$userId, productId=${it.productId}")
+                    viewModel.addToWishlist(token, userId, it.productId)
+                }
             }
         }
     }

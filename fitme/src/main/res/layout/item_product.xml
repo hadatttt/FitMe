@@ -20,7 +20,7 @@
             android:src="@drawable/ic_splash" />
 
         <TextView
-            android:id="@+id/tvProductName"
+            android:id="@+id/tvProductName_home"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Product Name"

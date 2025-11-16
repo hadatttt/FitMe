@@ -63,6 +63,27 @@
                     android:layout_marginTop="8dp" />
 
                 <TextView
+                    android:id="@+id/txtUserEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="User: example@mail.com"
+                    android:layout_marginTop="4dp" />
+
+                <TextView
+                    android:id="@+id/txtCreatedAt"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Created: N/A"
+                    android:layout_marginTop="4dp" />
+
+                <TextView
+                    android:id="@+id/txtUpdatedAt"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Updated: N/A"
+                    android:layout_marginTop="4dp" />
+
+                <TextView
                     android:id="@+id/txtStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -115,6 +136,13 @@
                     android:layout_height="wrap_content"
                     android:text="Delivery Address"
                     android:layout_marginTop="4dp" />
+                <TextView
+                    android:id="@+id/txtShippingAddressDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Full address details"
+                    android:layout_marginTop="4dp"
+                    android:textSize="12sp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -147,6 +175,12 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:nestedScrollingEnabled="false" />
+                <TextView
+                    android:id="@+id/txtOrderNotes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Notes: -"
+                    android:layout_marginTop="8dp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -193,6 +227,32 @@
                         android:layout_height="wrap_content"
                         android:text="$0.00" />
                 </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Discount" />
+
+                    <TextView
+                        android:id="@+id/txtDiscount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="$0.00" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/txtCouponCode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Coupon: -"
+                    android:layout_marginTop="8dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"

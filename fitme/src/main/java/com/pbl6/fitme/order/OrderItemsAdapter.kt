@@ -19,6 +19,8 @@ class OrderItemsAdapter(private val items: List<OrderItem>) : RecyclerView.Adapt
         holder.binding.txtName.text = item.productName ?: "Product"
         holder.binding.txtQty.text = "Qty: ${item.quantity}"
         holder.binding.txtPrice.text = "$${String.format("%.2f", item.unitPrice ?: 0.0)}"
+        holder.binding.txtVariant.text = item.variantDetails ?: ""
+        holder.binding.txtTotalPrice.text = "$${String.format("%.2f", item.totalPrice ?: ((item.unitPrice ?: 0.0) * item.quantity))}"
         val img = item.productImageUrl
         if (!img.isNullOrBlank()) {
             try {

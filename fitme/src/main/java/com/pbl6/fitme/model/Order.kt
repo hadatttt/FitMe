@@ -20,6 +20,9 @@ data class Order(
     val shippingAddressId: String = "",
     val shippingAddress: ShippingAddress = ShippingAddress(),
     val couponId: String = "",
+    // Added to mirror backend OrderResponse
+    val shippingAddressDetails: String? = null,
+    val couponCode: String? = null,
 
     // order items (both names supported by different parts of app)
     val orderItems: List<OrderItem> = emptyList(),

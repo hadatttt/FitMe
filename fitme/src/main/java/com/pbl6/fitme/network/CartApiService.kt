@@ -2,20 +2,42 @@ package com.pbl6.fitme.network
 
 import com.pbl6.fitme.model.CartItem
 import com.pbl6.fitme.model.AddCartRequest
-import retrofit2.http.Body
-import retrofit2.http.POST
 import retrofit2.Call
-import retrofit2.http.GET
-import retrofit2.http.Path
-import retrofit2.http.Header
+import retrofit2.http.*
+
+data class ShoppingCartResponse(
+    val cartId: String,
+    val userId: String,
+    val items: List<CartItem>
+)
 
 interface CartApiService {
-    @GET("cart/items")
-    fun getCartItems(): Call<BaseResponse<List<CartItem>>>
 
-    @GET("cart/items/{id}")
-    fun getCartItem(@Path("id") id: String): Call<BaseResponse<CartItem>>
+    // Create shopping cart for new user (called after registration)
+    @POST("cart-items/create-for-user/{userId}")
+    fun createCartForUser(
+        @Path("userId") userId: String
+    ): Call<ShoppingCartResponse>
 
-    @POST("cart/items")
-    fun addToCart(@Header("Authorization") token: String, @Body req: AddCartRequest): Call<Void>
+    // Lấy danh sách item trong giỏ
+    @GET("cart-items/{cartId}")
+    fun getCartItems(
+        @Header("Authorization") token: String,
+        @Path("cartId") cartId: String
+    ): Call<List<CartItem>>
+
+    // Thêm hoặc cập nhật số lượng item
+    @POST("cart-items/{cartId}")
+    fun addOrUpdateCartItem(
+        @Header("Authorization") token: String,
+        @Path("cartId") cartId: String,
+        @Body req: AddCartRequest
+    ): Call<CartItem>
+
+    // Xóa item trong giỏ
+    @DELETE("cart-items/{cartItemId}")
+    fun removeCartItem(
+        @Header("Authorization") token: String,
+        @Path("cartItemId") cartItemId: String
+    ): Call<Void>
 }
