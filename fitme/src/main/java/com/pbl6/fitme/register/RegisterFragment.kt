@@ -24,26 +24,7 @@ class RegisterFragment : BaseFragment<FragmentRegisterBinding, RegisterViewModel
     private var editTextValue1: String = ""
     private val authRepository = AuthRepository()
     var isPasswordVisible = true
-//    private val cameraLauncher =
-//        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-//            if (result.resultCode == Activity.RESULT_OK) {
-//                val data: Intent? = result.data
-//                val photo: Bitmap? = data?.extras?.get("data") as? Bitmap
-//                if (photo != null) {
-//                    binding.ivUpload.setImageBitmap(photo)
-//                } else {
-//                    Toast.makeText(requireContext(), "Cannot capture image", Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//        }
-//    private val requestCameraPermission =
-//        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-//            if (granted) {
-//                openCamera()
-//            } else {
-//                Toast.makeText(requireContext(), "Camera permission denied", Toast.LENGTH_SHORT).show()
-//            }
-//        }
+
     override fun initView() {
         binding.etEmail.addTextChangedListener { s ->
             editTextValue1 = s.toString()
@@ -51,9 +32,6 @@ class RegisterFragment : BaseFragment<FragmentRegisterBinding, RegisterViewModel
     }
 
     override fun initListener() {
-//        binding.ivUpload.singleClick {
-//            requestCameraPermission.launch(android.Manifest.permission.CAMERA)
-//        }
         binding.ivTogglePassword.singleClick {
             isPasswordVisible = !isPasswordVisible
             if (isPasswordVisible) {
