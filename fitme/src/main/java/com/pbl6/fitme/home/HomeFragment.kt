@@ -1,10 +1,12 @@
 package com.pbl6.fitme.home
 
+import android.text.TextWatcher
 import com.pbl6.fitme.model.Category
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
 import android.provider.MediaStore
+import android.text.Editable
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -103,17 +105,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
             hideToolbar()
             popBackStack()
         }
-        // SearchView: filter products as user types
-        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                filterProducts(query ?: "")
-                return true
+        binding.etSearchInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                filterProducts(s.toString())
             }
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                filterProducts(newText ?: "")
-                return true
-            }
+            override fun afterTextChanged(s: Editable?) {}
         })
         binding.ivCamera.singleClick {
             requestCameraPermission.launch(android.Manifest.permission.CAMERA)

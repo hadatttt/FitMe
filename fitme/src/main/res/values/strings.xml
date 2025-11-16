@@ -6,16 +6,16 @@
     <string name="notification_permission_message">Allow the app to send notifications so you don\'t miss new updates!</string>
     <string name="notification_permission_denied">Please enable notification permission in Settings to receive new updates.</string>
     <string-array name="daily_notification_messages">
-        <item>✏️ Your hero is waiting—draw them back into action!</item>
-        <item>🌀 A new maze has opened. Can you escape faster than your rivals?</item>
-        <item>🎨 Sketch. Play. Win. Jump back in now!</item>
-        <item>⚡ Your opponent is moving—draw your way to victory!</item>
-        <item>🚪 The maze won’t solve itself. Ready to escape?</item>
-        <item>🖌️ Create your champion and conquer the labyrinth!</item>
-        <item>🎮 The game is on! Outdraw and outplay your rivals today.</item>
-        <item>🧩 Every line you draw leads closer to freedom—continue now!</item>
-        <item>🔥 Your rivals are escaping… will you let them win?</item>
-        <item>🕹️ Draw your path. Play your story. Start now!</item>
+        <item>✨ New in Today! Explore fresh styles and make a statement with our latest drop.</item>
+        <item>🔥 The Look is Here! Discover the trends your feed is obsessed with right now.</item>
+        <item>🛍️ Ready for a style refresh? Tap to browse hundreds of new arrivals!</item>
+        <item>💡 Style Inspiration Awaits: See how to wear the hottest pieces this season!</item>
+        <item>⏰ Your Exclusive Offer Ends Tonight! Don\'t miss out on savings before they disappear.</item>
+        <item>🚨 Flash Sale Alert! Get XX% off selected items for the next 3 hours only!</item>
+        <item>💸 Use Your Rewards! Redeem your points today for a discount on your next haul.</item>
+        <item>📦 Free Shipping is Activated! Fill your cart and we\'ll cover the delivery.</item>
+        <item>💖 Don\'t let your faves sell out! Complete your order before it\'s too late.</item>
+        <item>👋 We Miss You! Check out the items we picked just for your style today.</item>
     </string-array>
     <string name="i_got_it_text">I got it</string>
     <string name="permission_denied_text">Permission denied!</string>

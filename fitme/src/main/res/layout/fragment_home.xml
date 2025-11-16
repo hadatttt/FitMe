@@ -31,19 +31,38 @@
             android:textStyle="bold"
             android:gravity="center_vertical" />
 
-        <SearchView
-            android:id="@+id/searchView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="7"
-            android:queryHint="Search products..."
-            android:iconifiedByDefault="false"
-            android:background="@drawable/bg_bluelight"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            app:searchIcon="@null"
-            android:gravity="center_vertical"
-            app:collapseIcon="@null"/>
+        <LinearLayout
+                android:id="@+id/searchContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="7"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_bluelight"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:gravity="center_vertical"
+                android:padding="8dp">
+
+            <EditText
+                    android:id="@+id/etSearchInput"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Search products..."
+                    android:singleLine="true"
+                    android:imeOptions="actionSearch"
+                    android:background="@android:color/transparent"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"/>
+
+            <ImageView
+                    android:id="@+id/ivSearchIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_search"
+                    android:contentDescription="Search Icon"/>
+
+        </LinearLayout>
         <ImageView
             android:id="@+id/ivCamera"
             android:layout_width="30dp"
