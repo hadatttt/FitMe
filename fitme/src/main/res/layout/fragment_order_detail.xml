@@ -11,25 +11,28 @@
         android:padding="16dp">
 
         <!-- Header with Back Button -->
-        <ImageView
-            android:id="@+id/ivBack"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_back"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+        <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/iv_back"
+                android:layout_width="@dimen/_40sdp"
+                android:layout_height="@dimen/_40sdp"
+                android:padding="@dimen/_7sdp"
+                android:src="@drawable/ic_back"
+                android:layout_marginStart="@dimen/_10sdp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:background="@drawable/bg_circle_blue"/>
 
         <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Order Details"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginStart="16dp"
-            app:layout_constraintStart_toEndOf="@id/ivBack"
-            app:layout_constraintTop_toTopOf="@id/ivBack"
-            app:layout_constraintBottom_toBottomOf="@id/ivBack" />
+                android:id="@+id/thump"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Detail"
+                android:fontFamily="@font/baloo2_semibold"
+                android:textSize="@dimen/_30sdp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                />
 
         <!-- Order Information Card -->
         <androidx.cardview.widget.CardView
@@ -39,7 +42,7 @@
             android:layout_marginTop="16dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
-            app:layout_constraintTop_toBottomOf="@id/tvTitle">
+            app:layout_constraintTop_toBottomOf="@id/thump">
 
             <LinearLayout
                 android:layout_width="match_parent"
