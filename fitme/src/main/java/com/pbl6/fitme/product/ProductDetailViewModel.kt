@@ -70,12 +70,12 @@ class ProductDetailViewModel : BaseViewModel() {
     var getAccessToken: ((Context) -> String?)? = null
     fun addToWishlist(token: String, userId: String?, productId: UUID) {
         val request = AddWishlistRequest(productId)
-        mainRepository.addToWishlist(token, userId, request) { success ->
-            if (success) {
-                onAddToWishlistSuccess.postValue(true)
-            } else {
-                errorMessage.postValue("Thêm vào wishlist thất bại")
-            }
-        }
+//        mainRepository.addToWishlist(token, userId,productId, request) { success ->
+//            if (success) {
+//                onAddToWishlistSuccess.postValue(true)
+//            } else {
+//                errorMessage.postValue("Thêm vào wishlist thất bại")
+//            }
+//        }
     }
 }

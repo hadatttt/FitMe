@@ -101,10 +101,8 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             return
         }
 
-        // ĐÃ XÓA: check selectedVariant
 
         when (v.id) {
-            // Cả hai nút "Add to Cart" và "Buy Now" đều mở bottom sheet
             R.id.btnAddToCart-> {
                 showAddtocardNowSheet()
             }
