@@ -13,13 +13,27 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 
+data class WishlistResponse(
+    val wishlistId: String,
+    val name: String,
+    val userId: String,
+    val createdAt: String,
+    val items: List<WishlistItemResponse>?
+)
+data class WishlistItemResponse(
+    val wishlistItemId: String,
+    val productId: String,
+    val addedAt: String
+)
+
+
 interface WishlistApiService {
     @POST("wishlists")
     fun createWishlist(
-        @Header("user-id") userId: String, // ⚠️ phải đúng "user-id"
-        @Header("Authorization") bearer: String,
+        @Header("user-id") userId: String, // ✔ đúng
+        @Header("Authorization") bearer: String, // ✔ đúng header chuẩn
         @Body request: WishlistRequest
-    ): Call<WishlistDto>
+    ): Call<WishlistResponse>
 
     @GET("wishlists/user/{userId}")
     fun getWishlistsByUser(

@@ -14,6 +14,7 @@ import com.pbl6.fitme.model.ProductResponse
 import com.pbl6.fitme.model.ProductVariant
 import com.pbl6.fitme.model.VNPayResponse
 import com.pbl6.fitme.model.WishlistItem
+import com.pbl6.fitme.model.WishlistRequest
 import com.pbl6.fitme.network.ApiClient
 import com.pbl6.fitme.network.CartApiService
 import com.pbl6.fitme.network.CategoryApiService
@@ -23,6 +24,7 @@ import com.pbl6.fitme.network.ProductImageApiService
 import com.pbl6.fitme.network.ProductVariantApiService
 import com.pbl6.fitme.network.ReviewApiService
 import com.pbl6.fitme.network.WishlistApiService
+import com.pbl6.fitme.network.WishlistResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -349,75 +351,111 @@ class MainRepository {
             }
         })
     }
-
-    // Add product to wishlist (ensures header uses profileId)
-    fun addToWishlist(
-        token: String,
-        req: AddWishlistRequest,
-        onResult: (Boolean) -> Unit
-    ) {
+    fun fetchUserWishlistId(token: String, profileId: String, onResult: (String?) -> Unit) {
         val bearer = "Bearer $token"
 
-
-
-        Log.d("MainRepository", "addToWishlist: using profileId=$productId")
-
-        // 1) Fetch existing wishlists for the user
-        wishlistApi.getWishlistsByUser(bearer, productId).enqueue(object : Callback<List<com.pbl6.fitme.model.WishlistDto>> {
+        wishlistApi.getWishlistsByUser(bearer, profileId).enqueue(object : Callback<List<com.pbl6.fitme.model.WishlistDto>> {
             override fun onResponse(
                 call: Call<List<com.pbl6.fitme.model.WishlistDto>>,
                 response: Response<List<com.pbl6.fitme.model.WishlistDto>>
             ) {
                 if (response.isSuccessful) {
                     val wishlists = response.body() ?: emptyList()
-                    if (wishlists.isNotEmpty()) {
-                        // Use first wishlist
-                        val wishlistId = wishlists[0].wishlistId.toString()
-                        addItemToWishlist(bearer, wishlistId, req, onResult)
+                    val wishlistId = if (wishlists.isNotEmpty()) {
+                        wishlists[0].wishlistId.toString()
                     } else {
-                        // No wishlist: create one first
-                        val wishlistReq = com.pbl6.fitme.model.WishlistRequest(name = "My Wishlist")
-                        wishlistApi.createWishlist(productId, bearer, wishlistReq)
-                            .enqueue(object : Callback<com.pbl6.fitme.model.WishlistDto> {
-                                override fun onResponse(
-                                    call: Call<com.pbl6.fitme.model.WishlistDto>,
-                                    response: Response<com.pbl6.fitme.model.WishlistDto>
-                                ) {
-                                    if (response.isSuccessful) {
-                                        val createdWishlistId = response.body()?.wishlistId?.toString()
-                                        if (!createdWishlistId.isNullOrBlank()) {
-                                            addItemToWishlist(bearer, createdWishlistId, req, onResult)
-                                        } else {
-                                            Log.e("MainRepository", "createWishlist returned empty wishlistId")
-                                            onResult(false)
-                                        }
-                                    } else {
-                                        Log.e("MainRepository", "createWishlist failed code=${response.code()} body=${response.errorBody()?.string()}")
-                                        onResult(false)
-                                    }
-                                }
-
-                                override fun onFailure(call: Call<com.pbl6.fitme.model.WishlistDto>, t: Throwable) {
-                                    Log.e("MainRepository", "createWishlist network failure", t)
-                                    onResult(false)
-                                }
-                            })
+                        null
                     }
+                    Log.d("MainRepository", "fetchUserWishlistId successful: wishlistId=$wishlistId")
+                    onResult(wishlistId)
                 } else {
-                    Log.e("MainRepository", "getWishlistsByUser failed code=${response.code()} body=${response.errorBody()?.string()}")
-                    onResult(false)
+                    Log.e("MainRepository", "fetchUserWishlistId failed code=${response.code()} body=${response.errorBody()?.string()}")
+                    onResult(null)
                 }
             }
 
             override fun onFailure(call: Call<List<com.pbl6.fitme.model.WishlistDto>>, t: Throwable) {
-                Log.e("MainRepository", "getWishlistsByUser network failure", t)
-                onResult(false)
+                Log.e("MainRepository", "fetchUserWishlistId network failure", t)
+                onResult(null)
             }
         })
     }
+    fun createWishlist(
+        token: String,
+        userId: String,
+        req: WishlistRequest,
+        onResult: (String?) -> Unit
+    ) {
+        val bearer = "Bearer $token"
+        wishlistApi.createWishlist(userId, bearer, req).enqueue(object : Callback<WishlistResponse> {
+            override fun onResponse(
+                call: Call<WishlistResponse>,
+                response: Response<WishlistResponse>
+            ) {
+                if (response.isSuccessful) {
+                    val wishlistId = response.body()?.wishlistId
+                    Log.d("MainRepository", "createWishlist SUCCESS, ID: $wishlistId")
+                    onResult(wishlistId)
+                } else {
+                    Log.e("MainRepository", "createWishlist failed code=${response.code()} body=${response.errorBody()?.string()}")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<WishlistResponse>, t: Throwable) { // Sửa kiểu
+                Log.e("MainRepository", "createWishlist network failure", t)
+                onResult(null)
+            }
+        })
+    }
+//    fun addToWishlist(
+//        token: String,
+//        profileId: String,
+//        req: AddWishlistRequest,
+//        onResult: (Boolean) -> Unit
+//    ) {
+//        val bearer = "Bearer $token"
+//
+//        Log.d("MainRepository", "addToWishlist: profileId=$profileId, productId=${req.productId}")
+//
+//        // 1) Lấy Wishlist ID của người dùng
+//        fetchUserWishlistId(token, profileId) { wishlistId ->
+//            if (wishlistId != null) {
+//                // 2) Đã có Wishlist: Thêm sản phẩm vào Wishlist đó
+//                Log.d("MainRepository", "Using existing wishlistId=$wishlistId")
+//                addItemToWishlist(bearer, wishlistId, req, onResult)
+//            } else {
+//                // 3) Chưa có Wishlist: Tạo mới bằng cách gọi hàm public createWishlist
+//                Log.d("MainRepository", "No wishlist found. Creating default wishlist.")
+//                val wishlistReq = com.pbl6.fitme.model.WishlistRequest(name = "My Wishlist")
+//
+//                // ⚠️ THAY THẾ KHỐI LỆNH TRỰC TIẾP bằng cách gọi hàm public createWishlist
+//                createWishlist(token, profileId, wishlistReq) { createSuccess ->
+//                    if (createSuccess) {
+//                        // Sau khi tạo thành công, phải LẤY LẠI ID và sau đó thêm sản phẩm.
+//                        // Việc này cần gọi lại fetchUserWishlistId (hoặc API tạo trả về ID).
+//                        // Vì hàm createWishlist public hiện tại chỉ trả về Boolean, ta phải gọi lại fetch.
+//                        fetchUserWishlistId(token, profileId) { newWishlistId ->
+//                            if (newWishlistId != null) {
+//                                Log.d("MainRepository", "Wishlist created: id=$newWishlistId. Adding item.")
+//                                // 4) Tạo xong thì thêm sản phẩm vào
+//                                addItemToWishlist(bearer, newWishlistId, req, onResult)
+//                            } else {
+//                                Log.e("MainRepository", "createWishlist returned success but cannot fetch ID.")
+//                                onResult(false)
+//                            }
+//                        }
+//                    } else {
+//                        Log.e("MainRepository", "createWishlist failed via public method.")
+//                        onResult(false)
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     // Helper to add item to wishlist by wishlistId
-    private fun addItemToWishlist(
+    fun addItemToWishlist(
         bearer: String,
         wishlistId: String,
         req: AddWishlistRequest,
