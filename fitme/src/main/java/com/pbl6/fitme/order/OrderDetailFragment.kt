@@ -39,13 +39,11 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
     override fun initData() {
         val orderId = arguments?.getString("order_id")
         if (orderId.isNullOrBlank()) {
-            showError("Order not found")
             return
         }
 
         val token = SessionManager.getInstance().getAccessToken(requireContext())
         if (token.isNullOrBlank()) {
-            showError("Please login to view order details")
             return
         }
 
@@ -56,7 +54,6 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         mainRepository.getOrderById(token, orderId) { order ->
             activity?.runOnUiThread {
                 if (order == null) {
-                    showError("Failed to load order")
                 } else {
                     bindOrder(order)
                 }
@@ -64,10 +61,7 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         }
     }
 
-    private fun showError(message: String) {
-        // You might want to add a proper error view in your layout
-        binding.tvTitle.text = message
-    }
+
 
     private fun bindOrder(order: Order) {
         // Order Info Card
@@ -85,6 +79,9 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         }
         binding.txtOrderDate.text = "Date: $displayDate"
         binding.txtStatus.text = "Status: ${order.status ?: order.orderStatus ?: "N/A"}"
+        binding.txtUserEmail.text = "User: ${order.userEmail ?: "N/A"}"
+        binding.txtCreatedAt.text = "Created: ${order.createdAt ?: "N/A"}"
+        binding.txtUpdatedAt.text = "Updated: ${order.updatedAt ?: "N/A"}"
 
         // Delivery Info Card — use nested ShippingAddress from model
         val ship = order.shippingAddress
@@ -100,9 +97,18 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
             ship.country.takeIf { it.isNotBlank() }
         )
         binding.txtAddress.text = if (addrParts.isEmpty()) "N/A" else addrParts.joinToString(", ")
+        // If backend provided a formatted shippingAddressDetails, show it too
+        try {
+            binding.txtShippingAddressDetails.text = order.shippingAddressDetails ?: ""
+            binding.txtShippingAddressDetails.visibility = if ((order.shippingAddressDetails ?: "").isBlank()) View.GONE else View.VISIBLE
+        } catch (_: Exception) { }
 
-        // Order Items
-        val items = (order.items ?: order.orderItems ?: emptyList())
+        // Order Items - prefer server `orderItems` if present, otherwise support older `items` key
+        val items = when {
+            !order.orderItems.isNullOrEmpty() -> order.orderItems
+            !order.items.isNullOrEmpty() -> order.items
+            else -> emptyList()
+        }
         val adapter = OrderItemsAdapter(items)
         binding.recyclerOrderItems.adapter = adapter
 
@@ -114,6 +120,9 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         binding.txtSubtotal.text = "$${String.format("%.2f", subtotal)}"
         binding.txtShippingFee.text = "$${String.format("%.2f", shippingFee)}"
         binding.txtTotal.text = "$${String.format("%.2f", total)}"
+        binding.txtDiscount.text = "$${String.format("%.2f", order.discountAmount ?: 0.0)}"
+        binding.txtCouponCode.text = "Coupon: ${order.couponId ?: "-"}"
+        binding.txtOrderNotes.text = "Notes: ${order.orderNotes ?: "-"}"
     // Order model doesn't include a paymentMethod field in this client model.
     // Show placeholder or derive from server response when available.
     binding.txtPaymentMethod.text = "Payment Method: N/A"

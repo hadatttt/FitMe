@@ -129,4 +129,17 @@
             app:argType="string" />
     </fragment>
 
+    <fragment
+        android:id="@+id/paymentWebViewFragment"
+        android:name="com.pbl6.fitme.payment.PaymentWebViewFragment"
+        android:label="Payment"
+        tools:layout="@layout/fragment_payment_webview">
+        <argument
+            android:name="payment_url"
+            app:argType="string" />
+        <argument
+            android:name="order_id"
+            app:argType="string" />
+    </fragment>
+
 </navigation>

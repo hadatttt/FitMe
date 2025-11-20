@@ -7,10 +7,8 @@ import hoang.dqm.codebase.base.adapter.BaseRecyclerViewAdapter
 
 class ProductImageAdapter : BaseRecyclerViewAdapter<String, ItemProductImageBinding>() {
 
-    // Giữ danh sách ảnh nội bộ
     private val imageList = mutableListOf<String>()
 
-    // Cập nhật danh sách ảnh mới
     @SuppressLint("NotifyDataSetChanged")
     fun setList(list: List<String>) {
         imageList.clear()

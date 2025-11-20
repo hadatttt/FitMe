@@ -42,10 +42,10 @@ interface OrderApiService {
         @Query("status") status: String? = null
     ): Call<BaseResponse<List<Order>>>
 
-    @PUT("orders/{id}/status")
+    @PUT("orders/{orderId}")
     fun updateOrderStatus(
         @Header("Authorization") token: String,
-        @Path("id") orderId: String,
+        @Path("orderId") orderId: String,
         @Query("status") status: String
     ): Call<BaseResponse<Order>>
 }

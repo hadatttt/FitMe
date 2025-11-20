@@ -23,7 +23,7 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
 
     override fun initView() {
         // setup header back
-        binding.ivBack.setOnClickListener { popBackStack() }
+        binding.ivBack.setOnClickListener { popBackStack(R.id.homeFragment) }
         hideToolbar()
         
         // Setup RecyclerView
@@ -81,25 +81,14 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
                 tvTabDelivered.singleClick { loadOrders(OrderStatus.DELIVERED) }
                 tvTabCancelled.singleClick { loadOrders(OrderStatus.CANCELLED) }
             }
-    }
-
-    override fun initListener() {
-        onBackPressed { popBackStack() }
-
-    }
-
-    private var currentOrders: List<Order> = emptyList()
-    private var currentStatus: OrderStatus = OrderStatus.PENDING
-
-    override fun initData() {
         val initialStatus = arguments?.getString("order_status")?.let { value ->
             OrderStatus.values().find { it.value == value }
         } ?: OrderStatus.PENDING
-        
+
         // Load all orders first
         val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
         val email = com.pbl6.fitme.session.SessionManager.getInstance().getUserEmail(requireContext())
-        
+
         if (token.isNullOrBlank() || email.isNullOrBlank()) {
             Toast.makeText(requireContext(), "Please login to view orders", Toast.LENGTH_SHORT).show()
             return
@@ -110,7 +99,7 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
         binding.emptyViewOrder.visibility = View.GONE
 
         // Get all orders first
-        mainRepo.getOrdersByUser(token, email, null) { allOrders -> 
+        mainRepo.getOrdersByUser(token, email, null) { allOrders ->
             activity?.runOnUiThread {
                 if (!allOrders.isNullOrEmpty()) {
                     currentOrders = allOrders
@@ -123,6 +112,18 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
                 }
             }
         }
+    }
+
+    override fun initListener() {
+        onBackPressed { popBackStack() }
+
+    }
+
+    private var currentOrders: List<Order> = emptyList()
+    private var currentStatus: OrderStatus = OrderStatus.PENDING
+
+    override fun initData() {
+
     }
 
     private fun loadOrders(status: OrderStatus) {

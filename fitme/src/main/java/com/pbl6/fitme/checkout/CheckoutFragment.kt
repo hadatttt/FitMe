@@ -52,31 +52,31 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         } catch (_: Exception) { }
     }
 
-//    override fun onResume() {
-//        super.onResume()
-//        val hasItems = binding.rvCart.adapter?.itemCount ?: 0
-//        if (!dataLoaded || hasItems == 0) {
-//            initData()
-//        }
-//
-//        viewModel.getCurrentOrderId()?.let { orderId ->
-//            val token = SessionManager.getInstance().getAccessToken(requireContext())
-//            if (!token.isNullOrBlank()) {
-//                mainRepository.getOrderById(token, orderId.toString()) { order ->
-//                    activity?.runOnUiThread {
-//                        if (order != null) {
-//                            viewModel.clearCurrentOrderId()
-//                            try {
-//                                val bundle = android.os.Bundle()
-//                                bundle.putString("order_id", order.orderId ?: "")
-//                                navigate(R.id.orderDetailFragment, bundle)
-//                            } catch (_: Exception) { }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
+    override fun onResume() {
+        super.onResume()
+        val hasItems = binding.rvCart.adapter?.itemCount ?: 0
+        if (!dataLoaded || hasItems == 0) {
+            initData()
+        }
+
+        viewModel.getCurrentOrderId()?.let { orderId ->
+            val token = SessionManager.getInstance().getAccessToken(requireContext())
+            if (!token.isNullOrBlank()) {
+                mainRepository.getOrderById(token, orderId.toString()) { order ->
+                    activity?.runOnUiThread {
+                        if (order != null) {
+                            viewModel.clearCurrentOrderId()
+                            try {
+                                val bundle = android.os.Bundle()
+                                bundle.putString("order_id", order.orderId ?: "")
+                                navigate(R.id.orderDetailFragment, bundle)
+                            } catch (_: Exception) { }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     override fun initListener() {
         binding.btnEditAddress.singleClick {
@@ -208,8 +208,18 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                             val uuid = createdOrder.orderId?.let { java.util.UUID.fromString(it) }
                                             viewModel.setCurrentOrderId(uuid)
                                         } catch (_: Exception) { }
-                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(vnResp!!.paymentUrl))
-                                        startActivity(intent)
+
+                                        // Navigate to in-app WebView for VNPay instead of external browser
+                                        try {
+                                            val bundle = android.os.Bundle()
+                                            bundle.putString("payment_url", vnResp!!.paymentUrl)
+                                            bundle.putString("order_id", createdOrder.orderId?.toString() ?: "")
+                                            navigate(R.id.paymentWebViewFragment, bundle)
+                                        } catch (ex: Exception) {
+                                            // Fallback to external browser if navigation fails
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(vnResp!!.paymentUrl))
+                                            startActivity(intent)
+                                        }
                                     }
                                 }
                             }
@@ -281,7 +291,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                 productMap = products?.associateBy { it.productId } ?: emptyMap()
                 android.util.Log.d("CheckoutFragment", "args buyProductId=$buyProductId buyVariantId=$buyVariantId cart_variant_ids=$cartVariantIds cart_indices=$cartIndices")
                 android.util.Log.d("CheckoutFragment", "initial productMap.size=${productMap.size}")
-                mainRepository.getProductVariants { variants ->
+                mainRepository.getProductVariants(token ?: "") { variants ->
                     activity?.runOnUiThread {
                         variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
                         android.util.Log.d("CheckoutFragment", "variantMap.size=${variantMap.size}")
@@ -396,7 +406,8 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                             }
                         } else if (cartIndices != null && cartIndices.isNotEmpty()) {
                             // Backwards compatible: indices provided
-                            mainRepository.getCartItems { items ->
+                            val cartId = com.pbl6.fitme.session.SessionManager.getInstance().getOrCreateCartId(requireContext()).toString()
+                            mainRepository.getCartItems(token ?: "", cartId) { items ->
                                 activity?.runOnUiThread {
                                     val allItems = items ?: emptyList()
                                     val selected = cartIndices.mapNotNull { idx ->
@@ -417,9 +428,12 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                             }
                         } else {
                             // No buy-now and no explicit cart indices: show full cart as fallback
-                            mainRepository.getCartItems { items ->
+                            val cartId = com.pbl6.fitme.session.SessionManager.getInstance().getOrCreateCartId(requireContext()).toString()
+                            mainRepository.getCartItems(token ?: "", cartId) { items ->
                                 activity?.runOnUiThread {
-                                    cartItems = items ?: emptyList()
+                                    // If server cart items are unavailable, fall back to local items
+                                    val fallback = com.pbl6.fitme.session.SessionManager.getInstance().getLocalCartItems(requireContext())
+                                    cartItems = items ?: (fallback ?: emptyList())
                                     checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                     binding.rvCart.adapter = checkoutProductAdapter
                                     checkoutProductAdapter.submitList(cartItems)

@@ -62,23 +62,17 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             if (success) {
                 Toast.makeText(requireContext(), "Đã thêm vào giỏ hàng", Toast.LENGTH_SHORT).show()
                 navigate(R.id.cartFragment)
+                viewModel.onAddToCartSuccess.postValue(false)
             }
         }
 
         viewModel.onBuyNowSuccess.observe { success ->
             if (success) navigate(R.id.checkoutFragment)
+            viewModel.onBuyNowSuccess.postValue(false)
         }
 
-        viewModel.onAddToWishlistSuccess.observe { success ->
-            if (success) {
-                Toast.makeText(requireContext(), "Đã thêm vào wishlist", Toast.LENGTH_SHORT).show()
-                navigate(R.id.wishlistFragment)
-            }
-        }
 
-        viewModel.errorMessage.observe { message ->
-            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-        }
+
 
         // ĐÃ XÓA: Logic Quantity +/-
     }
@@ -101,10 +95,8 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             return
         }
 
-        // ĐÃ XÓA: check selectedVariant
 
         when (v.id) {
-            // Cả hai nút "Add to Cart" và "Buy Now" đều mở bottom sheet
             R.id.btnAddToCart-> {
                 showAddtocardNowSheet()
             }
@@ -112,7 +104,28 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
                 showVariationsSheet()
             }
             R.id.btnFavorite -> {
-                currentProduct?.let { viewModel.addToWishlist(token, it.productId) }
+                currentProduct?.let { product ->
+                    val userId =
+                        SessionManager.getInstance().getUserId(requireContext())?.toString()
+
+                    if (userId.isNullOrBlank()) {
+                        Toast.makeText(
+                            requireContext(),
+                            "Không tìm thấy thông tin người dùng",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return
+                    }
+
+                    val productId = product.productId // Lấy Product ID
+
+                    android.util.Log.d(
+                        "ProductDetailFragment",
+                        "Add to wishlist initiated: userId(ProfileId)=$userId, productId=$productId"
+                    )
+
+                    viewModel.addToWishlist(token, userId, productId)
+                }
             }
         }
     }
