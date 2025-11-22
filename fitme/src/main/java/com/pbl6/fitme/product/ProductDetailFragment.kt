@@ -142,7 +142,9 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             return
         }
         currentProduct?.let {
-            val bottomSheet = AddToCartBottomSheetFragment.newInstance(it)
+            val auto = autoOpenAddToCart
+            autoOpenAddToCart = false
+            val bottomSheet = AddToCartBottomSheetFragment.newInstance(it, auto)
             bottomSheet.show(parentFragmentManager, "BuyNowBottomSheetFragment")
         }
     }

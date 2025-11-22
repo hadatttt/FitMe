@@ -23,4 +23,17 @@ class CartRepository {
             }
         })
     }
+
+    fun removeCartItem(token: String, cartItemId: String, onResult: (Boolean) -> Unit) {
+        val bearerToken = "Bearer $token"
+        cartApiService.removeCartItem(bearerToken, cartItemId).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                onResult(response.isSuccessful)
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                onResult(false)
+            }
+        })
+    }
 }

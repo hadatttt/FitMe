@@ -38,19 +38,83 @@ class ProductDetailViewModel : BaseViewModel() {
 
     fun addToCart(context: Context, token: String, variantId: UUID, quantity: Int = 1) {
         val request = AddCartRequest(variantId, quantity)
-        val cartId = com.pbl6.fitme.session.SessionManager.getInstance().getOrCreateCartId(context).toString()
-        Log.d("ProductDetailVM", "Attempting to add to cart: CartID=$cartId, VariantID=$variantId")
-        mainRepository.addToCart(context, token, cartId, request) { success ->
-            if (success) {
-                onAddToCartSuccess.postValue(true)
-                Log.d("ProductDetailVM", "Added to cart successfully (Remote).")
-            } else {
-                try {
-                    com.pbl6.fitme.session.SessionManager.getInstance().addLocalCartItem(context, variantId, quantity)
+        val session = com.pbl6.fitme.session.SessionManager.getInstance()
+        val profileId = session.getUserId(context)?.toString()
+
+        // If we have a profileId (logged-in user/profile), prefer to ask server for cart by user
+        if (!profileId.isNullOrBlank()) {
+            mainRepository.getCartByUser(token, profileId) { serverCartId ->
+                if (!serverCartId.isNullOrBlank()) {
+                    // Save persistent cart id for future operations
+                    try {
+                        session.savePersistentCartId(context, java.util.UUID.fromString(serverCartId))
+                    } catch (ex: Exception) {
+                        android.util.Log.w("ProductDetailVM", "Failed to save persistent cart id", ex)
+                    }
+                    android.util.Log.d("ProductDetailVM", "Using server cart id=$serverCartId to add item")
+                    mainRepository.addToCart(context, token, serverCartId, request) { success ->
+                        if (success) {
+                            onAddToCartSuccess.postValue(true)
+                        } else {
+                            try {
+                                session.addLocalCartItem(context, variantId, quantity)
+                                onAddToCartSuccess.postValue(true)
+                            } catch (ex: Exception) {
+                                android.util.Log.e("ProductDetailVM", "Add to cart failed and local fallback failed", ex)
+                            }
+                        }
+                    }
+                } else {
+                    // No server cart: try to create one then add
+                    if (!profileId.isNullOrBlank()) {
+                        mainRepository.createCartForNewUser(profileId) { newCartId ->
+                            if (!newCartId.isNullOrBlank()) {
+                                try {
+                                    session.savePersistentCartId(context, java.util.UUID.fromString(newCartId))
+                                } catch (ex: Exception) {
+                                    android.util.Log.w("ProductDetailVM", "Failed to save new persistent cart id", ex)
+                                }
+                                mainRepository.addToCart(context, token, newCartId, request) { success2 ->
+                                    if (success2) {
+                                        onAddToCartSuccess.postValue(true)
+                                    } else {
+                                        try {
+                                            session.addLocalCartItem(context, variantId, quantity)
+                                            onAddToCartSuccess.postValue(true)
+                                        } catch (ex: Exception) {
+                                            android.util.Log.e("ProductDetailVM", "Add to cart failed after create and local fallback failed", ex)
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Could not create server cart - fallback to local behavior
+                                try {
+                                    session.addLocalCartItem(context, variantId, quantity)
+                                    onAddToCartSuccess.postValue(true)
+                                } catch (ex: Exception) {
+                                    android.util.Log.e("ProductDetailVM", "Add to cart failed and no server cart available", ex)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // No profileId (anonymous user) - use local/session cart id as before
+            val cartId = session.getOrCreateCartId(context).toString()
+            android.util.Log.d("ProductDetailVM", "Attempting to add to cart: CartID=$cartId, VariantID=$variantId")
+            mainRepository.addToCart(context, token, cartId, request) { success ->
+                if (success) {
                     onAddToCartSuccess.postValue(true)
-                    Log.w("ProductDetailVM", "Failed to add to cart remotely, falling back to local storage.")
-                } catch (ex: Exception) {
-                    Log.e("ProductDetailVM", "Thêm vào giỏ hàng thất bại (Local Fallback Error)", ex)
+                    android.util.Log.d("ProductDetailVM", "Added to cart successfully (Remote).")
+                } else {
+                    try {
+                        session.addLocalCartItem(context, variantId, quantity)
+                        onAddToCartSuccess.postValue(true)
+                        android.util.Log.w("ProductDetailVM", "Failed to add to cart remotely, falling back to local storage.")
+                    } catch (ex: Exception) {
+                        android.util.Log.e("ProductDetailVM", "Thêm vào giỏ hàng thất bại (Local Fallback Error)", ex)
+                    }
                 }
             }
         }

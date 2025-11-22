@@ -14,6 +14,7 @@ import com.pbl6.fitme.model.CartItem
 import com.pbl6.fitme.databinding.FragmentCheckoutBinding
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
+import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.utils.singleClick
 
 class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel>() {
@@ -272,6 +273,16 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                 navigate(dest)
             }
         }
+
+        // Back arrow in toolbar
+        try {
+            binding.ivBack.singleClick {
+                // Go back to previous screen and hide toolbar
+                val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
+                toolbar.visibility = View.GONE
+                popBackStack()
+            }
+        } catch (_: Exception) { }
     }
 
     override fun initData() {
@@ -282,6 +293,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         val buyQuantity = args?.getInt("buy_now_quantity") ?: 1
         val cartIndices = args?.getIntegerArrayList("cart_item_indices")
         val cartVariantIds = args?.getStringArrayList("cart_variant_ids")
+        val cartVariantQuantities = args?.getIntegerArrayList("cart_variant_quantities")
 
         // Load products and variants then decide whether we show cart items or buy-now item
         val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
@@ -349,10 +361,11 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                             cartVariantIds.forEach { vidStr ->
                                 try {
                                     val vid = java.util.UUID.fromString(vidStr)
+                                    val qty = cartVariantQuantities?.getOrNull(list.size) ?: 1
                                     val item = com.pbl6.fitme.model.CartItem(
                                         cartItemId = java.util.UUID.randomUUID(),
                                         addedAt = null,
-                                        quantity = 1,
+                                        quantity = qty,
                                         cartId = java.util.UUID.randomUUID(),
                                         variantId = vid
                                     )

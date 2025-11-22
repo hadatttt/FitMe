@@ -234,6 +234,67 @@ class MainRepository {
         })
     }
 
+    // Fetch product by variant id (uses backend /products/by-variant/{variantId})
+    fun getProductByVariantId(token: String, variantId: String, onResult: (Product?) -> Unit) {
+        val bearer = "Bearer $token"
+        productApi.getProductByVariant(bearer, variantId).enqueue(object : Callback<BaseResponse<com.pbl6.fitme.model.ProductResponse>> {
+            override fun onResponse(call: Call<BaseResponse<com.pbl6.fitme.model.ProductResponse>>, response: Response<BaseResponse<com.pbl6.fitme.model.ProductResponse>>) {
+                if (response.isSuccessful) {
+                    val pr = response.body()?.result
+                    if (pr == null) {
+                        onResult(null)
+                        return
+                    }
+
+                    val images = pr.images.mapIndexed { idx, url ->
+                        com.pbl6.fitme.model.ProductImage(
+                            imageId = idx.toLong() * -1,
+                            createdAt = null,
+                            imageUrl = url,
+                            isMain = idx == 0,
+                            updatedAt = null,
+                            productId = pr.productId
+                        )
+                    }
+
+                    val variants = pr.variants.map { vr ->
+                        com.pbl6.fitme.model.ProductVariant(
+                            variantId = vr.variantId,
+                            color = vr.color,
+                            size = vr.size,
+                            price = vr.price,
+                            stockQuantity = vr.stockQuantity,
+                            productId = pr.productId
+                        )
+                    }
+
+                    val product = com.pbl6.fitme.model.Product(
+                        productId = pr.productId,
+                        createdAt = pr.createdAt,
+                        productName = pr.productName,
+                        description = pr.description,
+                        categoryName = pr.categoryName,
+                        brandName = pr.brandName,
+                        gender = pr.gender,
+                        season = pr.season,
+                        isActive = pr.isActive,
+                        images = images,
+                        variants = variants
+                    )
+
+                    onResult(product)
+                } else {
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<BaseResponse<com.pbl6.fitme.model.ProductResponse>>, t: Throwable) {
+                android.util.Log.e("MainRepository", "getProductByVariantId network error", t)
+                onResult(null)
+            }
+        })
+    }
+
     // Fetch user profile by email and save userId (profileId) into SessionManager
     // Note: UserResponse.userId is actually the profileId (not accountId), which is needed for wishlist operations
     fun fetchAndStoreUserId(token: String?, email: String?, onResult: (String?) -> Unit) {
@@ -312,6 +373,34 @@ class MainRepository {
 
             override fun onFailure(call: Call<List<CartItem>>, t: Throwable) {
                 Log.e("MainRepository", "getCartItems network error", t)
+                onResult(null)
+            }
+        })
+    }
+
+    /**
+     * Fetch server-side shopping cart for the given profile/user ID. Returns the cartId string
+     * via callback or null if not found or on error.
+     */
+    fun getCartByUser(token: String?, profileId: String?, onResult: (String?) -> Unit) {
+        if (token.isNullOrBlank() || profileId.isNullOrBlank()) {
+            onResult(null)
+            return
+        }
+        val bearer = "Bearer $token"
+        cartApi.getCartByUser(bearer, profileId).enqueue(object : Callback<com.pbl6.fitme.network.ShoppingCartResponse> {
+            override fun onResponse(call: Call<com.pbl6.fitme.network.ShoppingCartResponse>, response: Response<com.pbl6.fitme.network.ShoppingCartResponse>) {
+                if (response.isSuccessful) {
+                    val cartId = response.body()?.cartId
+                    onResult(cartId)
+                } else {
+                    android.util.Log.e("MainRepository", "getCartByUser failed: ${response.code()} body=${response.errorBody()?.string()}")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<com.pbl6.fitme.network.ShoppingCartResponse>, t: Throwable) {
+                android.util.Log.e("MainRepository", "getCartByUser network error", t)
                 onResult(null)
             }
         })

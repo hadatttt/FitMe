@@ -17,8 +17,9 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
     private lateinit var cartAdapter: CartProductAdapter
     private val cartRepository = com.pbl6.fitme.repository.CartRepository()
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
-    private var productMap: Map<java.util.UUID, com.pbl6.fitme.model.Product> = emptyMap()
-    private var variantMap: Map<java.util.UUID, com.pbl6.fitme.model.ProductVariant> = emptyMap()
+    private var accessToken: String? = null
+    private var productMap: MutableMap<java.util.UUID, com.pbl6.fitme.model.Product> = mutableMapOf()
+    private var variantMap: MutableMap<java.util.UUID, com.pbl6.fitme.model.ProductVariant> = mutableMapOf()
 
     override fun initView() {
         // Hiện toolbar
@@ -30,16 +31,19 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
 
         // Setup RecyclerView
         binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
-        val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+        accessToken = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+        val token = accessToken
         if (!token.isNullOrBlank()) {
             // Load dữ liệu: products -> variants -> cart
             mainRepository.getProducts(token) { products: List<com.pbl6.fitme.model.Product>? ->
                 activity?.runOnUiThread {
-                    productMap = products?.associateBy { it.productId } ?: emptyMap()
+                    productMap.clear()
+                    products?.forEach { p -> productMap[p.productId] = p }
 
                     mainRepository.getProductVariants(token ?: "") { variants: List<com.pbl6.fitme.model.ProductVariant>? ->
                         activity?.runOnUiThread {
-                            variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
+                            variantMap.clear()
+                            variants?.forEach { v -> variantMap[v.variantId] = v }
 
                             // Use CartRepository to fetch cart items
                             val cartId = com.pbl6.fitme.session.SessionManager.getInstance().getOrCreateCartId(requireContext()).toString()
@@ -54,47 +58,41 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
                                         cartItems.addAll(fallback)
                                     }
 
-                                    cartAdapter = CartProductAdapter(
-                                        cartItems,
-                                        variantMap,
-                                        productMap,
-                                        object : CartProductAdapter.OnCartActionListener {
-                                            override fun onRemove(position: Int) {
-                                                if (position in cartItems.indices) {
-                                                    cartItems.removeAt(position)
-                                                    cartAdapter.notifyItemRemoved(position)
-                                                    updateCartView()
-                                                }
-                                            }
+                                    // Ensure we have Product objects for each cart item variant.
+                                    val missingVariantIds = mutableListOf<java.util.UUID>()
+                                    cartItems.forEach { ci ->
+                                        val existingProduct = variantMap[ci.variantId]?.let { v -> productMap[v.productId] }
+                                        if (existingProduct == null) {
+                                            missingVariantIds.add(ci.variantId)
+                                        }
+                                    }
 
-                                            override fun onIncrease(position: Int) {
-                                                if (position in cartItems.indices) {
-                                                    cartItems[position] = cartItems[position].copy(
-                                                        quantity = cartItems[position].quantity + 1
-                                                    )
-                                                    cartAdapter.notifyItemChanged(position)
-                                                    updateCartView()
-                                                }
-                                            }
+                                    if (missingVariantIds.isEmpty()) {
+                                        // All products available -> initialize adapter
+                                        setupCartAdapter()
+                                    } else {
+                                        // Fetch product for each missing variant from backend
+                                        var remaining = missingVariantIds.size
+                                        missingVariantIds.forEach { vid ->
+                                            mainRepository.getProductByVariantId(token ?: "", vid.toString()) { product ->
+                                                activity?.runOnUiThread {
+                                                    product?.let { p -> productMap[p.productId] = p }
+                                                    // Also, if variant info missing, try to populate from product variants
+                                                    try {
+                                                        val foundVariant = product?.variants?.find { it.variantId == vid }
+                                                        if (foundVariant != null) variantMap[foundVariant.variantId] = foundVariant
+                                                    } catch (ex: Exception) {
+                                                        // ignore
+                                                    }
 
-                                            override fun onDecrease(position: Int) {
-                                                if (position in cartItems.indices) {
-                                                    if (cartItems[position].quantity > 1) {
-                                                        cartItems[position] = cartItems[position].copy(
-                                                            quantity = cartItems[position].quantity - 1
-                                                        )
-                                                        cartAdapter.notifyItemChanged(position)
-                                                        updateCartView()
-                                                    } else {
-                                                        onRemove(position)
+                                                    remaining -= 1
+                                                    if (remaining <= 0) {
+                                                        setupCartAdapter()
                                                     }
                                                 }
                                             }
                                         }
-                                    )
-
-                                    binding.rvCart.adapter = cartAdapter
-                                    updateCartView()
+                                    }
                                 }
                             }
                         }
@@ -105,11 +103,81 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
 
     }
 
+    private fun setupCartAdapter() {
+                                    cartAdapter = CartProductAdapter(
+            cartItems,
+            variantMap,
+            productMap,
+            object : CartProductAdapter.OnCartActionListener {
+                override fun onRemove(position: Int) {
+                    if (position in cartItems.indices) {
+                        // Call backend to remove item first
+                        val cartItemId = cartItems[position].cartItemId.toString()
+                        val t = accessToken
+                        if (!t.isNullOrBlank()) {
+                            cartRepository.removeCartItem(t, cartItemId) { success ->
+                                activity?.runOnUiThread {
+                                    if (success) {
+                                        cartItems.removeAt(position)
+                                        cartAdapter.notifyItemRemoved(position)
+                                        updateCartView()
+                                    } else {
+                                        // Optionally show toast; keep item
+                                    }
+                                }
+                            }
+                        } else {
+                            // No token: remove locally
+                            cartItems.removeAt(position)
+                            cartAdapter.notifyItemRemoved(position)
+                            updateCartView()
+                        }
+                    }
+                }
+
+                override fun onIncrease(position: Int) {
+                    if (position in cartItems.indices) {
+                        cartItems[position] = cartItems[position].copy(
+                            quantity = cartItems[position].quantity + 1
+                        )
+                        cartAdapter.notifyItemChanged(position)
+                        updateCartView()
+                    }
+                }
+
+                override fun onDecrease(position: Int) {
+                    if (position in cartItems.indices) {
+                        if (cartItems[position].quantity > 1) {
+                            cartItems[position] = cartItems[position].copy(
+                                quantity = cartItems[position].quantity - 1
+                            )
+                            cartAdapter.notifyItemChanged(position)
+                            updateCartView()
+                        } else {
+                            onRemove(position)
+                        }
+                    }
+                }
+            }
+        )
+
+        binding.rvCart.adapter = cartAdapter
+        updateCartView()
+    }
+
     override fun initListener() {
         onBackPressed {
             hideToolbar()
             popBackStack()
         }
+
+        // Back arrow click
+        try {
+            binding.ivBack.singleClick {
+                hideToolbar()
+                popBackStack()
+            }
+        } catch (_: Exception) { }
 
         binding.btnEditAddress.singleClick {
             // TODO: Navigate/Edit Address
@@ -118,9 +186,14 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
             if (cartItems.isNotEmpty()) {
                 // Pass variant ids as strings to avoid index mismatch after reload
                 val variantIds = ArrayList<String>()
-                cartItems.forEach { ci -> variantIds.add(ci.variantId.toString()) }
+                val variantQuantities = ArrayList<Int>()
+                cartItems.forEach { ci ->
+                    variantIds.add(ci.variantId.toString())
+                    variantQuantities.add(ci.quantity)
+                }
                 val bundle = Bundle().apply {
                     putStringArrayList("cart_variant_ids", variantIds)
+                    putIntegerArrayList("cart_variant_quantities", variantQuantities)
                 }
                navigate(R.id.checkoutFragment, bundle)
             }
