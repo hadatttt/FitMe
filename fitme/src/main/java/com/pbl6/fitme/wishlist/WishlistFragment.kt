@@ -18,6 +18,7 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
     private val variantMap = mutableMapOf<java.util.UUID, com.pbl6.fitme.model.ProductVariant>()
     private lateinit var adapter: WishlistProductAdapter
     private val wishlistRepository = com.pbl6.fitme.repository.WishlistRepository()
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
 
     override fun initView() {
         // Hiện toolbar
@@ -31,17 +32,6 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
         binding.rvWishlist.layoutManager =
             LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false)
 
-        // Lấy dữ liệu wishlist từ API
-        val token = SessionManager.getInstance().getAccessToken(requireContext())
-        wishlistRepository.getWishlist(token) { result ->
-            wishlistItems.clear()
-            if (result != null) {
-                wishlistItems.addAll(result)
-            }
-            adapter.notifyDataSetChanged()
-            updateWishlistView()
-        }
-
         // Chuẩn hóa truyền dữ liệu cho Adapter
         // Giả sử bạn đã có productMap và variantMap từ MainRepository
         adapter = WishlistProductAdapter(
@@ -50,18 +40,98 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
             variantMap,
             object : WishlistProductAdapter.OnWishlistActionListener {
                 override fun onRemove(position: Int) {
-                    if (position in wishlistItems.indices) {
-                        wishlistItems.removeAt(position)
-                        adapter.notifyItemRemoved(position)
-                        updateWishlistView()
+                    if (position !in wishlistItems.indices) return
+                    val item = wishlistItems[position]
+                    val token = SessionManager.getInstance().getAccessToken(requireContext())
+                    if (token.isNullOrBlank()) {
+                        android.widget.Toast.makeText(requireContext(), "Vui lòng đăng nhập", android.widget.Toast.LENGTH_SHORT).show()
+                        return
+                    }
+
+                    // Call API to remove wishlist item, then update UI on success
+                    wishlistRepository.removeWishlistItem(token, item.wishlistItemId.toString()) { success ->
+                        activity?.runOnUiThread {
+                            if (success) {
+                                wishlistItems.removeAt(position)
+                                adapter.notifyItemRemoved(position)
+                                updateWishlistView()
+                            } else {
+                                android.widget.Toast.makeText(requireContext(), "Xóa mục yêu thích thất bại", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 }
+
                 override fun onAddToCart(position: Int) {
-                    // TODO: Thêm sản phẩm này vào Cart
+                    if (position !in wishlistItems.indices) return
+                    val item = wishlistItems[position]
+                    val product = productMap[item.productId]
+                    if (product == null) {
+                        // product not loaded yet
+                        return
+                    }
+
+                    // Navigate to ProductDetailFragment and request to auto-open add-to-cart
+                    val bundle = android.os.Bundle().apply {
+                        putString("productId", product.productId.toString())
+                        putBoolean("autoAddToCart", true)
+                    }
+                    try {
+                        navigate(R.id.productDetailFragment, bundle)
+                    } catch (ex: Exception) {
+                        android.util.Log.e("WishlistFragment", "Failed to navigate to product detail", ex)
+                    }
                 }
             }
         )
         binding.rvWishlist.adapter = adapter
+
+        // Lấy dữ liệu wishlist từ API
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
+        // Prefer profileId stored in SessionManager (profile id) because backend expects profileId
+        val profileUuid = SessionManager.getInstance().getUserId(requireContext())
+        val fetchCallback: (List<com.pbl6.fitme.model.WishlistItem>?) -> Unit = { result ->
+            wishlistItems.clear()
+            productMap.clear()
+            variantMap.clear()
+
+            if (result != null) {
+                wishlistItems.addAll(result)
+            }
+
+            // If there are no wishlist items, update UI immediately
+            val productIds = wishlistItems.map { it.productId.toString() }.distinct()
+            if (productIds.isEmpty()) {
+                adapter.notifyDataSetChanged()
+                updateWishlistView()
+//                return@fetchCallback
+            }
+
+            // Fetch product details for each productId to display product name/price/image
+            var remaining = productIds.size
+            productIds.forEach { pid ->
+                mainRepository.getProductById(token ?: "",  pid) { product ->
+                    if (product != null) {
+                        productMap[product.productId] = product
+                        product.variants.forEach { v ->
+                            variantMap[v.variantId] = v
+                        }
+                    }
+                    remaining -= 1
+                    if (remaining <= 0) {
+                        adapter.notifyDataSetChanged()
+                        updateWishlistView()
+                    }
+                }
+            }
+        }
+
+        if (profileUuid != null) {
+            wishlistRepository.getWishlistByProfile(token, profileUuid.toString(), fetchCallback)
+        } else {
+            wishlistRepository.getWishlist(token, fetchCallback)
+        }
+
         updateWishlistView()
     }
 

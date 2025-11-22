@@ -23,6 +23,7 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
     private lateinit var imageAdapter: ProductImageAdapter
     private lateinit var reviewAdapter: ReviewAdapter
     private var currentProduct: Product? = null
+    private var autoOpenAddToCart: Boolean = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -55,6 +56,11 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             product?.let {
                 currentProduct = it
                 populateUI(it)
+                // If requested from navigation (wishlist -> product), open add-to-cart sheet automatically
+                if (autoOpenAddToCart) {
+                    autoOpenAddToCart = false
+                    showAddtocardNowSheet()
+                }
             }
         }
 
@@ -79,6 +85,7 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
 
     override fun initData() {
         val productId = arguments?.getString("productId") ?: return
+        autoOpenAddToCart = arguments?.getBoolean("autoAddToCart") ?: false
         val token = SessionManager.getInstance().getAccessToken(requireContext())
         if (token.isNullOrBlank()) {
             Toast.makeText(requireContext(), "Vui lòng đăng nhập để xem chi tiết", Toast.LENGTH_SHORT).show()

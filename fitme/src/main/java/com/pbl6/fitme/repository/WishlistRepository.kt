@@ -82,4 +82,67 @@ class WishlistRepository {
             }
         })
     }
+
+    /**
+     * Fetch wishlist items for the supplied profileId (explicit), bypassing JWT claim extraction.
+     */
+    fun getWishlistByProfile(token: String?, profileId: String?, onResult: (List<WishlistItem>?) -> Unit) {
+        if (token == null || profileId.isNullOrBlank()) {
+            onResult(null)
+            return
+        }
+
+        val bearer = "Bearer $token"
+        wishlistApiService.getWishlistsByUser(bearer, profileId).enqueue(object : Callback<List<WishlistDto>> {
+            override fun onResponse(call: Call<List<WishlistDto>>, response: Response<List<WishlistDto>>) {
+                if (response.isSuccessful) {
+                    val list = response.body() ?: emptyList()
+                    if (list.isNotEmpty()) {
+                        val wishlistId = list[0].wishlistId.toString()
+                        wishlistApiService.getWishlistItems(bearer, wishlistId).enqueue(object : Callback<List<WishlistItem>> {
+                            override fun onResponse(call: Call<List<WishlistItem>>, response: Response<List<WishlistItem>>) {
+                                if (response.isSuccessful) {
+                                    onResult(response.body())
+                                } else {
+                                    onResult(null)
+                                }
+                            }
+
+                            override fun onFailure(call: Call<List<WishlistItem>>, t: Throwable) {
+                                onResult(null)
+                            }
+                        })
+                    } else {
+                        onResult(emptyList())
+                    }
+                } else {
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<List<WishlistDto>>, t: Throwable) {
+                onResult(null)
+            }
+        })
+    }
+
+    /**
+     * Remove a wishlist item by wishlistItemId. Calls callback with true on success.
+     */
+    fun removeWishlistItem(token: String?, wishlistItemId: String, onResult: (Boolean) -> Unit) {
+        if (token == null) {
+            onResult(false)
+            return
+        }
+        val bearer = "Bearer $token"
+        wishlistApiService.removeWishlistItem(bearer, wishlistItemId).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                onResult(response.isSuccessful)
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                onResult(false)
+            }
+        })
+    }
 }
