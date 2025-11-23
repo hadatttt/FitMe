@@ -3,14 +3,13 @@ package com.pbl6.fitme.model
 import java.io.Serializable
 import java.util.UUID
 
-// Product model with images and reviews as typed objects
 data class Product(
     val productId: UUID,
     val productName: String,
     val createdAt: String? = null,
     val description: String?,
-    val categoryName: String, // mapped from categoryId by API layer
-    val brandName: String,    // mapped from brandId by API layer
+    val categoryName: String,
+    val brandName: String,
     val gender: String? = null,
     val season: String? = null,
     val isActive: Boolean,
@@ -18,11 +17,8 @@ data class Product(
     val variants: List<ProductVariant> = emptyList(),
     val reviews: List<Review> = emptyList()
 ): Serializable {
-    // convenience property returning the main image url or first image
     val mainImageUrl: String?
         get() = images.firstOrNull { it.isMain == true }?.imageUrl ?: images.firstOrNull()?.imageUrl
-
-    // convenience property returning the lowest variant price if available
     val minPrice: Double?
         get() = variants.minByOrNull { it.price }?.price
 }

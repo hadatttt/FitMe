@@ -24,6 +24,7 @@ class CartRepository {
         })
     }
 
+
     fun removeCartItem(token: String, cartItemId: String, onResult: (Boolean) -> Unit) {
         val bearerToken = "Bearer $token"
         cartApiService.removeCartItem(bearerToken, cartItemId).enqueue(object : Callback<Void> {

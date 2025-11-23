@@ -7,6 +7,11 @@ import retrofit2.http.Header
 import retrofit2.http.Path
 
 interface UserApiService {
+    @GET("users/{userId}")
+    fun getUserDetail(
+        @Header("Authorization") token: String,
+        @Path("userId") userId: String
+    ): Call<UserDetailResponse>
     @GET("users/user-profile/{email}")
     fun getUserProfileByEmail(@Header("Authorization") bearer: String, @Path("email") email: String): Call<BaseResponse<UserResponse>>
 }
