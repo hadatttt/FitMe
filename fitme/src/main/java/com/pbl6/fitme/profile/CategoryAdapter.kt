@@ -3,7 +3,6 @@ package com.pbl6.fitme.profile
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -13,9 +12,8 @@ import com.pbl6.fitme.model.Category
 
 class CategoryAdapter(
     private var categories: List<Category>,
-    private val onSelectionChanged: (String?) -> Unit = {}
-) : // Thay đổi: val -> var
-    RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>() {
+    private val onSelectionChanged: (Category) -> Unit
+) : RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>() {
 
     private var selectedPosition = RecyclerView.NO_POSITION
 
@@ -25,13 +23,13 @@ class CategoryAdapter(
 
         init {
             itemView.setOnClickListener {
+                val currentPos = bindingAdapterPosition
+                if (currentPos == RecyclerView.NO_POSITION) return@setOnClickListener
                 val prevPos = selectedPosition
-                selectedPosition = bindingAdapterPosition
+                selectedPosition = currentPos
                 notifyItemChanged(prevPos)
                 notifyItemChanged(selectedPosition)
-
-                val selected = if (selectedPosition != RecyclerView.NO_POSITION) categories[selectedPosition].categoryName else null
-                onSelectionChanged(selected)
+                onSelectionChanged(categories[selectedPosition])
             }
         }
     }
@@ -49,7 +47,6 @@ class CategoryAdapter(
         Glide.with(holder.itemView.context)
             .load(category.imageUrl)
             .into(holder.img)
-
         if (position == selectedPosition) {
             holder.img.setBackgroundResource(R.drawable.bg_selected)
         } else {
@@ -57,19 +54,16 @@ class CategoryAdapter(
         }
     }
 
-
-
     override fun getItemCount(): Int = categories.size
 
-    fun getSelectedCategory(): String? {
-        return if (selectedPosition != RecyclerView.NO_POSITION) categories[selectedPosition].categoryName else null
+    fun getSelectedCategory(): Category? {
+        return if (selectedPosition != RecyclerView.NO_POSITION) categories[selectedPosition] else null
     }
 
     fun clearSelection() {
         val oldPos = selectedPosition
         selectedPosition = RecyclerView.NO_POSITION
         if (oldPos != RecyclerView.NO_POSITION) notifyItemChanged(oldPos)
-        onSelectionChanged(null)
     }
 
     fun updateData(newCategories: List<Category>) {

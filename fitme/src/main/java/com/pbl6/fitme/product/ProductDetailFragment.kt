@@ -56,7 +56,6 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             product?.let {
                 currentProduct = it
                 populateUI(it)
-                // If requested from navigation (wishlist -> product), open add-to-cart sheet automatically
                 if (autoOpenAddToCart) {
                     autoOpenAddToCart = false
                     showAddtocardNowSheet()
@@ -154,24 +153,20 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             return
         }
 
-        // Tạo và hiển thị BottomSheet, truyền dữ liệu product vào
         currentProduct?.let {
             val bottomSheet = VariationsBottomSheetFragment.newInstance(it)
-            // TODO: Bạn có thể truyền thêm cờ "isBuyNow" nếu logic 2 nút khác nhau
             bottomSheet.show(parentFragmentManager, "VariationsBottomSheetFragment")
         }
     }
 
   fun fetchProductReviews(token: String, productId: String) {
-        // Sử dụng reviewRepo bạn đã khai báo
         reviewRepo.getReviewsByProduct(token, productId) { reviews: List<Review>? ->
-            // Luôn cập nhật UI trên Main Thread
             activity?.runOnUiThread {
                 if (reviews != null && reviews.isNotEmpty()) {
                     Log.d("HomeFragment", "API Products Response: $reviews")
                     binding.rvReviews.visibility = View.VISIBLE
                     binding.tvNoReviews.visibility = View.GONE
-                    reviewAdapter.setList(reviews) // Cập nhật data cho adapter
+                    reviewAdapter.setList(reviews)
                 } else {
                     Log.d("HomeFragment", "API Products Response: $reviews")
                     binding.rvReviews.visibility = View.GONE

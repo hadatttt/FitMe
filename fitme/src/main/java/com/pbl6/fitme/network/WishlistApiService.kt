@@ -31,8 +31,8 @@ data class WishlistItemResponse(
 interface WishlistApiService {
     @POST("wishlists")
     fun createWishlist(
-        @Header("user-id") userId: String, // ✔ đúng
-        @Header("Authorization") bearer: String, // ✔ đúng header chuẩn
+        @Header("user-id") userId: String,
+        @Header("Authorization") bearer: String,
         @Body request: WishlistRequest
     ): Call<WishlistResponse>
 

@@ -1,6 +1,8 @@
 package com.pbl6.fitme.session
 
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.pbl6.fitme.network.LoginResponse
 import hoang.dqm.codebase.utils.pref.SpUtils
 import java.text.SimpleDateFormat
@@ -132,6 +134,7 @@ class SessionManager private constructor() {
     }
 
     // Local cart helpers: store cart items locally when backend cart is unavailable.
+    @RequiresApi(Build.VERSION_CODES.O)
     fun addLocalCartItem(context: Context, variantId: java.util.UUID, quantity: Int) {
         try {
             val existing = spUtils.getData(context, KEY_LOCAL_CART, Array<com.pbl6.fitme.model.CartItem>::class.java)

@@ -59,8 +59,6 @@ class MainRepository {
             }
         })
     }
-
-    // 🧩 Lấy danh sách biến thể sản phẩm
     fun getProductVariants(token: String, onResult: (List<ProductVariant>?) -> Unit) {
         val bearerToken = "Bearer $token"
         variantApi.getProductVariants(bearerToken).enqueue(object : Callback<BaseResponse<List<ProductVariant>>> {
@@ -79,7 +77,6 @@ class MainRepository {
             }
         })
     }
-
     fun getProductImages(onResult: (List<ProductImage>?) -> Unit) {
         productImageApi.getProductImages().enqueue(object : Callback<List<ProductImage>> {
             override fun onResponse(call: Call<List<ProductImage>>, response: Response<List<ProductImage>>) {
@@ -98,7 +95,6 @@ class MainRepository {
         })
     }
 
-    // Debug helper: log element classes of a raw product response list (useful when BE returns mixed tuples)
     fun debugPrintProductResponseElements(elements: List<Any>?) {
         if (elements == null) return
         elements.forEachIndexed { idx, el ->
@@ -106,7 +102,6 @@ class MainRepository {
         }
     }
 
-    // 🛍️ Lấy danh sách sản phẩm (có token)
     fun getProducts(token: String, onResult: (List<Product>?) -> Unit) {
         val bearerToken = "Bearer $token"
         productApi.getProducts(bearerToken)
@@ -354,6 +349,69 @@ class MainRepository {
                 }
 
                 override fun onFailure(call: Call<BaseResponse<List<Category>>>, t: Throwable) {
+                    onResult(null)
+                }
+            })
+    }
+    fun getProductsByCategory(token: String, categoryId: String, onResult: (List<Product>?) -> Unit) {
+        val bearerToken = "Bearer $token"
+        productApi.getProductsByCategory(bearerToken, categoryId)
+            .enqueue(object : Callback<BaseResponse<List<ProductResponse>>> {
+
+                override fun onResponse(
+                    call: Call<BaseResponse<List<ProductResponse>>>,
+                    response: Response<BaseResponse<List<ProductResponse>>>
+                ) {
+                    if (response.isSuccessful) {
+                        val respList = response.body()?.result ?: emptyList()
+                        val products = respList.map { pr ->
+                            val images = pr.images.mapIndexed { idx, url ->
+                                ProductImage(
+                                    imageId = idx.toLong() * -1,
+                                    createdAt = null,
+                                    imageUrl = url,
+                                    isMain = idx == 0,
+                                    updatedAt = null,
+                                    productId = pr.productId
+                                )
+                            }
+
+                            val variants = pr.variants.map { vr ->
+                                ProductVariant(
+                                    variantId = vr.variantId,
+                                    color = vr.color,
+                                    size = vr.size,
+                                    price = vr.price,
+                                    stockQuantity = vr.stockQuantity,
+                                    productId = pr.productId
+                                )
+                            }
+
+                            Product(
+                                productId = pr.productId,
+                                productName = pr.productName,
+                                description = pr.description,
+                                categoryName = pr.categoryName,
+                                brandName = pr.brandName,
+                                isActive = pr.isActive,
+                                images = images,
+                                variants = variants
+                            )
+                        }
+
+                        android.util.Log.d("MainRepository", "getProductsByCategory: Found ${products.size} items for catId=$categoryId")
+                        onResult(products)
+                    } else {
+                        android.util.Log.e("MainRepository", "getProductsByCategory failed: ${response.code()}")
+                        onResult(null)
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<BaseResponse<List<ProductResponse>>>,
+                    t: Throwable
+                ) {
+                    android.util.Log.e("MainRepository", "getProductsByCategory network error", t)
                     onResult(null)
                 }
             })

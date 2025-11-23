@@ -23,11 +23,8 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         val session = SessionManager.getInstance()
         val token = session.getAccessToken(requireContext())
         Log.d("SessionManager", "AccessToken = $token")
-        // Hiện toolbar trong Activity
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
-
-        // Highlight tab person trong toolbar
         highlightSelectedTab(R.id.person_id)
 
         setupRecyclerViews()
@@ -41,15 +38,11 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         binding.flCart.setDraggableWithClick {
             navigate(R.id.cartFragment)
         }
-        // ===== Button trong Profile =====
         binding.btnSetting.singleClick {
             navigate(R.id.settingsFragment)
         }
-
         binding.ivSeeAllNotification.singleClick {
         }
-
-        // ===== Toolbar click =====
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
             highlightSelectedTab(R.id.home_id)
             navigate(R.id.homeFragment)
@@ -70,8 +63,6 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             highlightSelectedTab(R.id.person_id)
 
         }
-
-        // Order status clicks -> navigate to OrdersFragment with status
         binding.root.findViewById<View>(R.id.ll_status_confirming)?.singleClick {
             val bundle = android.os.Bundle().apply { putString("order_status", "confirming") }
             navigate(R.id.ordersFragment, bundle)
@@ -89,7 +80,6 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             navigate(R.id.ordersFragment, bundle)
         }
     }
-
     override fun initData() {
     }
     private fun highlightSelectedTab(selectedId: Int) {

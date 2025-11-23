@@ -10,11 +10,10 @@
             android:id="@+id/imgItem"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:padding="10dp"
-            android:src="@drawable/ic_cart"
             android:scaleType="centerCrop"
-            android:background="@drawable/bg_outer_circle" />
-
+            android:src="@drawable/ic_cart"
+            android:background="@drawable/bg_outer_circle"
+            android:clipToOutline="true" />
     <TextView
             android:id="@+id/txtName"
             android:layout_width="wrap_content"

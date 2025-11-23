@@ -23,4 +23,9 @@ interface ProductApiService {
         @Header("Authorization") token: String,
         @Path("variantId") variantId: String
     ): Call<BaseResponse<ProductResponse>>
+    @GET("products/category/{categoryId}")
+    fun getProductsByCategory(
+        @Header("Authorization") token: String,
+        @Path("categoryId") categoryId: String
+    ): Call<BaseResponse<List<ProductResponse>>>
 }
