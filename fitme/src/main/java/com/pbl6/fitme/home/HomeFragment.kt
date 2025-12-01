@@ -187,10 +187,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
             highlightSelectedTab(R.id.wish_id)
             navigate(R.id.wishlistFragment)
         }
-        requireActivity().findViewById<View>(R.id.filter_id).singleClick {
-            highlightSelectedTab(R.id.filter_id)
-            navigate(R.id.filterFragment)
-        }
+
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
             navigate(R.id.cartFragment)
@@ -203,9 +200,8 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
 
     override fun initData() { }
 
-    // ===== Toolbar Helpers & Logic (Giữ nguyên) =====
     private fun highlightSelectedTab(selectedId: Int) {
-        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.filter_id, R.id.cart_id, R.id.person_id)
+        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.cart_id, R.id.person_id)
         ids.forEach { id ->
             val view = requireActivity().findViewById<View>(id)
             if (id == selectedId) {

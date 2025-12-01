@@ -1,12 +1,12 @@
 package com.pbl6.fitme.profile
 
-import com.pbl6.fitme.model.Category
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentProfileBinding
+import com.pbl6.fitme.model.Product
 import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
@@ -16,8 +16,8 @@ import hoang.dqm.codebase.utils.setDraggableWithClick
 import hoang.dqm.codebase.utils.singleClick
 
 class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>() {
-
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+    private lateinit var productAdapter: ProductAdapter
 
     override fun initView() {
         val session = SessionManager.getInstance()
@@ -28,6 +28,12 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         highlightSelectedTab(R.id.person_id)
 
         setupRecyclerViews()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Cập nhật số lượng đơn hàng mỗi khi màn hình hiện lên
+        updateOrderBadges()
     }
 
     override fun initListener() {
@@ -51,39 +57,67 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             highlightSelectedTab(R.id.wish_id)
             navigate(R.id.wishlistFragment)
         }
-        requireActivity().findViewById<View>(R.id.filter_id).singleClick {
-            highlightSelectedTab(R.id.filter_id)
-            navigate(R.id.filterFragment)
-        }
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
             navigate(R.id.cartFragment)
         }
         requireActivity().findViewById<View>(R.id.person_id).singleClick {
             highlightSelectedTab(R.id.person_id)
+        }
 
-        }
-        binding.root.findViewById<View>(R.id.ll_status_confirming)?.singleClick {
-            val bundle = android.os.Bundle().apply { putString("order_status", "confirming") }
-            navigate(R.id.ordersFragment, bundle)
-        }
-        binding.root.findViewById<View>(R.id.ll_status_packing)?.singleClick {
-            val bundle = android.os.Bundle().apply { putString("order_status", "packing") }
-            navigate(R.id.ordersFragment, bundle)
-        }
-        binding.root.findViewById<View>(R.id.ll_status_delivering)?.singleClick {
-            val bundle = android.os.Bundle().apply { putString("order_status", "delivering") }
-            navigate(R.id.ordersFragment, bundle)
-        }
-        binding.root.findViewById<View>(R.id.ll_status_received)?.singleClick {
-            val bundle = android.os.Bundle().apply { putString("order_status", "received") }
-            navigate(R.id.ordersFragment, bundle)
-        }
+        // Click events for Order Statuses
+        binding.llStatusPending.singleClick { navigateToOrder("pending") }
+        binding.llStatusConfirmed.singleClick { navigateToOrder("confirmed") }
+        binding.llStatusProcessing.singleClick { navigateToOrder("processing") }
+        binding.llStatusShipped.singleClick { navigateToOrder("shipped") }
+        binding.llStatusDelivered.singleClick { navigateToOrder("delivered") }
+        binding.llStatusCancelled.singleClick { navigateToOrder("cancelled") }
     }
+
+    private fun navigateToOrder(status: String) {
+        val bundle = android.os.Bundle().apply { putString("order_status", status) }
+        navigate(R.id.ordersFragment, bundle)
+    }
+
     override fun initData() {
     }
+
+    private fun updateOrderBadges() {
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
+        val email = SessionManager.getInstance().getUserEmail(requireContext())
+
+        if (!token.isNullOrBlank() && !email.isNullOrBlank()) {
+            mainRepository.getOrdersByUser(token, email, null) { orders ->
+                activity?.runOnUiThread {
+                    if (orders != null) {
+                        // Helper function to count and set text
+                        fun setBadge(textView: android.widget.TextView, statusKey: String) {
+                            val count = orders.count {
+                                (it.status ?: it.orderStatus ?: "").equals(statusKey, ignoreCase = true)
+                            }
+                            if (count > 0) {
+                                textView.text = count.toString()
+                                textView.visibility = View.VISIBLE
+                            } else {
+                                textView.visibility = View.GONE
+                            }
+                        }
+
+                        // Map counts to the TextViews created in XML
+                        setBadge(binding.tvCountPending, "pending")
+                        setBadge(binding.tvCountConfirmed, "confirmed")
+                        setBadge(binding.tvCountProcessing, "processing")
+                        setBadge(binding.tvCountShipped, "shipped")
+                        setBadge(binding.tvCountDelivered, "delivered")
+                        setBadge(binding.tvCountCancelled, "cancelled")
+                    }
+                }
+            }
+        }
+    }
+
     private fun highlightSelectedTab(selectedId: Int) {
-        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.filter_id, R.id.cart_id, R.id.person_id)
+        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.cart_id, R.id.person_id)
         ids.forEach { id ->
             val view = requireActivity().findViewById<View>(id)
             if (id == selectedId) {
@@ -96,50 +130,30 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         }
     }
 
-    // ===== RecyclerView Helpers =====
     private fun setupRecyclerViews() {
         val token = SessionManager.getInstance().getAccessToken(requireContext())
-
         if (!token.isNullOrBlank()) {
-            // --- 1. Lấy và hiển thị DANH MỤC (đã có) ---
-            mainRepository.getCategories(token) { categories: List<Category>? ->
+            productAdapter = ProductAdapter()
+            binding.rvTopProducts.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2)
+            binding.rvTopProducts.adapter = productAdapter
+
+            productAdapter.setOnClickItemRecyclerView { product, _ ->
+                val bundle = android.os.Bundle().apply {
+                    putString("productId", product.productId.toString())
+                }
+                navigate(R.id.productDetailFragment, bundle)
+            }
+
+            mainRepository.getProducts(token) { products: List<Product>? ->
                 activity?.runOnUiThread {
-                    if (categories != null) {
-                        binding.rvTopProducts.layoutManager =
-                            androidx.recyclerview.widget.LinearLayoutManager(requireContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
-                        binding.rvTopProducts.adapter =
-                            CategoryAdapter(categories) { /* no-op selection */ }
-                    } else {
-                        Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
+                    if (products != null) {
+                        productAdapter.setList(products)
                     }
                 }
             }
-
-            // --- 2. Lấy và hiển thị SẢN PHẨM (phần thêm mới) ---
-//            mainRepository.getProducts(token) { products: List<com.pbl6.fitme.model.Product>? ->
-//                activity?.runOnUiThread {
-//                    if (products != null) {
-//                        // Giả sử RecyclerView cho sản phẩm có id là rvItems
-//                        binding.rvNewItems.layoutManager =
-//                            androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2) // Hiển thị dạng lưới 2 cột
-//                        binding.rvNewItems.adapter =
-//                            ProductAdapter(products) { product ->
-//                                val bundle = android.os.Bundle().apply {
-//                                    putString("productId", product.productId.toString())
-//                                }
-//                                navigate(R.id.productDetailFragment, bundle)
-//                            }
-//                    } else {
-//                        Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
-//                    }
-//                }
-//            }
-
-        } else {
-            // Gộp chung thông báo khi chưa đăng nhập
-            Toast.makeText(requireContext(), "Vui lòng đăng nhập để xem dữ liệu", Toast.LENGTH_LONG).show()
         }
     }
+
     private fun hideToolbar() {
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.GONE

@@ -19,6 +19,7 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
     private lateinit var cartAdapter: CartProductAdapter
     private val cartRepository = com.pbl6.fitme.repository.CartRepository()
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+    private val addressRepository = com.pbl6.fitme.repository.AddressRepository()
     private var accessToken: String? = null
 
     // Map lưu thông tin sản phẩm
@@ -39,6 +40,21 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
         val token = accessToken
 
         if (!token.isNullOrBlank()) {
+            val email = com.pbl6.fitme.session.SessionManager.getInstance().getUserEmail(requireContext())
+
+            if (!email.isNullOrBlank()) {
+                addressRepository.getUserAddresses(token, email) { listAddress ->
+                    activity?.runOnUiThread {
+                        if (!listAddress.isNullOrEmpty()) {
+                            val defaultAddress = listAddress.find { it.isDefault } ?: listAddress.first()
+
+                            binding.txtShippingAddress.text = "${defaultAddress.addressLine1},${defaultAddress.addressLine2}"
+                        } else {
+                            binding.txtShippingAddress.text = "Please add a shipping address"
+                        }
+                    }
+                }
+            }
             mainRepository.getProducts(token) { products ->
                 activity?.runOnUiThread {
                     productMap.clear()
@@ -276,10 +292,7 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
             highlightSelectedTab(R.id.wish_id)
             navigate(R.id.wishlistFragment)
         }
-        requireActivity().findViewById<View>(R.id.filter_id).singleClick {
-            highlightSelectedTab(R.id.filter_id)
-            navigate(R.id.filterFragment)
-        }
+
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
         }
@@ -292,7 +305,7 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
     override fun initData() { }
 
     private fun highlightSelectedTab(selectedId: Int) {
-        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.filter_id, R.id.cart_id, R.id.person_id)
+        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.cart_id, R.id.person_id)
         ids.forEach { id ->
             val view = requireActivity().findViewById<View>(id)
             if (id == selectedId) {
