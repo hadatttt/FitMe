@@ -54,7 +54,10 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         mainRepository.getOrderById(token, orderId) { order ->
             activity?.runOnUiThread {
                 if (order == null) {
+                    android.util.Log.e("OrderDetailFragment", "getOrderById returned null for orderId=$orderId")
                 } else {
+                    android.util.Log.d("OrderDetailFragment", "Order loaded: $order")
+                    android.util.Log.d("OrderDetailFragment", "Payment fields: method=${order.paymentMethod} status=${order.paymentStatus} amount=${order.paymentAmount}")
                     bindOrder(order)
                 }
             }
@@ -123,9 +126,14 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         binding.txtDiscount.text = "\$${String.format("%.2f", order.discountAmount ?: 0.0)}"
         binding.txtCouponCode.text = "Coupon: ${order.couponId ?: "-"}"
         binding.txtOrderNotes.text = "Notes: ${order.orderNotes ?: "-"}"
-    // Order model doesn't include a paymentMethod field in this client model.
-    // Show placeholder or derive from server response when available.
-    binding.txtPaymentMethod.text = "Payment Method: N/A"
+    // Show payment method if provided by backend
+    val paymentMethodText = when {
+        !order.paymentMethod.isNullOrBlank() -> order.paymentMethod
+        !order.paymentStatus.isNullOrBlank() -> order.paymentStatus
+        else -> "N/A"
+    }
+    binding.txtPaymentMethod.text = "Payment Method: $paymentMethodText"
+    binding.txtPaymentMethod.visibility = View.VISIBLE
 
         // Set status color based on order status
         val statusColor = when(order.status?.uppercase() ?: order.orderStatus?.uppercase()) {

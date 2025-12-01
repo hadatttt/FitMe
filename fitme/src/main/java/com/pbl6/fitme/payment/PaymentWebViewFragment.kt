@@ -6,6 +6,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -69,7 +72,53 @@ class PaymentWebViewFragment : Fragment() {
             webChromeClient = WebChromeClient()
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                    val url = request?.url?.toString() ?: return false
+                    val uri = request?.url ?: return false
+
+                    // Handle non-http(s) schemes (e.g. momo:// or custom app deep links)
+                    val scheme = uri.scheme
+                    if (!scheme.isNullOrBlank() && scheme != "http" && scheme != "https") {
+                        try {
+                            // Special-case Android intent:// URIs
+                            if (scheme.equals("intent", ignoreCase = true)) {
+                                try {
+                                    val intent = Intent.parseUri(uri.toString(), Intent.URI_INTENT_SCHEME)
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    if (intent.resolveActivity(requireContext().packageManager) != null) {
+                                        requireContext().startActivity(intent)
+                                    } else {
+                                        // No activity to handle intent:// — show fallback dialog
+                                        showAppNotInstalledDialog(uri.toString())
+                                    }
+                                } catch (iex: Exception) {
+                                    showAppNotInstalledDialog(uri.toString())
+                                }
+                                return true
+                            }
+
+                            // General custom-scheme handler (e.g. momo://)
+                            val intent = Intent(Intent.ACTION_VIEW, uri)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            if (intent.resolveActivity(requireContext().packageManager) != null) {
+                                requireContext().startActivity(intent)
+                            } else {
+                                showAppNotInstalledDialog(uri.toString())
+                            }
+                        } catch (ex: Exception) {
+                            try {
+                                // Last-resort: try opening in browser
+                                val browserIntent = Intent(Intent.ACTION_VIEW, uri)
+                                browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                requireContext().startActivity(browserIntent)
+                            } catch (ie: Exception) {
+                                // give up silently and pop back
+                                activity?.runOnUiThread { android.widget.Toast.makeText(requireContext(), "Không thể xử lý liên kết: ${uri}", android.widget.Toast.LENGTH_LONG).show() }
+                            }
+                        }
+                        return true
+                    }
+
+                    val url = uri.toString()
+
                     if (isCallbackUrl(url)) {
                         try {
                             val uri = Uri.parse(url)
@@ -172,6 +221,41 @@ class PaymentWebViewFragment : Fragment() {
         } else {
             // nothing to load, go back
             findNavController().popBackStack()
+        }
+    }
+
+    private fun showAppNotInstalledDialog(uri: String) {
+        activity?.runOnUiThread {
+            try {
+                val builder = AlertDialog.Builder(requireContext())
+                builder.setTitle("Ứng dụng cần thiết không được cài đặt")
+                builder.setMessage("Ứng dụng thanh toán (ví dụ MoMo) không được tìm thấy để xử lý liên kết. Bạn có thể sao chép liên kết và mở thủ công hoặc cài đặt ứng dụng tương ứng.")
+                builder.setPositiveButton("Sao chép liên kết") { _, _ ->
+                    try {
+                        val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip = ClipData.newPlainText("payment_link", uri)
+                        clipboard.setPrimaryClip(clip)
+                        android.widget.Toast.makeText(requireContext(), "Đã sao chép liên kết vào clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                    } catch (ex: Exception) {
+                        android.widget.Toast.makeText(requireContext(), "Không thể sao chép liên kết", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+                builder.setNeutralButton("Mở trình duyệt") { _, _ ->
+                    try {
+                        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+                        browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        requireContext().startActivity(browserIntent)
+                    } catch (ex: Exception) {
+                        android.widget.Toast.makeText(requireContext(), "Không thể mở liên kết bằng trình duyệt", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+                builder.setNegativeButton("Huỷ") { _, _ -> }
+                builder.setCancelable(true)
+                builder.show()
+            } catch (ex: Exception) {
+                // fallback toast
+                android.widget.Toast.makeText(requireContext(), "Ứng dụng không được tìm thấy và không thể hiển thị dialog.", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

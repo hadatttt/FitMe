@@ -1,66 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="8dp">
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp">
 
+        <!-- Product Image -->
         <ImageView
-            android:id="@+id/img"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:scaleType="centerCrop"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+                android:id="@+id/img"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:scaleType="centerCrop"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
 
+        <!-- Product Name -->
         <TextView
-            android:id="@+id/txtName"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Product name"
-            app:layout_constraintStart_toEndOf="@id/img"
-            app:layout_constraintTop_toTopOf="@id/img"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="8dp" />
+                android:id="@+id/txtName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Product name"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginStart="8dp"
+                app:layout_constraintStart_toEndOf="@id/img"
+                app:layout_constraintEnd_toStartOf="@id/txtPrice"
+                app:layout_constraintTop_toTopOf="@id/img" />
 
+        <!-- Price (right side) -->
         <TextView
-            android:id="@+id/txtVariant"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Size: S, Color: Blue"
-            app:layout_constraintStart_toEndOf="@id/img"
-            app:layout_constraintTop_toBottomOf="@id/txtName"
-            app:layout_constraintEnd_toStartOf="@id/txtPrice"
-            android:layout_marginStart="8dp"
-            android:textSize="12sp"
-            android:textColor="#666" />
+                android:id="@+id/txtPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="$0.00"
+                android:textStyle="bold"
+                app:layout_constraintTop_toTopOf="@+id/txtName"
+                app:layout_constraintEnd_toEndOf="parent" />
 
+        <!-- Variant (under name) -->
         <TextView
-            android:id="@+id/txtQty"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Qty"
-            app:layout_constraintStart_toEndOf="@id/img"
-            app:layout_constraintTop_toBottomOf="@id/txtName"
-            android:layout_marginStart="8dp" />
+                android:id="@+id/txtVariant"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Size: S, Color: Blue"
+                android:textColor="#666"
+                android:textSize="12sp"
+                android:layout_marginStart="8dp"
+                app:layout_constraintStart_toEndOf="@id/img"
+                app:layout_constraintTop_toBottomOf="@id/txtName"
+                app:layout_constraintEnd_toStartOf="@id/txtPrice" />
 
+        <!-- Quantity (under variant) -->
         <TextView
-            android:id="@+id/txtPrice"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="$0.00"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/txtName" />
+                android:id="@+id/txtQty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Qty: 1"
+                android:textSize="12sp"
+                android:layout_marginStart="8dp"
+                app:layout_constraintStart_toEndOf="@id/img"
+                app:layout_constraintTop_toBottomOf="@id/txtVariant"/>
 
+        <!-- Total Price (right bottom) -->
         <TextView
-            android:id="@+id/txtTotalPrice"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="$0.00"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtPrice"
-            android:textStyle="bold" />
+                android:id="@+id/txtTotalPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="$0.00"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/txtPrice" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

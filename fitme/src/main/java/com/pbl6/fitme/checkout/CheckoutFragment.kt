@@ -196,7 +196,12 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                 totalAmount = totalAmount,
                 discountAmount = discount,
                 shippingFee = shippingMoney,
-                orderNotes = ""
+                orderNotes = "",
+                paymentMethod = when (selectedPaymentMethod) {
+                    PaymentMethod.MOMO -> "MOMO"
+                    PaymentMethod.VNPAY -> "VNPAY"
+                    PaymentMethod.COD -> "COD"
+                }
             )
 
             mainRepository.createOrder(token, order) { createdOrder ->
@@ -354,6 +359,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                         }
 
                         PaymentMethod.COD -> {
+                            // For COD we rely on server to create the Payment record when the order is created.
                             binding.btnCheckout.isEnabled = true
                             Toast.makeText(requireContext(), "Order placed successfully (COD)", Toast.LENGTH_LONG).show()
                             try {

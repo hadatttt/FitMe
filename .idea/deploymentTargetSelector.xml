@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="fitme">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-11-12T06:15:10.717452900Z">
+        <DropdownSelection timestamp="2025-12-01T14:54:31.224087200Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Admin\.android\avd\Medium_Tablet_pro.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\KIM AN\.android\avd\Medium_Phone.avd" />
             </handle>
           </Target>
         </DropdownSelection>
