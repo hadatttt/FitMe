@@ -111,10 +111,10 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             }
             R.id.btnFavorite -> {
                 currentProduct?.let { product ->
-                    val userId =
-                        SessionManager.getInstance().getUserId(requireContext())?.toString()
+                    val userEmail =
+                        SessionManager.getInstance().getUserEmail(requireContext())
 
-                    if (userId.isNullOrBlank()) {
+                    if (userEmail.isNullOrBlank()) {
                         Toast.makeText(
                             requireContext(),
                             "Không tìm thấy thông tin người dùng",
@@ -127,10 +127,10 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
 
                     android.util.Log.d(
                         "ProductDetailFragment",
-                        "Add to wishlist initiated: userId(ProfileId)=$userId, productId=$productId"
+                        "Add to wishlist initiated: userEmail=$userEmail, productId=$productId"
                     )
 
-                    viewModel.addToWishlist(token, userId, productId)
+                    viewModel.addToWishlist(token, userEmail, productId)
                 }
             }
         }

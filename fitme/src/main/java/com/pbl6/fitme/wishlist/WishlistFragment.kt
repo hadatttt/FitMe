@@ -88,8 +88,8 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
 
         // Lấy dữ liệu wishlist từ API
         val token = SessionManager.getInstance().getAccessToken(requireContext())
-        // Prefer profileId stored in SessionManager (profile id) because backend expects profileId
-        val profileUuid = SessionManager.getInstance().getUserId(requireContext())
+        // Prefer userEmail stored in SessionManager because backend expects userEmail for wishlist APIs
+        val userEmail = SessionManager.getInstance().getUserEmail(requireContext())
         val fetchCallback: (List<com.pbl6.fitme.model.WishlistItem>?) -> Unit = { result ->
             wishlistItems.clear()
             productMap.clear()
@@ -126,9 +126,11 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
             }
         }
 
-        if (profileUuid != null) {
-            wishlistRepository.getWishlistByProfile(token, profileUuid.toString(), fetchCallback)
+        if (!userEmail.isNullOrBlank()) {
+            // We have explicit user email saved in session
+            wishlistRepository.getWishlistByProfile(token, userEmail, fetchCallback)
         } else {
+            // Fallback: repository will try to extract email from JWT token if available
             wishlistRepository.getWishlist(token, fetchCallback)
         }
 

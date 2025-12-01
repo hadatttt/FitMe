@@ -31,7 +31,7 @@ data class WishlistItemResponse(
 interface WishlistApiService {
     @POST("wishlists")
     fun createWishlist(
-        @Header("user-id") userId: String,
+        @retrofit2.http.Query("userEmail") userEmail: String,
         @Header("Authorization") bearer: String,
         @Body request: WishlistRequest
     ): Call<WishlistResponse>
