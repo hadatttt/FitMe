@@ -127,10 +127,20 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         binding.txtCouponCode.text = "Coupon: ${order.couponId ?: "-"}"
         binding.txtOrderNotes.text = "Notes: ${order.orderNotes ?: "-"}"
     // Show payment method if provided by backend
-    val paymentMethodText = when {
+    val rawMethod = when {
         !order.paymentMethod.isNullOrBlank() -> order.paymentMethod
         !order.paymentStatus.isNullOrBlank() -> order.paymentStatus
-        else -> "N/A"
+        else -> null
+    }
+    val paymentMethodText = when (rawMethod?.uppercase()) {
+        "COD", "CASHONDELIVERY", "CASH_ON_DELIVERY" -> "Cash on Delivery"
+        "VNPAY", "VN_PAY" -> "VNPay"
+        "MOMO" -> "Momo"
+        "PENDING" -> "Pending"
+        "COMPLETED" -> "Completed"
+        "FAILED" -> "Failed"
+        null -> "N/A"
+        else -> rawMethod
     }
     binding.txtPaymentMethod.text = "Payment Method: $paymentMethodText"
     binding.txtPaymentMethod.visibility = View.VISIBLE
