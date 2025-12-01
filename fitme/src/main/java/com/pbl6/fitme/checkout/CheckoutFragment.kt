@@ -4,6 +4,7 @@ import android.view.View
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import com.bumptech.glide.Glide
 import com.pbl6.fitme.model.Order
 import com.pbl6.fitme.model.OrderItem
 import com.pbl6.fitme.session.SessionManager
@@ -16,6 +17,8 @@ import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.utils.singleClick
+
+// Cleaned and reformatted CheckoutFragment to fix syntax/brace issues and preserve existing logic.
 
 class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel>() {
     private var total: Double = 0.0
@@ -118,10 +121,8 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                 return@singleClick
             }
 
-            val recipientNameFromSession = SessionManager.getInstance().getRecipientName(requireContext())
-                ?.takeIf { it.isNotBlank() }
-            val fallbackRecipient = SessionManager.getInstance().getUserEmail(requireContext())
-                ?.substringBefore("@")
+            val recipientNameFromSession = SessionManager.getInstance().getRecipientName(requireContext())?.takeIf { it.isNotBlank() }
+            val fallbackRecipient = SessionManager.getInstance().getUserEmail(requireContext())?.substringBefore("@")
             val recipient = recipientNameFromSession ?: fallbackRecipient ?: "Customer"
 
             val shippingAddress = com.pbl6.fitme.model.ShippingAddress(
@@ -166,7 +167,24 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             val subtotal = total
             val shippingMoney = shippingFee
             val discount = 0.0
-            val totalAmount = total + shippingFee
+            val rawTotal = total + shippingFee
+
+            val totalAmount = try {
+                if (selectedPaymentMethod == PaymentMethod.VNPAY) {
+                    val bd = java.math.BigDecimal(rawTotal.toString())
+                    val rounded = bd.setScale(0, java.math.RoundingMode.HALF_UP).toDouble()
+                    if (rounded != rawTotal) {
+                        activity?.runOnUiThread {
+                            Toast.makeText(requireContext(), "Total rounded to \$${String.format("%.0f", rounded)} for VNPay", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    rounded
+                } else {
+                    rawTotal
+                }
+            } catch (ex: Exception) {
+                rawTotal
+            }
 
             val order = Order(
                 userEmail = userEmail,
@@ -191,15 +209,126 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
 
                     when (selectedPaymentMethod) {
                         PaymentMethod.MOMO -> {
+                            val exchangeRate = 25000L
+                            val amountVndLong = try {
+                                java.math.BigDecimal(totalAmount.toString())
+                                    .multiply(java.math.BigDecimal.valueOf(exchangeRate))
+                                    .setScale(0, java.math.RoundingMode.HALF_UP)
+                                    .longValueExact()
+                            } catch (ex: Exception) {
+                                (totalAmount * exchangeRate).toLong()
+                            }
 
+                            mainRepository.createMomoPayment(token, amountVndLong, userEmail, createdOrder.orderId?.toString()) { momoResp ->
+                                activity?.runOnUiThread {
+                                    binding.btnCheckout.isEnabled = true
+                                    if (momoResp == null) {
+                                        Toast.makeText(requireContext(), "Failed to start Momo payment", Toast.LENGTH_LONG).show()
+                                        return@runOnUiThread
+                                    }
+
+                                    // If Momo returned a non-success result code, show message and abort
+                                    if (momoResp.resultCode != null && momoResp.resultCode != 0) {
+                                        val msg = momoResp.message ?: "Momo payment failed (code=${momoResp.resultCode})"
+                                        try {
+                                            AlertDialog.Builder(requireContext())
+                                                .setTitle("Momo Payment")
+                                                .setMessage(msg)
+                                                .setPositiveButton("OK", null)
+                                                .show()
+                                        } catch (_: Exception) {
+                                            Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+                                        }
+                                        return@runOnUiThread
+                                    }
+
+                                    android.util.Log.d("CheckoutFragment", "MomoResponse: deeplink=${momoResp.deeplink} payUrl=${momoResp.payUrl} qrCodeUrl=${momoResp.qrCodeUrl} resultCode=${momoResp.resultCode}")
+
+                                    try { val uuid = createdOrder.orderId?.let { java.util.UUID.fromString(it) }; viewModel.setCurrentOrderId(uuid) } catch (_: Exception) { }
+
+                                    val deeplink = momoResp.deeplink
+                                    val payUrl = momoResp.payUrl
+                                    val qrCodeUrl = momoResp.qrCodeUrl
+
+                                    if (!payUrl.isNullOrBlank()) {
+                                        try {
+                                            val bundle = android.os.Bundle()
+                                            bundle.putString("payment_url", payUrl)
+                                            bundle.putString("order_id", createdOrder.orderId?.toString() ?: "")
+                                            navigate(R.id.paymentWebViewFragment, bundle)
+                                        } catch (ex: Exception) {
+                                            Toast.makeText(requireContext(), "Unable to open in-app payment. Please try again.", Toast.LENGTH_LONG).show()
+                                        }
+                                    } else if (!qrCodeUrl.isNullOrBlank()) {
+                                        try {
+                                            val iv = android.widget.ImageView(requireContext())
+                                            val padding = (16 * resources.displayMetrics.density).toInt()
+                                            iv.setPadding(padding, padding, padding, padding)
+                                            iv.adjustViewBounds = true
+                                            Glide.with(requireContext()).load(qrCodeUrl).into(iv)
+
+                                            AlertDialog.Builder(requireContext())
+                                                .setTitle("Momo QR Code")
+                                                .setView(iv)
+                                                .setPositiveButton("I Paid / Refresh") { _, _ ->
+                                                    val repo = com.pbl6.fitme.repository.MainRepository()
+                                                    val token2 = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+                                                    val orderIdStr = createdOrder.orderId?.toString()
+                                                    if (!token2.isNullOrBlank() && !orderIdStr.isNullOrBlank()) {
+                                                        repo.getOrderById(token2, orderIdStr) { order ->
+                                                            activity?.runOnUiThread {
+                                                                if (order != null) {
+                                                                    Toast.makeText(requireContext(), "Order status: ${order.orderStatus ?: order.status}", Toast.LENGTH_LONG).show()
+                                                                } else {
+                                                                    Toast.makeText(requireContext(), "Failed to fetch order status", Toast.LENGTH_SHORT).show()
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                .setNegativeButton("Close", null)
+                                                .show()
+                                        } catch (ex: Exception) {
+                                            Toast.makeText(requireContext(), "Unable to show QR", Toast.LENGTH_LONG).show()
+                                        }
+                                    } else if (!deeplink.isNullOrBlank()) {
+                                        if (deeplink.startsWith("http")) {
+                                            try {
+                                                val bundle = android.os.Bundle()
+                                                bundle.putString("payment_url", deeplink)
+                                                bundle.putString("order_id", createdOrder.orderId?.toString() ?: "")
+                                                navigate(R.id.paymentWebViewFragment, bundle)
+                                            } catch (ex: Exception) {
+                                                Toast.makeText(requireContext(), "Unable to open in-app payment. Please try again.", Toast.LENGTH_LONG).show()
+                                            }
+                                        } else {
+                                            try {
+                                                AlertDialog.Builder(requireContext())
+                                                    .setTitle("Open Momo App")
+                                                    .setMessage("This payment will open the Momo app. Continue?")
+                                                    .setPositiveButton("Open") { _, _ ->
+                                                        try {
+                                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplink))
+                                                            startActivity(intent)
+                                                        } catch (ex: Exception) {
+                                                            Toast.makeText(requireContext(), "Unable to open external app", Toast.LENGTH_LONG).show()
+                                                        }
+                                                    }
+                                                    .setNegativeButton("Cancel", null)
+                                                    .show()
+                                            } catch (ex: Exception) {
+                                                Toast.makeText(requireContext(), "Unable to open external app", Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                    } else {
+                                        Toast.makeText(requireContext(), "Momo returned no usable payment link", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
                         }
 
                         PaymentMethod.VNPAY -> {
-                            mainRepository.createVNPayPayment(
-                                token,
-                                createdOrder.orderId?.toString() ?: "",
-                                userEmail
-                            ) { vnResp ->
+                            mainRepository.createVNPayPayment(token, createdOrder.orderId?.toString() ?: "", userEmail) { vnResp ->
                                 activity?.runOnUiThread {
                                     binding.btnCheckout.isEnabled = true
                                     if (vnResp?.paymentUrl.isNullOrBlank()) {
@@ -210,14 +339,12 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                             viewModel.setCurrentOrderId(uuid)
                                         } catch (_: Exception) { }
 
-                                        // Navigate to in-app WebView for VNPay instead of external browser
                                         try {
                                             val bundle = android.os.Bundle()
                                             bundle.putString("payment_url", vnResp!!.paymentUrl)
                                             bundle.putString("order_id", createdOrder.orderId?.toString() ?: "")
                                             navigate(R.id.paymentWebViewFragment, bundle)
                                         } catch (ex: Exception) {
-                                            // Fallback to external browser if navigation fails
                                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(vnResp!!.paymentUrl))
                                             startActivity(intent)
                                         }
@@ -231,7 +358,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                             Toast.makeText(requireContext(), "Order placed successfully (COD)", Toast.LENGTH_LONG).show()
                             try {
                                 val bundle = android.os.Bundle()
-                                bundle.putString("order_status", "confirming") // Trạng thái pending/confirming
+                                bundle.putString("order_status", "confirming")
                                 navigate(R.id.ordersFragment, bundle)
                             } catch (e: Exception) {
                                 android.util.Log.e("CheckoutFragment", "Failed to navigate to orders list", e)
@@ -249,6 +376,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                     binding.rbStandard.setBackgroundResource(R.drawable.bg_shipping_selected)
                     binding.rbExpress.setBackgroundResource(R.drawable.bg_shipping_unselected)
                 }
+
                 R.id.rbExpress -> {
                     shippingFee = 12.0
                     binding.rbStandard.setBackgroundResource(R.drawable.bg_shipping_unselected)
@@ -258,7 +386,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             updateTotalPrice()
         }
 
-        // Toolbar navigation
         val tabIds = listOf(
             R.id.home_id to R.id.homeFragment,
             R.id.wish_id to R.id.wishlistFragment,
@@ -274,10 +401,8 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             }
         }
 
-        // Back arrow in toolbar
         try {
             binding.ivBack.singleClick {
-                // Go back to previous screen and hide toolbar
                 val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
                 toolbar.visibility = View.GONE
                 popBackStack()
@@ -286,7 +411,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     }
 
     override fun initData() {
-        // Use arguments to support buy-now flow
         val args = arguments
         val buyProductId = args?.getString("buy_now_product_id")
         val buyVariantId = args?.getString("buy_now_variant_id")
@@ -295,21 +419,24 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         val cartVariantIds = args?.getStringArrayList("cart_variant_ids")
         val cartVariantQuantities = args?.getIntegerArrayList("cart_variant_quantities")
 
-        // Load products and variants then decide whether we show cart items or buy-now item
-        val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+        val token =
+            com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
 
         mainRepository.getProducts(token ?: "") { products ->
             activity?.runOnUiThread {
                 productMap = products?.associateBy { it.productId } ?: emptyMap()
-                android.util.Log.d("CheckoutFragment", "args buyProductId=$buyProductId buyVariantId=$buyVariantId cart_variant_ids=$cartVariantIds cart_indices=$cartIndices")
+                android.util.Log.d(
+                    "CheckoutFragment",
+                    "args buyProductId=$buyProductId buyVariantId=$buyVariantId cart_variant_ids=$cartVariantIds cart_indices=$cartIndices"
+                )
                 android.util.Log.d("CheckoutFragment", "initial productMap.size=${productMap.size}")
+
                 mainRepository.getProductVariants(token ?: "") { variants ->
                     activity?.runOnUiThread {
                         variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
                         android.util.Log.d("CheckoutFragment", "variantMap.size=${variantMap.size}")
 
                         if (!buyProductId.isNullOrBlank() && !buyVariantId.isNullOrBlank()) {
-                            // Build a single CartItem for buy-now
                             try {
                                 val cartItem = com.pbl6.fitme.model.CartItem(
                                     cartItemId = java.util.UUID.randomUUID(),
@@ -322,17 +449,23 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                             } catch (ex: Exception) {
                                 cartItems = emptyList()
                             }
-                            // Ensure we have product details for the variant's productId; fetch if missing
+
                             val variant = cartItems.firstOrNull()?.let { variantMap[it.variantId] }
                             val neededProductId = variant?.productId
                             if (neededProductId != null && !productMap.containsKey(neededProductId) && !token.isNullOrBlank()) {
-                                // fetch missing product detail
-                                mainRepository.getProductById(token, neededProductId.toString()) { fetched ->
+                                mainRepository.getProductById(
+                                    token,
+                                    neededProductId.toString()
+                                ) { fetched ->
                                     activity?.runOnUiThread {
                                         if (fetched != null) {
-                                            productMap = productMap + mapOf(fetched.productId to fetched)
+                                            productMap =
+                                                productMap + mapOf(fetched.productId to fetched)
                                         }
-                                        checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
+                                        checkoutProductAdapter = CheckoutProductAdapter(
+                                            createUnifiedVariantMap(),
+                                            productMap
+                                        )
                                         binding.rvCart.adapter = checkoutProductAdapter
                                         checkoutProductAdapter.submitList(cartItems)
                                         val unified = createUnifiedVariantMap()
@@ -344,7 +477,8 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                     }
                                 }
                             } else {
-                                checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
+                                checkoutProductAdapter =
+                                    CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                 binding.rvCart.adapter = checkoutProductAdapter
                                 checkoutProductAdapter.submitList(cartItems)
                                 dataLoaded = true
@@ -374,23 +508,29 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                     if (v != null && !productMap.containsKey(v.productId)) {
                                         productIdsToFetch.add(v.productId)
                                     }
-                                } catch (_: Exception) { }
+                                } catch (_: Exception) {
+                                }
                             }
                             cartItems = list
 
                             if (productIdsToFetch.isNotEmpty() && !token.isNullOrBlank()) {
-                                val fetchedList = mutableListOf<com.pbl6.fitme.model.Product>()
                                 var remaining = productIdsToFetch.size
                                 productIdsToFetch.forEach { pid ->
-                                    mainRepository.getProductById(token, pid.toString()) { fetched ->
+                                    mainRepository.getProductById(
+                                        token,
+                                        pid.toString()
+                                    ) { fetched ->
                                         activity?.runOnUiThread {
                                             if (fetched != null) {
-                                                fetchedList.add(fetched)
-                                                productMap = productMap + mapOf(fetched.productId to fetched)
+                                                productMap =
+                                                    productMap + mapOf(fetched.productId to fetched)
                                             }
                                             remaining -= 1
                                             if (remaining <= 0) {
-                                                checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
+                                                checkoutProductAdapter = CheckoutProductAdapter(
+                                                    createUnifiedVariantMap(),
+                                                    productMap
+                                                )
                                                 binding.rvCart.adapter = checkoutProductAdapter
                                                 checkoutProductAdapter.submitList(cartItems)
                                                 dataLoaded = true
@@ -405,8 +545,8 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                     }
                                 }
                             } else {
-                                // no missing products or cannot fetch: show what we have
-                                checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
+                                checkoutProductAdapter =
+                                    CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
                                 binding.rvCart.adapter = checkoutProductAdapter
                                 checkoutProductAdapter.submitList(cartItems)
                                 dataLoaded = true
@@ -418,16 +558,23 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                 updateTotalPrice()
                             }
                         } else if (cartIndices != null && cartIndices.isNotEmpty()) {
-                            // Backwards compatible: indices provided
-                            val cartId = com.pbl6.fitme.session.SessionManager.getInstance().getOrCreateCartId(requireContext()).toString()
+                            val cartId = com.pbl6.fitme.session.SessionManager.getInstance()
+                                .getOrCreateCartId(requireContext()).toString()
                             mainRepository.getCartItems(token ?: "", cartId) { items ->
                                 activity?.runOnUiThread {
                                     val allItems = items ?: emptyList()
                                     val selected = cartIndices.mapNotNull { idx ->
-                                        try { allItems[idx] } catch (e: Exception) { null }
+                                        try {
+                                            allItems[idx]
+                                        } catch (e: Exception) {
+                                            null
+                                        }
                                     }
                                     cartItems = selected
-                                    checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
+                                    checkoutProductAdapter = CheckoutProductAdapter(
+                                        createUnifiedVariantMap(),
+                                        productMap
+                                    )
                                     binding.rvCart.adapter = checkoutProductAdapter
                                     checkoutProductAdapter.submitList(cartItems)
                                     dataLoaded = true
@@ -440,14 +587,18 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                 }
                             }
                         } else {
-                            // No buy-now and no explicit cart indices: show full cart as fallback
-                            val cartId = com.pbl6.fitme.session.SessionManager.getInstance().getOrCreateCartId(requireContext()).toString()
+                            val cartId = com.pbl6.fitme.session.SessionManager.getInstance()
+                                .getOrCreateCartId(requireContext()).toString()
                             mainRepository.getCartItems(token ?: "", cartId) { items ->
                                 activity?.runOnUiThread {
-                                    // If server cart items are unavailable, fall back to local items
-                                    val fallback = com.pbl6.fitme.session.SessionManager.getInstance().getLocalCartItems(requireContext())
+                                    val fallback =
+                                        com.pbl6.fitme.session.SessionManager.getInstance()
+                                            .getLocalCartItems(requireContext())
                                     cartItems = items ?: (fallback ?: emptyList())
-                                    checkoutProductAdapter = CheckoutProductAdapter(createUnifiedVariantMap(), productMap)
+                                    checkoutProductAdapter = CheckoutProductAdapter(
+                                        createUnifiedVariantMap(),
+                                        productMap
+                                    )
                                     binding.rvCart.adapter = checkoutProductAdapter
                                     checkoutProductAdapter.submitList(cartItems)
                                     dataLoaded = true
@@ -464,10 +615,9 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             }
         }
     }
-
     private fun updateTotalPrice() {
         val finalTotal = total + shippingFee
-        binding.txtTotal.text = "Total $${String.format("%.2f", finalTotal)}"
+        binding.txtTotal.text = "Total \$${String.format("%.2f", finalTotal)}"
         binding.rvCart.visibility = View.VISIBLE
         dataLoaded = true
     }
@@ -483,7 +633,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     }
 
     private fun showPaymentMethodDialog() {
-        val options = arrayOf("Card", "VNPay", "Cash on Delivery")
+        val options = arrayOf("Momo", "VNPay", "Cash on Delivery")
         val checkedItem = when (selectedPaymentMethod) {
             PaymentMethod.MOMO -> 0
             PaymentMethod.VNPAY -> 1
@@ -526,3 +676,4 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         }
     }
 }
+

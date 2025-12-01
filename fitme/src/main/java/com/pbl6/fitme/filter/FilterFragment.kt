@@ -148,7 +148,7 @@
 //    private fun setupPriceRange() {
 //        binding.priceRangeSlider.addOnChangeListener { slider, _, _ ->
 //            val values = slider.values
-//            binding.tvPrice.text = "$${values[0].toInt()} — $${values[1].toInt()}"
+//            binding.tvPrice.text = "\$${values[0].toInt()} — \$${values[1].toInt()}"
 //        }
 //        val greenColor = ColorStateList.valueOf(Color.parseColor("#004CFF")) // Màu main
 //        binding.priceRangeSlider.trackActiveTintList = greenColor

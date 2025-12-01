@@ -13,6 +13,7 @@ import com.pbl6.fitme.model.ProductImage
 import com.pbl6.fitme.model.ProductResponse
 import com.pbl6.fitme.model.ProductVariant
 import com.pbl6.fitme.model.VNPayResponse
+import com.pbl6.fitme.model.MomoResponse
 import com.pbl6.fitme.model.WishlistItem
 import com.pbl6.fitme.network.ApiClient
 import com.pbl6.fitme.network.CartApiService
@@ -38,6 +39,7 @@ class MainRepository {
     private val productImageApi = ApiClient.retrofit.create(ProductImageApiService::class.java)
     private val reviewApi = ApiClient.retrofit.create(ReviewApiService::class.java)
     private val orderApi = ApiClient.retrofit.create(OrderApiService::class.java)
+    private val momoApi = ApiClient.retrofit.create(com.pbl6.fitme.network.MomoApiService::class.java)
 
     // Create shopping cart for newly registered user
     fun createCartForNewUser(userId: String, onResult: (String?) -> Unit) {
@@ -705,6 +707,26 @@ class MainRepository {
 
             override fun onFailure(call: Call<BaseResponse<VNPayResponse>>, t: Throwable) {
                 android.util.Log.e("MainRepository", "createVNPayPayment network error", t)
+                onResult(null)
+            }
+        })
+    }
+
+    // Create Momo payment (calls backend /momopay/create)
+    fun createMomoPayment(token: String, amount: Long, userEmail: String, orderId: String?, onResult: (MomoResponse?) -> Unit) {
+        val bearer = "Bearer $token"
+        momoApi.createMomoPayment(bearer, amount, userEmail, orderId).enqueue(object : Callback<MomoResponse> {
+            override fun onResponse(call: Call<MomoResponse>, response: Response<MomoResponse>) {
+                if (response.isSuccessful) {
+                    onResult(response.body())
+                } else {
+                    android.util.Log.e("MainRepository", "createMomoPayment failed: ${response.code()}")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<MomoResponse>, t: Throwable) {
+                android.util.Log.e("MainRepository", "createMomoPayment network error", t)
                 onResult(null)
             }
         })

@@ -26,4 +26,14 @@
         android:contentDescription="Close"
         android:layout_gravity="top|end" />
 
+    <ImageButton
+        android:id="@+id/btnRefresh"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_margin="12dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_splash"
+        android:contentDescription="Refresh"
+        android:layout_gravity="top|start" />
+
 </FrameLayout>

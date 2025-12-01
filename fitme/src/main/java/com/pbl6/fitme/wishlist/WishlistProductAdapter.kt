@@ -47,7 +47,7 @@ class WishlistProductAdapter(
         val variant = variantMap.values.find { it.productId == item.productId }
 
         holder.txtTitle.text = product?.productName ?: "Unknown"
-        holder.txtPrice.text = variant?.price?.let { "$${String.format("%.2f", it)}" } ?: ""
+        holder.txtPrice.text = variant?.price?.let { "\$${String.format("%.2f", it)}" } ?: ""
 
         // Hide color/size on wishlist item (handled in product detail)
         holder.btnColor.visibility = View.GONE

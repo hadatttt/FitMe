@@ -50,7 +50,7 @@ class CheckoutProductAdapter(
         holder.txtProductName.text = product?.productName ?: (variant?.let { "${it.color} - ${it.size}" } ?: "Unknown")
         holder.txtVariant.text = variant?.let { "${it.color} - ${it.size}" } ?: ""
 
-        holder.txtPrice.text = variant?.price?.let { "$${String.format("%.2f", it)}" } ?: ""
+        holder.txtPrice.text = variant?.price?.let { "\$${String.format("%.2f", it)}" } ?: ""
         holder.txtQuantity.text = "x${cartItem.quantity}"
 
         val imageUrl = product?.mainImageUrl

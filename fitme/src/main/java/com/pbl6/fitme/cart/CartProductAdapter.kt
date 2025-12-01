@@ -53,7 +53,7 @@ class CartProductAdapter(
 
         holder.txtTitle.text = product?.productName ?: "Unknown"
         holder.txtDetail.text = variant?.let { "${it.color} - Size: ${it.size}" } ?: ""
-        holder.txtPrice.text = variant?.price?.let { "$${String.format("%.2f", it)}" } ?: ""
+        holder.txtPrice.text = variant?.price?.let { "\$${String.format("%.2f", it)}" } ?: ""
         holder.txtQuantity.text = cartItem.quantity.toString()
 
         val imageUrl = product?.images?.firstOrNull()?.imageUrl

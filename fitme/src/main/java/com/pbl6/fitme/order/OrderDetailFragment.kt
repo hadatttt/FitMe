@@ -117,10 +117,10 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         val shippingFee = order.shippingFee ?: 0.0
         val total = order.totalAmount ?: (subtotal + shippingFee)
 
-        binding.txtSubtotal.text = "$${String.format("%.2f", subtotal)}"
-        binding.txtShippingFee.text = "$${String.format("%.2f", shippingFee)}"
-        binding.txtTotal.text = "$${String.format("%.2f", total)}"
-        binding.txtDiscount.text = "$${String.format("%.2f", order.discountAmount ?: 0.0)}"
+        binding.txtSubtotal.text = "\$${String.format("%.2f", subtotal)}"
+        binding.txtShippingFee.text = "\$${String.format("%.2f", shippingFee)}"
+        binding.txtTotal.text = "\$${String.format("%.2f", total)}"
+        binding.txtDiscount.text = "\$${String.format("%.2f", order.discountAmount ?: 0.0)}"
         binding.txtCouponCode.text = "Coupon: ${order.couponId ?: "-"}"
         binding.txtOrderNotes.text = "Notes: ${order.orderNotes ?: "-"}"
     // Order model doesn't include a paymentMethod field in this client model.
