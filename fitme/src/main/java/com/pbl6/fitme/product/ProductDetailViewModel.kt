@@ -122,25 +122,25 @@ class ProductDetailViewModel : BaseViewModel() {
 
     var getAccessToken: ((Context) -> String?)? = null
 
-    // SỬA: Logic ban đầu bị lỗi (luôn gọi createAndAddItemToWishlist)
-    fun addToWishlist(token: String, userId: String?, productId: UUID) {
-        if (userId.isNullOrBlank()) {
-            Log.e("ProductDetailVM", "addToWishlist failed: userId is null or blank.")
+    // Logic to add product to wishlist: userEmail is used by backend
+    fun addToWishlist(token: String, userEmail: String?, productId: UUID) {
+        if (userEmail.isNullOrBlank()) {
+            Log.e("ProductDetailVM", "addToWishlist failed: userEmail is null or blank.")
             return
         }
 
         val productRequest = AddWishlistRequest(productId)
         val defaultWishlistName = "My Wishlist"
-        Log.d("ProductDetailVM", "Starting addToWishlist for user: $userId, product: $productId")
+        Log.d("ProductDetailVM", "Starting addToWishlist for userEmail: $userEmail, product: $productId")
 
         // 1. Kiểm tra/Lấy Wishlist ID
-        mainRepository.fetchUserWishlistId(token, userId) { wishlistId ->
+        mainRepository.fetchUserWishlistId(token, userEmail) { wishlistId ->
             if (wishlistId != null) {
                 Log.d("ProductDetailVM", "Wishlist found: $wishlistId. Adding item...")
                 addItemToExistingWishlist(token, wishlistId, productRequest)
             } else {
                 Log.d("ProductDetailVM", "No Wishlist found. Creating new wishlist...")
-                createAndAddItemToWishlist(token, userId, defaultWishlistName, productRequest)
+                createAndAddItemToWishlist(token, userEmail, defaultWishlistName, productRequest)
             }
         }
     }
@@ -150,22 +150,21 @@ class ProductDetailViewModel : BaseViewModel() {
      */
     private fun createAndAddItemToWishlist(
         token: String,
-        userId: String,
+        userEmail: String,
         name: String,
         productRequest: AddWishlistRequest
     ) {
         val wishlistReq = WishlistRequest(name)
-        Log.d("ProductDetailVM", "Calling createWishlist with userId (profileId): $userId")
+        Log.d("ProductDetailVM", "Calling createWishlist with userEmail: $userEmail")
 
-        // 1. GỌI API TẠO WISHLIST (Trả về ID)
-        mainRepository.createWishlist(token, userId, wishlistReq) { newWishlistId ->
+        // 1. Call API to create wishlist (returns ID)
+        mainRepository.createWishlist(token, userEmail, wishlistReq) { newWishlistId ->
             if (newWishlistId != null) {
                 Log.d("ProductDetailVM", "Wishlist created successfully with ID: $newWishlistId")
-                // 2. TẠO THÀNH CÔNG VÀ CÓ ID -> Thêm sản phẩm
+                // Add product to the newly created wishlist
                 addItemToExistingWishlist(token, newWishlistId, productRequest)
             } else {
-                // Lỗi: Không thể tạo Wishlist mới (API tạo trả về null)
-                Log.e("ProductDetailVM", "Failed to create new wishlist for user: $userId")
+                Log.e("ProductDetailVM", "Failed to create new wishlist for userEmail: $userEmail")
             }
         }
     }

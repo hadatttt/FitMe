@@ -13,6 +13,7 @@ import com.pbl6.fitme.model.ProductImage
 import com.pbl6.fitme.model.ProductResponse
 import com.pbl6.fitme.model.ProductVariant
 import com.pbl6.fitme.model.VNPayResponse
+import com.pbl6.fitme.model.MomoResponse
 import com.pbl6.fitme.model.WishlistItem
 import com.pbl6.fitme.network.ApiClient
 import com.pbl6.fitme.network.CartApiService
@@ -38,6 +39,7 @@ class MainRepository {
     private val productImageApi = ApiClient.retrofit.create(ProductImageApiService::class.java)
     private val reviewApi = ApiClient.retrofit.create(ReviewApiService::class.java)
     private val orderApi = ApiClient.retrofit.create(OrderApiService::class.java)
+    private val momoApi = ApiClient.retrofit.create(com.pbl6.fitme.network.MomoApiService::class.java)
 
     // Create shopping cart for newly registered user
     fun createCartForNewUser(userId: String, onResult: (String?) -> Unit) {
@@ -500,22 +502,22 @@ class MainRepository {
     // Add product to wishlist (ensures header uses profileId)
     fun addToWishlist(
         token: String,
-        profileId: String?, // must be profileId from UserProfile
+        userEmail: String?, // user email used by backend
         req: AddWishlistRequest,
         onResult: (Boolean) -> Unit
     ) {
         val bearer = "Bearer $token"
 
-        if (profileId.isNullOrBlank()) {
-            Log.e("MainRepository", "Cannot add to wishlist: profileId is null or blank")
+        if (userEmail.isNullOrBlank()) {
+            Log.e("MainRepository", "Cannot add to wishlist: userEmail is null or blank")
             onResult(false)
             return
         }
 
-        Log.d("MainRepository", "addToWishlist: using profileId=$profileId")
+        Log.d("MainRepository", "addToWishlist: using userEmail=$userEmail")
 
         // 1) Fetch existing wishlists for the user
-        wishlistApi.getWishlistsByUser(bearer, profileId).enqueue(object : Callback<List<com.pbl6.fitme.model.WishlistDto>> {
+        wishlistApi.getWishlistsByUser(bearer, userEmail).enqueue(object : Callback<List<com.pbl6.fitme.model.WishlistDto>> {
             override fun onResponse(
                 call: Call<List<com.pbl6.fitme.model.WishlistDto>>,
                 response: Response<List<com.pbl6.fitme.model.WishlistDto>>
@@ -529,7 +531,7 @@ class MainRepository {
                     } else {
                         // No wishlist: create one first
                         val wishlistReq = com.pbl6.fitme.model.WishlistRequest(name = "My Wishlist")
-                        wishlistApi.createWishlist(profileId, bearer, wishlistReq)
+                        wishlistApi.createWishlist(userEmail, bearer, wishlistReq)
                             .enqueue(object : Callback<com.pbl6.fitme.network.WishlistResponse> {
                                 override fun onResponse(
                                     call: Call<com.pbl6.fitme.network.WishlistResponse>,
@@ -574,13 +576,13 @@ class MainRepository {
      * Create a new wishlist for the given profile (user) and return the created wishlistId as String
      * via the callback, or null on error.
      */
-    fun createWishlist(token: String?, profileId: String?, req: com.pbl6.fitme.model.WishlistRequest, onResult: (String?) -> Unit) {
-        if (token.isNullOrBlank() || profileId.isNullOrBlank()) {
+    fun createWishlist(token: String?, userEmail: String?, req: com.pbl6.fitme.model.WishlistRequest, onResult: (String?) -> Unit) {
+        if (token.isNullOrBlank() || userEmail.isNullOrBlank()) {
             onResult(null)
             return
         }
         val bearer = "Bearer $token"
-        wishlistApi.createWishlist(profileId, bearer, req).enqueue(object : Callback<com.pbl6.fitme.network.WishlistResponse> {
+        wishlistApi.createWishlist(userEmail, bearer, req).enqueue(object : Callback<com.pbl6.fitme.network.WishlistResponse> {
             override fun onResponse(call: Call<com.pbl6.fitme.network.WishlistResponse>, response: Response<com.pbl6.fitme.network.WishlistResponse>) {
                 if (response.isSuccessful) {
                     val createdId = response.body()?.wishlistId
@@ -602,13 +604,13 @@ class MainRepository {
      * Fetch the first wishlist ID for the given user/profile. Returns the wishlistId as String
      * or null if none exists or on error.
      */
-    fun fetchUserWishlistId(token: String?, profileId: String?, onResult: (String?) -> Unit) {
-        if (token.isNullOrBlank() || profileId.isNullOrBlank()) {
+    fun fetchUserWishlistId(token: String?, userEmail: String?, onResult: (String?) -> Unit) {
+        if (token.isNullOrBlank() || userEmail.isNullOrBlank()) {
             onResult(null)
             return
         }
         val bearer = "Bearer $token"
-        wishlistApi.getWishlistsByUser(bearer, profileId).enqueue(object : Callback<List<com.pbl6.fitme.model.WishlistDto>> {
+        wishlistApi.getWishlistsByUser(bearer, userEmail).enqueue(object : Callback<List<com.pbl6.fitme.model.WishlistDto>> {
             override fun onResponse(call: Call<List<com.pbl6.fitme.model.WishlistDto>>, response: Response<List<com.pbl6.fitme.model.WishlistDto>>) {
                 if (response.isSuccessful) {
                     val list = response.body() ?: emptyList()
@@ -705,6 +707,26 @@ class MainRepository {
 
             override fun onFailure(call: Call<BaseResponse<VNPayResponse>>, t: Throwable) {
                 android.util.Log.e("MainRepository", "createVNPayPayment network error", t)
+                onResult(null)
+            }
+        })
+    }
+
+    // Create Momo payment (calls backend /momopay/create)
+    fun createMomoPayment(token: String, amount: Long, userEmail: String, orderId: String?, onResult: (MomoResponse?) -> Unit) {
+        val bearer = "Bearer $token"
+        momoApi.createMomoPayment(bearer, amount, userEmail, orderId).enqueue(object : Callback<MomoResponse> {
+            override fun onResponse(call: Call<MomoResponse>, response: Response<MomoResponse>) {
+                if (response.isSuccessful) {
+                    onResult(response.body())
+                } else {
+                    android.util.Log.e("MainRepository", "createMomoPayment failed: ${response.code()}")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<MomoResponse>, t: Throwable) {
+                android.util.Log.e("MainRepository", "createMomoPayment network error", t)
                 onResult(null)
             }
         })

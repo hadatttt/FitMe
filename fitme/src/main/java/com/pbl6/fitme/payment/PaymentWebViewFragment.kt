@@ -30,8 +30,37 @@ class PaymentWebViewFragment : Fragment() {
         webView = view.findViewById(R.id.webview)
         val progress = view.findViewById<View>(R.id.progress)
         val btnClose = view.findViewById<View>(R.id.btnClose)
+        val btnRefresh = view.findViewById<View>(R.id.btnRefresh)
 
         btnClose.setOnClickListener { findNavController().popBackStack() }
+
+        btnRefresh.setOnClickListener {
+            // Manual refresh of order status
+            val orderIdArg = arguments?.getString("order_id")
+            val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+            if (token.isNullOrBlank() || orderIdArg.isNullOrBlank()) {
+                android.widget.Toast.makeText(requireContext(), "No order to refresh", android.widget.Toast.LENGTH_SHORT).show()
+            } else {
+                val repo = MainRepository()
+                repo.getOrderById(token, orderIdArg) { order ->
+                    activity?.runOnUiThread {
+                        if (order != null) {
+                            try {
+                                val builder = AlertDialog.Builder(requireContext())
+                                val serverStatus = order.orderStatus ?: order.status
+                                builder.setTitle("Order status")
+                                builder.setMessage("Current order status: ${serverStatus ?: "unknown"}")
+                                builder.setPositiveButton("OK") { _, _ -> findNavController().popBackStack() }
+                                builder.setCancelable(false)
+                                builder.show()
+                            } catch (_: Exception) { }
+                        } else {
+                            android.widget.Toast.makeText(requireContext(), "Failed to fetch order status", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+        }
 
         webView?.apply {
             settings.javaScriptEnabled = true
@@ -44,30 +73,32 @@ class PaymentWebViewFragment : Fragment() {
                     if (isCallbackUrl(url)) {
                         try {
                             val uri = Uri.parse(url)
-                            val vnpResponseCode = uri.getQueryParameter("vnp_response_code") ?: ""
-                            val vnpOrderInfo = uri.getQueryParameter("vnp_order_info") ?: ""
-                            val vnpTransactionStatus = uri.getQueryParameter("vnp_transaction_status") ?: ""
-                            val vnpTransactionNo = uri.getQueryParameter("vnp_transaction_no")
-                            val vnpPayDate = uri.getQueryParameter("vnp_pay_date")
 
-                            // Avoid calling backend callback endpoint directly (may be misconfigured to localhost).
-                            // Instead, refresh order status from server (authoritative) and show result based on vnp_response_code.
+                            // VNPay params
+                            val vnpResponseCode = uri.getQueryParameter("vnp_response_code") ?: ""
+                            // Momo params (resultCode is used by backend/ipn)
+                            val momoResultCode = uri.getQueryParameter("resultCode") ?: uri.getQueryParameter("errorCode") ?: ""
+
                             val orderIdArg = arguments?.getString("order_id")
                             val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
                             val builder = AlertDialog.Builder(requireContext())
+
+                            // Determine success: VNPay uses "00", Momo uses "0"
+                            val success = (vnpResponseCode == "00") || (momoResultCode == "0")
 
                             if (!token.isNullOrBlank() && !orderIdArg.isNullOrBlank()) {
                                 val repo = MainRepository()
                                 repo.getOrderById(token, orderIdArg) { order ->
                                     activity?.runOnUiThread {
-                                        val success = vnpResponseCode == "00"
                                         builder.setTitle(if (success) "Payment Successful" else "Payment Result")
                                         val serverStatus = order?.orderStatus ?: order?.status
                                         val msg = StringBuilder()
                                         if (success) {
                                             msg.append("Thanh toán thành công. ")
                                         } else {
-                                            msg.append("Thanh toán không thành công. Mã trả về: $vnpResponseCode\n")
+                                            // prefer showing Momo or VNPay code if available
+                                            val code = if (vnpResponseCode.isNotBlank()) vnpResponseCode else momoResultCode
+                                            msg.append("Thanh toán không thành công. Mã trả về: $code\n")
                                         }
                                         if (!serverStatus.isNullOrBlank()) {
                                             msg.append("Trạng thái đơn trên server: $serverStatus")
@@ -85,11 +116,11 @@ class PaymentWebViewFragment : Fragment() {
                                     }
                                 }
                             } else {
-                                // No token/orderId available — show basic result from query param
+                                // No token/orderId available — show basic result from query params
                                 activity?.runOnUiThread {
-                                    val success = vnpResponseCode == "00"
                                     builder.setTitle(if (success) "Payment Successful" else "Payment Result")
-                                    val msg = if (success) "Thanh toán thành công." else "Thanh toán không thành công. Mã trả về: $vnpResponseCode"
+                                    val code = if (vnpResponseCode.isNotBlank()) vnpResponseCode else momoResultCode
+                                    val msg = if (success) "Thanh toán thành công." else "Thanh toán không thành công. Mã trả về: $code"
                                     builder.setMessage(msg)
                                     builder.setPositiveButton("OK") { _, _ -> findNavController().popBackStack() }
                                     builder.setCancelable(false)
@@ -110,6 +141,27 @@ class PaymentWebViewFragment : Fragment() {
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     progress.visibility = View.GONE
+
+                    // Detect VNPay 'merchant not approved' error by checking page text
+                    try {
+                        view?.evaluateJavascript("(function(){return (document.body && document.body.innerText) || (document.documentElement && document.documentElement.innerText) || '';})()") { value ->
+                            try {
+                                val pageText = value?.trim('"')?.replace("\\n", "\n") ?: ""
+                                if (pageText.contains("Website này chưa được phê duyệt", ignoreCase = true) || pageText.contains("chưa được phê duyệt", ignoreCase = true)) {
+                                    activity?.runOnUiThread {
+                                        try {
+                                            val builder = AlertDialog.Builder(requireContext())
+                                            builder.setTitle("VNPay Error")
+                                            builder.setMessage("VNPay trả về: Website/merchant chưa được phê duyệt. Vui lòng kiểm tra cấu hình merchant (vnp_TmnCode / return URL) hoặc liên hệ VNPay để được whitelist.")
+                                            builder.setPositiveButton("OK") { _, _ -> }
+                                            builder.setCancelable(true)
+                                            builder.show()
+                                        } catch (_: Exception) { }
+                                    }
+                                }
+                            } catch (_: Exception) { }
+                        }
+                    } catch (_: Exception) { }
                 }
             }
         }
@@ -124,8 +176,42 @@ class PaymentWebViewFragment : Fragment() {
     }
 
     private fun isCallbackUrl(url: String): Boolean {
-        // The backend's return url contains "/payment/vn-pay-callback"; detect that
-        return url.contains("/payment/vn-pay-callback") || url.contains("vnp_response_code")
+        // Detect VNPay and MoMo callback return URLs or query params
+        return url.contains("/payment/vn-pay-callback") || url.contains("vnp_response_code") || url.contains("resultCode") || url.contains("errorCode")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // If user returned from external payment app, allow auto-refresh of order status
+        val orderIdArg = arguments?.getString("order_id")
+        val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
+        if (!token.isNullOrBlank() && !orderIdArg.isNullOrBlank()) {
+            val repo = MainRepository()
+            repo.getOrderById(token, orderIdArg) { order ->
+                activity?.runOnUiThread {
+                    if (order != null) {
+                        // If order is confirmed, show dialog and navigate to orders
+                        val serverStatus = order.orderStatus ?: order.status
+                        if (!serverStatus.isNullOrBlank() && serverStatus.equals("CONFIRMED", ignoreCase = true)) {
+                            try {
+                                val builder = AlertDialog.Builder(requireContext())
+                                builder.setTitle("Payment Successful")
+                                builder.setMessage("Thanh toán thành công. Trạng thái đơn: $serverStatus")
+                                builder.setPositiveButton("OK") { _, _ ->
+                                    try {
+                                        val bundle = android.os.Bundle()
+                                        bundle.putString("order_status", "confirming")
+                                        findNavController().navigate(R.id.ordersFragment, bundle)
+                                    } catch (_: Exception) { findNavController().popBackStack() }
+                                }
+                                builder.setCancelable(false)
+                                builder.show()
+                            } catch (_: Exception) { }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun onDestroyView() {

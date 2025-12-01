@@ -58,7 +58,7 @@ class OrdersAdapter : BaseRecyclerViewAdapter<Order, ItemOrderBinding>() {
             } catch (e: Exception) {
                 (item.totalAmount ?: 0.0).toString()
             }
-            binding.txtPrice.text = "Total Price: $${total}"
+            binding.txtPrice.text = "Total Price: \$${total}"
 
             binding.txtStatus.text = item.status ?: item.orderStatus ?: ""
 
