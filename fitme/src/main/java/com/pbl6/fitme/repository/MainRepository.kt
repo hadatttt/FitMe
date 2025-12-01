@@ -1,7 +1,6 @@
 package com.pbl6.fitme.repository
 
 import android.util.Log
-import com.pbl6.fitme.model.AddCartRequest
 import com.pbl6.fitme.model.AddWishlistRequest
 import com.pbl6.fitme.network.BaseResponse
 import com.pbl6.fitme.model.CartItem
@@ -41,7 +40,6 @@ class MainRepository {
     private val orderApi = ApiClient.retrofit.create(OrderApiService::class.java)
     private val momoApi = ApiClient.retrofit.create(com.pbl6.fitme.network.MomoApiService::class.java)
 
-    // Create shopping cart for newly registered user
     fun createCartForNewUser(userId: String, onResult: (String?) -> Unit) {
         cartApi.createCartForUser(userId).enqueue(object : Callback<com.pbl6.fitme.network.ShoppingCartResponse> {
             override fun onResponse(call: Call<com.pbl6.fitme.network.ShoppingCartResponse>, response: Response<com.pbl6.fitme.network.ShoppingCartResponse>) {

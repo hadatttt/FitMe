@@ -17,7 +17,7 @@ class OrderItemsAdapter(private val items: List<OrderItem>) : RecyclerView.Adapt
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = items[position]
         holder.binding.txtName.text = item.productName ?: "Product"
-        holder.binding.txtQty.text = "Qty: ${item.quantity}"
+        holder.binding.txtQty.text = "x${item.quantity}"
             holder.binding.txtPrice.text = "\$${String.format("%.2f", item.unitPrice ?: 0.0)}"
         holder.binding.txtVariant.text = item.variantDetails ?: ""
             holder.binding.txtTotalPrice.text = "\$${String.format("%.2f", item.totalPrice ?: ((item.unitPrice ?: 0.0) * item.quantity))}"

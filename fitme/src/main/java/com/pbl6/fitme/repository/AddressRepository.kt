@@ -1,6 +1,7 @@
 package com.pbl6.fitme.repository
 
 import android.util.Log
+import com.pbl6.fitme.model.ShippingAddress
 import com.pbl6.fitme.network.AddressApiService
 import com.pbl6.fitme.network.ApiClient
 import com.pbl6.fitme.network.UserAddressRequest
@@ -24,13 +25,13 @@ class AddressRepository {
             }
         })
     }
-    fun getUserAddresses(token: String, email: String, onResult: (List<UserAddressResponse>?) -> Unit) {
+    fun getUserAddresses(token: String, email: String, onResult: (List<ShippingAddress>?) -> Unit) {
         val bearerToken = "Bearer $token"
 
-        addressApiService.getUserAddresses(bearerToken, email).enqueue(object : Callback<List<UserAddressResponse>> {
+        addressApiService.getUserAddresses(bearerToken, email).enqueue(object : Callback<List<ShippingAddress>> {
             override fun onResponse(
-                call: Call<List<UserAddressResponse>>,
-                response: Response<List<UserAddressResponse>>
+                call: Call<List<ShippingAddress>>,
+                response: Response<List<ShippingAddress>>
             ) {
                 if (response.isSuccessful) {
                     Log.d("AddressRepo", "Get addresses success: ${response.body()?.size} items")
@@ -41,7 +42,7 @@ class AddressRepository {
                 }
             }
 
-            override fun onFailure(call: Call<List<UserAddressResponse>>, t: Throwable) {
+            override fun onFailure(call: Call<List<ShippingAddress>>, t: Throwable) {
                 Log.e("AddressRepo", "Network error: ${t.localizedMessage}")
                 onResult(null)
             }

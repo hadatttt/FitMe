@@ -151,10 +151,7 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
             highlightSelectedTab(R.id.wish_id)
         }
-        requireActivity().findViewById<View>(R.id.filter_id).singleClick {
-            highlightSelectedTab(R.id.filter_id)
-            navigate(R.id.filterFragment)
-        }
+
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
             navigate(R.id.cartFragment)
@@ -181,7 +178,7 @@ class WishlistFragment : BaseFragment<FragmentWishlistBinding, WishlistViewModel
     }
 
     private fun highlightSelectedTab(selectedId: Int) {
-        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.filter_id, R.id.cart_id, R.id.person_id)
+        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.cart_id, R.id.person_id)
         ids.forEach { id ->
             val view = requireActivity().findViewById<View>(id)
             if (id == selectedId) {
