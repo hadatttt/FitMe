@@ -1,5 +1,6 @@
 package com.pbl6.fitme.network
 
+import com.pbl6.fitme.model.ShippingAddress
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -19,5 +20,5 @@ interface AddressApiService {
     fun getUserAddresses(
         @Header("Authorization") token: String,
         @Query("email") email: String
-    ): Call<List<UserAddressResponse>>
+    ): Call<List<ShippingAddress>>
 }

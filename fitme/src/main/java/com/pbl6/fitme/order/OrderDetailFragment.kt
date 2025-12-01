@@ -87,23 +87,16 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         val ship = order.shippingAddress
         binding.txtCustomerName.text = ship.recipientName.ifBlank { "N/A" }
         binding.txtPhoneNumber.text = ship.phone.ifBlank { "N/A" }
-        // Compose a readable address from available fields
         val addrParts = listOfNotNull(
             ship.addressLine1.takeIf { it.isNotBlank() },
             ship.addressLine2.takeIf { it.isNotBlank() },
-            ship.city.takeIf { it.isNotBlank() },
-            ship.stateProvince.takeIf { it.isNotBlank() },
-            ship.postalCode.takeIf { it.isNotBlank() },
             ship.country.takeIf { it.isNotBlank() }
         )
         binding.txtAddress.text = if (addrParts.isEmpty()) "N/A" else addrParts.joinToString(", ")
-        // If backend provided a formatted shippingAddressDetails, show it too
         try {
             binding.txtShippingAddressDetails.text = order.shippingAddressDetails ?: ""
             binding.txtShippingAddressDetails.visibility = if ((order.shippingAddressDetails ?: "").isBlank()) View.GONE else View.VISIBLE
         } catch (_: Exception) { }
-
-        // Order Items - prefer server `orderItems` if present, otherwise support older `items` key
         val items = when {
             !order.orderItems.isNullOrEmpty() -> order.orderItems
             !order.items.isNullOrEmpty() -> order.items
@@ -111,23 +104,16 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         }
         val adapter = OrderItemsAdapter(items)
         binding.recyclerOrderItems.adapter = adapter
-
-        // Payment Summary
         val subtotal = order.subtotal ?: 0.0
         val shippingFee = order.shippingFee ?: 0.0
         val total = order.totalAmount ?: (subtotal + shippingFee)
-
         binding.txtSubtotal.text = "\$${String.format("%.2f", subtotal)}"
         binding.txtShippingFee.text = "\$${String.format("%.2f", shippingFee)}"
         binding.txtTotal.text = "\$${String.format("%.2f", total)}"
         binding.txtDiscount.text = "\$${String.format("%.2f", order.discountAmount ?: 0.0)}"
         binding.txtCouponCode.text = "Coupon: ${order.couponId ?: "-"}"
         binding.txtOrderNotes.text = "Notes: ${order.orderNotes ?: "-"}"
-    // Order model doesn't include a paymentMethod field in this client model.
-    // Show placeholder or derive from server response when available.
     binding.txtPaymentMethod.text = "Payment Method: N/A"
-
-        // Set status color based on order status
         val statusColor = when(order.status?.uppercase() ?: order.orderStatus?.uppercase()) {
             "PENDING" -> R.color.status_pending
             "CONFIRMED" -> R.color.status_confirmed
