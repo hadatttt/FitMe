@@ -65,10 +65,11 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
 
                     it.avatarUrl?.let { url ->
                         val fullUrl = if (url.startsWith("/")) {
-                            "http://localhost:8080$url"
+                            "http://10.0.2.2:8080/api$url"
                         } else {
-                            "http://localhost:8080/$url"
+                            "http://10.0.2.2:8080/api/$url"
                         }
+                        Log.d("hehe",fullUrl)
                         Glide.with(requireContext())
                             .load(fullUrl)
                             .circleCrop()
