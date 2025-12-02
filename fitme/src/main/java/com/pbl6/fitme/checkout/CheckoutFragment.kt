@@ -70,6 +70,17 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                 }
             }
         }
+        // Load saved contact info from session (recipient name, phone, email)
+        try {
+            val session = SessionManager.getInstance()
+            val recipient = session.getRecipientName(requireContext()) ?: ""
+            val phone =  ""
+            val userEmail2 = session.getUserEmail(requireContext()) ?: ""
+            if (recipient.isNotBlank()) binding.txtRecipientName.text = "Recipient Name: $recipient"
+            if (phone.isNotBlank()) binding.txtPhone.text = "Phone: $phone"
+            if (userEmail2.isNotBlank()) binding.txtEmail.text = "Email: $userEmail2"
+        } catch (_: Exception) {
+        }
         try {
             binding.txtPaymentMethod.text = when (selectedPaymentMethod) {
                 PaymentMethod.MOMO -> "MOMO"
@@ -104,6 +115,18 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                     }
                 }
             }
+        }
+
+        // Refresh contact info when returning to this fragment
+        try {
+            val session = SessionManager.getInstance()
+            val recipient = session.getRecipientName(requireContext()) ?: ""
+            val phone =  ""
+            val userEmail2 = session.getUserEmail(requireContext()) ?: ""
+            if (recipient.isNotBlank()) binding.txtRecipientName.text = "Recipient Name: $recipient"
+            if (phone.isNotBlank()) binding.txtPhone.text = "Phone: $phone"
+            if (userEmail2.isNotBlank()) binding.txtEmail.text = "Email: $userEmail2"
+        } catch (_: Exception) {
         }
     }
 
@@ -327,7 +350,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                             bundle.putString("qr_url", qrCodeUrl)
                                             bundle.putString("amount_text", "Amount (VND): ${amountVndLong}")
                                             bundle.putString("order_id", createdOrder.orderId?.toString() ?: "")
-                                               bundle.putString("payment_method", "MOMO")
+                                            bundle.putString("payment_method", "MOMO")
                                             navigate(R.id.paymentWebViewFragment, bundle)
                                         } catch (ex: Exception) {
                                             try {
@@ -343,7 +366,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                                 val bundle = android.os.Bundle()
                                                 bundle.putString("payment_url", deeplink)
                                                 bundle.putString("order_id", createdOrder.orderId?.toString() ?: "")
-                                                   bundle.putString("payment_method", "MOMO")
+                                                bundle.putString("payment_method", "MOMO")
                                                 navigate(R.id.paymentWebViewFragment, bundle)
                                             } catch (ex: Exception) {
                                                 Toast.makeText(requireContext(), "Unable to open in-app payment. Please try again.", Toast.LENGTH_LONG).show()
@@ -711,7 +734,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             PaymentMethod.VNPAY -> 1
             PaymentMethod.COD -> 2
         }
-
         var tempSelection = selectedPaymentMethod
 
         AlertDialog.Builder(requireContext())

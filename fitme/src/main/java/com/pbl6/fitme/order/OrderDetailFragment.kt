@@ -84,9 +84,18 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
 
         // Delivery Info Card — use nested ShippingAddress from model
         val ship = order.shippingAddress
-        binding.txtCustomerName.text = ship.recipientName.ifBlank { "N/A" }
-        binding.txtPhoneNumber.text = ship.phone.ifBlank { "N/A" }
+            // Delivery Info Card — use nested ShippingAddress from model, fallback to session values if missing
+            val session = SessionManager.getInstance()
+            val fallbackName = session.getRecipientName(requireContext()) ?: ""
+            val fallbackPhone = session.getRecipientPhone(requireContext()) ?: ""
+            val customerName = ship.recipientName.takeIf { it.isNotBlank() } ?: fallbackName
+            val phoneNumber = ship.phone.takeIf { it.isNotBlank() } ?: fallbackPhone
+            binding.txtCustomerName.text = "Recipient Name: "+customerName.ifBlank { "N/A" }
+            binding.txtPhoneNumber.text = "Phone number: "+phoneNumber.ifBlank { "N/A" }
         // Compose a readable address from available fields
+            // Email: prefer order.userEmail, otherwise use session-stored email
+            val sessionEmail = SessionManager.getInstance().getUserEmail(requireContext())
+            binding.txtUserEmail.text = "User: ${order.userEmail ?: sessionEmail ?: "N/A"}"
         val addrParts = listOfNotNull(
             ship.addressLine1.takeIf { it.isNotBlank() },
             ship.addressLine2.takeIf { it.isNotBlank() },
@@ -95,10 +104,10 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
             ship.postalCode.takeIf { it.isNotBlank() },
             ship.country.takeIf { it.isNotBlank() }
         )
-        binding.txtAddress.text = if (addrParts.isEmpty()) "N/A" else addrParts.joinToString(", ")
+        binding.txtAddress.text = "Country: " + if (addrParts.isEmpty()) "N/A" else addrParts.joinToString(", ")
         // If backend provided a formatted shippingAddressDetails, show it too
         try {
-            binding.txtShippingAddressDetails.text = order.shippingAddressDetails ?: ""
+            binding.txtShippingAddressDetails.text = "Address: " + (order.shippingAddressDetails ?: "")
             binding.txtShippingAddressDetails.visibility = if ((order.shippingAddressDetails ?: "").isBlank()) View.GONE else View.VISIBLE
         } catch (_: Exception) { }
 
