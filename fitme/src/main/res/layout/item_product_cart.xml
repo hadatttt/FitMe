@@ -1,108 +1,132 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="12dp"
-        android:background="@android:color/white"
-        android:layout_marginBottom="12dp"
-        android:elevation="2dp"
-        android:gravity="center_vertical">
+        android:layout_marginHorizontal="3dp"
+        android:layout_marginVertical="8dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp">
 
-    <CheckBox
-            android:id="@+id/chkSelect_cart"
-            android:layout_width="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:minWidth="0dp"
-            android:minHeight="0dp"
-            android:buttonTint="@color/maincolor"
-            android:layout_gravity="center_vertical"/>
+            android:padding="12dp">
 
-    <RelativeLayout
-            android:layout_width="90dp"
-            android:layout_height="90dp">
+        <CheckBox
+                android:id="@+id/chkSelect_cart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:buttonTint="#FF6F00"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-        <ImageView
-                android:id="@+id/imgProduct_cart"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_splash"
-                android:background="@android:color/darker_gray"
-                android:clipToOutline="true"/>
+        <androidx.cardview.widget.CardView
+                android:id="@+id/cardImgWrapper"
+                android:layout_width="90dp"
+                android:layout_height="90dp"
+                android:layout_marginStart="8dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#F5F5F5"
+                app:layout_constraintStart_toEndOf="@id/chkSelect_cart"
+                app:layout_constraintTop_toTopOf="parent"
+>
+
+            <ImageView
+                    android:id="@+id/imgProduct_cart"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_splash" />
+        </androidx.cardview.widget.CardView>
 
         <ImageView
                 android:id="@+id/btnRemoveCart"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_margin="5dp"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentStart="true"
-                android:src="@drawable/ic_bin"/>
-    </RelativeLayout>
-
-    <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="12dp">
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:src="@drawable/ic_bin"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
                 android:id="@+id/txtTitle_cart"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Product Name"
-                android:textSize="14sp"
-                android:textColor="#333333" />
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="8dp"
+                android:fontFamily="sans-serif-medium"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:text="Nike Air Jordan"
+                android:textColor="#333333"
+                android:textSize="16sp"
+                app:layout_constraintEnd_toStartOf="@id/btnRemoveCart"
+                app:layout_constraintStart_toEndOf="@id/cardImgWrapper"
+                app:layout_constraintTop_toTopOf="@id/cardImgWrapper" />
 
         <TextView
                 android:id="@+id/txtDetail_cart"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:text="Pink, Size M"
+                android:textColor="#888888"
                 android:textSize="13sp"
-                android:textColor="#777777"
-                android:layout_marginTop="2dp"/>
+                app:layout_constraintEnd_toEndOf="@id/txtTitle_cart"
+                app:layout_constraintStart_toStartOf="@id/txtTitle_cart"
+                app:layout_constraintTop_toBottomOf="@id/txtTitle_cart" />
 
         <TextView
                 android:id="@+id/txtPrice_cart"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="$17,00"
+                android:layout_marginTop="12dp"
+                android:fontFamily="sans-serif-black"
+                android:text="$17.00"
+                android:textColor="#FF6F00"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#000000"
-                android:layout_marginTop="6dp"/>
-    </LinearLayout>
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="@id/txtTitle_cart" />
 
-    <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="6dp">
-
-        <ImageView
-                android:id="@+id/btnMinus"
-                android:layout_width="32dp"
+        <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="32dp"
-                android:src="@drawable/ic_less"/>
+                android:background="@drawable/bg_quantity_rounded"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+            <ImageView
+                    android:id="@+id/btnMinus"
+                    android:layout_width="32dp"
+                    android:layout_height="match_parent"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_less"
+                    app:tint="#333333"/>
 
-        <TextView
-                android:id="@+id/txtQty"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:gravity="center"
-                android:text="1"
-                android:background="#E5EBFC"
-                android:layout_marginHorizontal="4dp"/>
+            <TextView
+                    android:id="@+id/txtQty"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="1"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:textSize="14sp" />
 
-        <ImageView
-                android:id="@+id/btnPlus"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_more"/>
-    </LinearLayout>
-</LinearLayout>
+            <ImageView
+                    android:id="@+id/btnPlus"
+                    android:layout_width="32dp"
+                    android:layout_height="match_parent"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_more"
+                    app:tint="#333333"/>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

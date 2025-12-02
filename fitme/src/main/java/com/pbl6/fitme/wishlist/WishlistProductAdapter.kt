@@ -28,8 +28,7 @@ class WishlistProductAdapter(
         val btnRemove: ImageView = view.findViewById(R.id.btnRemove)
         val txtTitle: TextView = view.findViewById(R.id.txtTitle_wl)
         val txtPrice: TextView = view.findViewById(R.id.txtPrice_wl)
-        val btnColor: TextView = view.findViewById(R.id.btnColor)
-        val btnSize: TextView = view.findViewById(R.id.btnSize)
+
         val btnAddToCart: ImageView = view.findViewById(R.id.btnAddToCart)
     }
 
@@ -49,9 +48,7 @@ class WishlistProductAdapter(
         holder.txtTitle.text = product?.productName ?: "Unknown"
         holder.txtPrice.text = variant?.price?.let { "\$${String.format("%.2f", it)}" } ?: ""
 
-        // Hide color/size on wishlist item (handled in product detail)
-        holder.btnColor.visibility = View.GONE
-        holder.btnSize.visibility = View.GONE
+
 
         // Load product image if available, otherwise use placeholder
         val imageUrl = product?.mainImageUrl ?: product?.images?.firstOrNull()?.imageUrl

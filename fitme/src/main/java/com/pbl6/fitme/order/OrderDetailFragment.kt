@@ -19,21 +19,17 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
     private val apiDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
 
     override fun initView() {
-        // Hide main toolbar
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.GONE
 
-        // Setup RecyclerView
         binding.recyclerOrderItems.layoutManager = LinearLayoutManager(requireContext())
 
-        // Setup back button
         binding.ivBack.setOnClickListener {
             popBackStack()
         }
     }
 
     override fun initListener() {
-        // Add any additional listeners here
     }
 
     override fun initData() {
