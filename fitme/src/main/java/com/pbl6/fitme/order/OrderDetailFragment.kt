@@ -142,6 +142,7 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         null -> "N/A"
         else -> rawMethod
     }
+
     binding.txtPaymentMethod.text = "Payment Method: $paymentMethodText"
     binding.txtPaymentMethod.visibility = View.VISIBLE
 

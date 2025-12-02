@@ -24,6 +24,9 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
     private lateinit var reviewAdapter: ReviewAdapter
     private var currentProduct: Product? = null
     private var autoOpenAddToCart: Boolean = false
+    private var isInWishlist: Boolean = false
+    private val wishlistRepo = com.pbl6.fitme.repository.WishlistRepository()
+    private var currentWishlistItemId: String? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -56,6 +59,8 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             product?.let {
                 currentProduct = it
                 populateUI(it)
+                // Check whether this product is already in the user's wishlist
+                checkWishlistForProduct(it)
                 if (autoOpenAddToCart) {
                     autoOpenAddToCart = false
                     showAddtocardNowSheet()
@@ -110,9 +115,14 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
                 showVariationsSheet()
             }
             R.id.btnFavorite -> {
+                val token = SessionManager.getInstance().getAccessToken(requireContext())
+                if (token.isNullOrBlank()) {
+                    Toast.makeText(requireContext(), "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show()
+                    return
+                }
+
                 currentProduct?.let { product ->
-                    val userEmail =
-                        SessionManager.getInstance().getUserEmail(requireContext())
+                    val userEmail = SessionManager.getInstance().getUserEmail(requireContext())
 
                     if (userEmail.isNullOrBlank()) {
                         Toast.makeText(
@@ -127,10 +137,85 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
 
                     android.util.Log.d(
                         "ProductDetailFragment",
-                        "Add to wishlist initiated: userEmail=$userEmail, productId=$productId"
+                        "Wishlist toggle initiated: userEmail=$userEmail, productId=$productId, currentlyInWishlist=$isInWishlist"
                     )
 
-                    viewModel.addToWishlist(token, userEmail, productId)
+                    if (isInWishlist) {
+                        // Remove from wishlist
+                        val wishlistItemId = currentWishlistItemId
+                        if (!wishlistItemId.isNullOrBlank()) {
+                            wishlistRepo.removeWishlistItem(token, wishlistItemId) { success ->
+                                activity?.runOnUiThread {
+                                    if (success) {
+                                        isInWishlist = false
+                                        currentWishlistItemId = null
+                                        try {
+                                            binding.btnFavorite.setImageResource(R.drawable.ic_heart_blue)
+                                        } catch (_: Exception) {
+                                        }
+                                        Toast.makeText(requireContext(), "Đã bỏ khỏi wishlist", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(requireContext(), "Xóa khỏi wishlist thất bại", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        } else {
+                            // If we don't have the wishlistItemId, refresh wishlist and try to find it then remove
+                            wishlistRepo.getWishlist(token) { items ->
+                                val found = items?.firstOrNull { wi ->
+                                    try { wi.productId.toString() == productId.toString() } catch (_: Exception) { false }
+                                }
+                                val idToRemove = found?.wishlistItemId?.toString()
+                                if (!idToRemove.isNullOrBlank()) {
+                                    wishlistRepo.removeWishlistItem(token, idToRemove) { success ->
+                                        activity?.runOnUiThread {
+                                            if (success) {
+                                                isInWishlist = false
+                                                currentWishlistItemId = null
+                                                try { binding.btnFavorite.setImageResource(R.drawable.ic_heart_blue) } catch (_: Exception) {}
+                                                Toast.makeText(requireContext(), "Đã bỏ khỏi wishlist", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(requireContext(), "Xóa khỏi wishlist thất bại", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    activity?.runOnUiThread {
+                                        Toast.makeText(requireContext(), "Không tìm thấy mục wishlist để xóa", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Add to wishlist
+                        mainRepository.addToWishlist(
+                            token,
+                            userEmail,
+                            com.pbl6.fitme.model.AddWishlistRequest(productId)
+                        ) { success ->
+                            activity?.runOnUiThread {
+                                if (success) {
+                                    // Refresh wishlist to capture the created wishlistItemId
+                                    wishlistRepo.getWishlist(token) { items ->
+                                        activity?.runOnUiThread {
+                                            val found = items?.firstOrNull { wi ->
+                                                try { wi.productId.toString() == productId.toString() } catch (_: Exception) { false }
+                                            }
+                                            currentWishlistItemId = found?.wishlistItemId?.toString()
+                                            isInWishlist = found != null
+                                            try {
+                                                binding.btnFavorite.setImageResource(if (isInWishlist) R.drawable.ic_heart else R.drawable.ic_heart_blue)
+                                            } catch (_: Exception) {
+                                            }
+                                            Toast.makeText(requireContext(), if (isInWishlist) "Đã thêm vào wishlist" else "Đã thêm - nhưng không xác nhận được", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                } else {
+                                    Toast.makeText(requireContext(), "Thêm vào wishlist thất bại", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -184,6 +269,42 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
         }
     }
 
+    private fun checkWishlistForProduct(p: Product) {
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
+        if (token.isNullOrBlank()) {
+            // Not logged in: show default (not in wishlist)
+            isInWishlist = false
+            try {
+                binding.btnFavorite.setImageResource(R.drawable.ic_heart_blue)
+                binding.btnFavorite.isEnabled = true
+            } catch (_: Exception) {
+            }
+            return
+        }
+
+        wishlistRepo.getWishlist(token) { items ->
+            activity?.runOnUiThread {
+                val found = items?.firstOrNull { wi ->
+                    try { wi.productId?.toString() == p.productId.toString() } catch (_: Exception) { false }
+                }
+
+                val inList = found != null
+                isInWishlist = inList
+                currentWishlistItemId = found?.wishlistItemId?.toString()
+                try {
+                    if (inList) {
+                        binding.btnFavorite.setImageResource(R.drawable.ic_heart)
+                    } else {
+                        binding.btnFavorite.setImageResource(R.drawable.ic_heart_blue)
+                    }
+                    // Keep button enabled so user can toggle (remove) from this screen
+                    binding.btnFavorite.isEnabled = true
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
     private fun hideToolbar() {
         activity?.findViewById<View>(R.id.toolbar)?.visibility = View.GONE
     }
@@ -193,6 +314,13 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
         val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
 
         if (!token.isNullOrBlank()) {
+
+            // Ensure favorite button default state
+            try {
+                binding.btnFavorite.setImageResource(R.drawable.ic_heart_blue)
+                binding.btnFavorite.isEnabled = true
+            } catch (_: Exception) {
+            }
 
             // --- Setup Related Products (Giữ nguyên) ---
             val productAdapter = ProductAdapter()
