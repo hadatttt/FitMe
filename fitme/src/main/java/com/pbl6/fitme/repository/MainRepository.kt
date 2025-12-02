@@ -60,6 +60,7 @@ class MainRepository {
             }
         })
     }
+
     fun getProductVariants(token: String, onResult: (List<ProductVariant>?) -> Unit) {
         val bearerToken = "Bearer $token"
         variantApi.getProductVariants(bearerToken).enqueue(object : Callback<BaseResponse<List<ProductVariant>>> {
@@ -78,6 +79,7 @@ class MainRepository {
             }
         })
     }
+
     fun getProductImages(onResult: (List<ProductImage>?) -> Unit) {
         productImageApi.getProductImages().enqueue(object : Callback<List<ProductImage>> {
             override fun onResponse(call: Call<List<ProductImage>>, response: Response<List<ProductImage>>) {

@@ -135,5 +135,13 @@
             android:name="order_id"
             app:argType="string" />
     </fragment>
+    <fragment
+            android:id="@+id/reviewFragment"
+            android:name="com.pbl6.fitme.review.ReviewFragment"
+            android:label="ReviewFragment" >
+        <argument
+                android:name="order_id"
+                app:argType="string" />
+    </fragment>
 
 </navigation>
