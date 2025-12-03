@@ -17,6 +17,7 @@ import hoang.dqm.codebase.utils.singleClick
 
 class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>() {
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+    private val recommendRepository = com.pbl6.fitme.repository.RecommendRepository()
     private lateinit var productAdapter: ProductAdapter
 
     override fun initView() {
@@ -144,10 +145,52 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
                 navigate(R.id.productDetailFragment, bundle)
             }
 
-            mainRepository.getProducts(token) { products: List<Product>? ->
-                activity?.runOnUiThread {
-                    if (products != null) {
-                        productAdapter.setList(products)
+            val userId = SessionManager.getInstance().getUserId(requireContext())?.toString()
+            if (!userId.isNullOrBlank()) {
+                // Request 6 recommendations and display them
+                recommendRepository.getRecommendations(requireContext(), userId, 6) { list ->
+                    activity?.runOnUiThread {
+                        if (!list.isNullOrEmpty()) {
+                                        // Ensure at most 6 items
+                                        val limited = if (list.size > 6) list.take(6) else list
+
+                                        // If some recommended products don't include images, fetch full product details
+                                        val needFetch = limited.filter { it.mainImageUrl.isNullOrBlank() }
+                                        if (needFetch.isEmpty()) {
+                                            productAdapter.setList(limited)
+                                        } else {
+                                            val mutable = limited.toMutableList()
+                                            var remaining = needFetch.size
+                                            needFetch.forEach { rec ->
+                                                mainRepository.getProductById(token, rec.productId.toString()) { full ->
+                                                    activity?.runOnUiThread {
+                                                        if (full != null) {
+                                                            val idx = mutable.indexOfFirst { it.productId == rec.productId }
+                                                            if (idx >= 0) mutable[idx] = full
+                                                        }
+                                                        remaining -= 1
+                                                        if (remaining <= 0) {
+                                                            productAdapter.setList(mutable)
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                        } else {
+                            // fallback to top products if no recommendations
+                            mainRepository.getProducts(token) { products: List<Product>? ->
+                                activity?.runOnUiThread {
+                                    if (products != null) productAdapter.setList(products.take(6))
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // No user id: show top 6 products
+                mainRepository.getProducts(token) { products: List<Product>? ->
+                    activity?.runOnUiThread {
+                        if (products != null) productAdapter.setList(products.take(6))
                     }
                 }
             }

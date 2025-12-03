@@ -18,7 +18,14 @@ data class Product(
     val reviews: List<Review> = emptyList()
 ): Serializable {
     val mainImageUrl: String?
-        get() = images.firstOrNull { it.isMain == true }?.imageUrl ?: images.firstOrNull()?.imageUrl
+        get() {
+            // Be defensive: Gson may set fields to null even if Kotlin declares non-nullable defaults.
+            val imgs = images as? List<ProductImage> ?: emptyList()
+            return imgs.firstOrNull { it.isMain == true }?.imageUrl ?: imgs.firstOrNull()?.imageUrl
+        }
     val minPrice: Double?
-        get() = variants.minByOrNull { it.price }?.price
+        get() {
+            val vars = variants as? List<ProductVariant> ?: emptyList()
+            return vars.minByOrNull { it.price }?.price
+        }
 }

@@ -25,26 +25,79 @@ import hoang.dqm.codebase.utils.singleClick
 
 class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
 
-    private val cameraLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                val data: Intent? = result.data
-                val photo: Bitmap? = data?.extras?.get("data") as? Bitmap
-                if (photo != null) {
-                    binding.ivCamera.setImageBitmap(photo)
+    // Person image picker (choose from album) — replaces camera capture
+    private val personPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            try {
+                val bmp = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    requireContext().contentResolver.loadThumbnail(uri, android.util.Size(800, 800), null)
                 } else {
-                    Toast.makeText(requireContext(), "Cannot capture image", Toast.LENGTH_SHORT).show()
+                    MediaStore.Images.Media.getBitmap(requireContext().contentResolver, uri)
+                }
+                personBitmap = bmp
+                binding.ivCamera.setImageBitmap(bmp)
+                // after selecting person, prompt to pick a cloth image
+                clothPicker.launch("image/*")
+            } catch (ex: Exception) {
+                Toast.makeText(requireContext(), "Cannot load selected image", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(requireContext(), "No image selected", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // pick a cloth image from gallery
+    private val clothPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            try {
+                val bmp = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    // API 29+ has loadThumbnail which is efficient
+                    requireContext().contentResolver.loadThumbnail(uri, android.util.Size(800, 800), null)
+                } else {
+                    // Fallback for older devices
+                    MediaStore.Images.Media.getBitmap(requireContext().contentResolver, uri)
+                }
+                clothBitmap = bmp
+                if (personBitmap != null && clothBitmap != null) {
+                    performTryOn(personBitmap!!, clothBitmap!!)
+                }
+            } catch (ex: Exception) {
+                Toast.makeText(requireContext(), "Failed to load cloth image", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(requireContext(), "No cloth selected", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private var personBitmap: Bitmap? = null
+    private var clothBitmap: Bitmap? = null
+    private val tryOnRepo = com.pbl6.fitme.repository.TryOnRepository()
+
+    private fun performTryOn(person: Bitmap, cloth: Bitmap) {
+        binding.progressBar.visibility = View.VISIBLE
+        tryOnRepo.virtualTryOn(requireContext(), person, cloth) { bytes ->
+            activity?.runOnUiThread {
+                binding.progressBar.visibility = View.GONE
+                if (bytes != null && bytes.isNotEmpty()) {
+                    try {
+                        val bmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                        // show result in a dialog
+                        val dlg = android.app.Dialog(requireContext())
+                        val iv = android.widget.ImageView(requireContext())
+                        iv.setImageBitmap(bmp)
+                        dlg.setContentView(iv)
+                        dlg.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
+                        dlg.show()
+                    } catch (ex: Exception) {
+                        Toast.makeText(requireContext(), "Failed to render try-on result", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(requireContext(), "Try-on failed or returned empty image", Toast.LENGTH_SHORT).show()
                 }
             }
         }
-    private val requestCameraPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) {
-                openCamera()
-            } else {
-                Toast.makeText(requireContext(), "Camera permission denied", Toast.LENGTH_SHORT).show()
-            }
-        }
+        // No recommendations in HomeFragment: only run Try-On
+    }
 
     override fun initView() {
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
@@ -150,7 +203,8 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         })
 
         binding.ivCamera.singleClick {
-            requestCameraPermission.launch(android.Manifest.permission.CAMERA)
+            // Open album to select person image (user requested album selection instead of camera)
+            personPicker.launch("image/*")
         }
 
         // Filter / Sort popup
@@ -214,10 +268,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         }
     }
 
-    private fun openCamera() {
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        cameraLauncher.launch(intent)
-    }
+    // camera capture removed in favor of album picker
 
     private fun sortByNameAsc() {
         val sorted = allProducts.sortedBy { it.productName?.lowercase() }
