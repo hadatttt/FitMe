@@ -3,7 +3,6 @@ package com.pbl6.fitme.settings
 import android.app.DatePickerDialog
 import android.content.Context
 import android.net.Uri
-import android.os.Bundle
 import android.util.Log
 import android.widget.DatePicker
 import android.widget.Toast
@@ -12,7 +11,6 @@ import androidx.core.content.FileProvider
 import com.bumptech.glide.Glide
 import com.pbl6.fitme.databinding.FragmentSettingProfileBinding
 import com.pbl6.fitme.home.HomeMainViewModel
-import com.pbl6.fitme.network.UpdateUserRequest
 import com.pbl6.fitme.repository.UserRepository
 import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
@@ -65,9 +63,9 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
 
                     it.avatarUrl?.let { url ->
                         val fullUrl = if (url.startsWith("/")) {
-                            "http://10.0.2.2:8080/api$url"
+                            "http://2.2:8080/api$url"
                         } else {
-                            "http://10.0.2.2:8080/api/$url"
+                            "http://10.48.170.123/api/$url"
                         }
                         Log.d("hehe",fullUrl)
                         Glide.with(requireContext())
