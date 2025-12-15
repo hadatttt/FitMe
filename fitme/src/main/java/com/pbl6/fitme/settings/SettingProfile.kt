@@ -1,13 +1,18 @@
 package com.pbl6.fitme.settings
 
+import android.Manifest
+import android.app.Activity
 import android.app.DatePickerDialog
 import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
+import android.provider.MediaStore
 import android.util.Log
 import android.widget.DatePicker
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.FileProvider
+import androidx.appcompat.app.AlertDialog
 import com.bumptech.glide.Glide
 import com.pbl6.fitme.databinding.FragmentSettingProfileBinding
 import com.pbl6.fitme.home.HomeMainViewModel
@@ -19,7 +24,9 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileOutputStream
 import java.util.*
 
 class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewModel>() {
@@ -27,22 +34,45 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
     private val userRepository = UserRepository()
     private var avatarFile: File? = null
 
-    // Chọn ảnh từ Gallery
+    // --- 1. LOGIC CAMERA GIỐNG HOME FRAGMENT ---
+
+    // Launcher nhận kết quả từ Camera (Trả về Bitmap)
+    private val cameraLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data: Intent? = result.data
+                val photo: Bitmap? = data?.extras?.get("data") as? Bitmap
+                if (photo != null) {
+                    // Hiển thị lên View
+                    binding.imgProfile.setImageBitmap(photo)
+                    // QUAN TRỌNG: Chuyển Bitmap thành File để chuẩn bị Upload
+                    avatarFile = bitmapToFile(requireContext(), photo)
+                } else {
+                    Toast.makeText(requireContext(), "Cannot capture image", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+    // Launcher xin quyền Camera
+    private val requestCameraPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                openCameraIntent()
+            } else {
+                Toast.makeText(requireContext(), "Camera permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    // --- 2. LOGIC GALLERY (GIỮ NGUYÊN) ---
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            binding.imgProfile.setImageURI(uri)
+            Glide.with(requireContext())
+                .load(uri)
+                .circleCrop()
+                .into(binding.imgProfile)
             avatarFile = uriToFile(requireContext(), uri)
-        }
-    }
-
-    // Chụp ảnh Camera
-    private val takePictureLauncher = registerForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { success: Boolean ->
-        if (success && avatarFile != null) {
-            binding.imgProfile.setImageURI(Uri.fromFile(avatarFile))
         }
     }
 
@@ -51,7 +81,6 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
         val userId = SessionManager.getInstance().getUserId(requireContext())?.toString()
         if (userId.isNullOrBlank()) return
 
-        // Load user info
         userRepository.getUserDetail(token, userId) { user ->
             activity?.runOnUiThread {
                 user?.let {
@@ -65,9 +94,8 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
                         val fullUrl = if (url.startsWith("/")) {
                             "http://2.2:8080/api$url"
                         } else {
-                            "http://10.48.170.123/api/$url"
+                            "http://10.48.170.90/api/$url"
                         }
-                        Log.d("hehe",fullUrl)
                         Glide.with(requireContext())
                             .load(fullUrl)
                             .circleCrop()
@@ -79,18 +107,13 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
     }
 
     override fun initListener() {
-        // Back button
         binding.ivBack.setOnClickListener { activity?.onBackPressed() }
-
-        // Date picker
         binding.etDateOfBirth.setOnClickListener { showDatePicker() }
-
-        // Edit avatar
         binding.btnEditImage.setOnClickListener { showImagePickerDialog() }
-
-        // Save changes
         binding.btnSave.setOnClickListener { saveUserChanges() }
     }
+
+    // region: Helper Functions
 
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
@@ -110,28 +133,24 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
 
     private fun showImagePickerDialog() {
         val options = arrayOf("Camera", "Gallery")
-        val builder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        val builder = AlertDialog.Builder(requireContext())
         builder.setTitle("Choose Avatar")
         builder.setItems(options) { _, which ->
             when (which) {
-                0 -> openCamera()
+                0 -> requestCameraPermission.launch(Manifest.permission.CAMERA) // Gọi xin quyền giống Home
                 1 -> pickImageLauncher.launch("image/*")
             }
         }
         builder.show()
     }
 
-    private fun openCamera() {
-        val file = File(requireContext().cacheDir, "avatar_${System.currentTimeMillis()}.jpg")
-        avatarFile = file
-        val uri = FileProvider.getUriForFile(
-            requireContext(),
-            "${requireContext().packageName}.provider",
-            file
-        )
-        takePictureLauncher.launch(uri)
+    // Hàm mở Camera đơn giản (giống HomeFragment)
+    private fun openCameraIntent() {
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        cameraLauncher.launch(intent)
     }
 
+    // Helper: Chuyển Uri -> File (Cho Gallery)
     private fun uriToFile(context: Context, uri: Uri): File {
         val file = File(context.cacheDir, "temp_avatar_${System.currentTimeMillis()}.jpg")
         context.contentResolver.openInputStream(uri)?.use { input ->
@@ -142,21 +161,37 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
         return file
     }
 
+    // Helper MỚI: Chuyển Bitmap -> File (Cho Camera)
+    // Cần hàm này vì Camera trả về Bitmap nhưng API cần File
+    private fun bitmapToFile(context: Context, bitmap: Bitmap): File {
+        val file = File(context.cacheDir, "camera_capture_${System.currentTimeMillis()}.jpg")
+        val bos = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos) // Nén ảnh thành JPEG
+        val bitmapdata = bos.toByteArray()
+
+        val fos = FileOutputStream(file)
+        fos.write(bitmapdata)
+        fos.flush()
+        fos.close()
+        return file
+    }
+
+    // endregion
+
     private fun saveUserChanges() {
         val token = SessionManager.getInstance().getAccessToken(requireContext()) ?: ""
         val userId = SessionManager.getInstance().getUserId(requireContext())?.toString()
         if (userId.isNullOrBlank()) return
 
-        val roleIds = listOf("6828a645-b7a7-45ab-8568-0268b0085268") // Default role
+        val roleIds = listOf("6828a645-b7a7-45ab-8568-0268b0085268")
 
         val username = binding.etEmail.text.toString()
         val email = binding.etEmail.text.toString()
         val fullName = binding.etFullName.text.toString()
         val dateOfBirth = binding.etDateOfBirth.text.toString()
         val phone = binding.etPhone.text.toString()
-        val password = "" // nếu không đổi
+        val password = ""
 
-        // Tạo Map và Multipart cho API
         val params = HashMap<String, RequestBody>()
         params["username"] = username.toRequestBody("text/plain".toMediaType())
         params["password"] = password.toRequestBody("text/plain".toMediaType())
@@ -175,6 +210,8 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
             activity?.runOnUiThread {
                 if (updatedUser != null) {
                     Toast.makeText(requireContext(), "Update success!", Toast.LENGTH_SHORT).show()
+                    avatarFile?.delete()
+                    avatarFile = null
                 } else {
                     Toast.makeText(requireContext(), "Update failed!", Toast.LENGTH_SHORT).show()
                 }
@@ -183,6 +220,5 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
     }
 
     override fun initData() {
-        // Init thêm dữ liệu nếu cần
     }
 }

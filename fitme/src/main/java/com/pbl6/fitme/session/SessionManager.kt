@@ -13,11 +13,12 @@ class SessionManager private constructor() {
     companion object {
         private const val KEY_LOGIN_RESPONSE = "login_response"
         private const val KEY_USER_EMAIL = "session_user_email"
-    private const val KEY_USER_ID = "session_user_id"
-    private const val KEY_RECIPIENT_NAME = "session_recipient_name"
-    private const val KEY_CART_ID = "session_cart_id"
-    private const val KEY_PERSISTENT_CART_ID = "persistent_cart_id"
-    private const val KEY_LOCAL_CART = "local_cart_items"
+        private const val KEY_USER_ID = "session_user_id"
+        private const val KEY_RECIPIENT_NAME = "session_recipient_name"
+        private const val KEY_RECIPIENT_PHONE = "session_recipient_phone"
+        private const val KEY_CART_ID = "session_cart_id"
+        private const val KEY_PERSISTENT_CART_ID = "persistent_cart_id"
+        private const val KEY_LOCAL_CART = "local_cart_items"
 
         @Volatile
         private var instance: SessionManager? = null
@@ -43,6 +44,14 @@ class SessionManager private constructor() {
         spUtils.saveData(context, name, KEY_RECIPIENT_NAME)
     }
 
+    fun saveRecipientPhone(context: Context, phone: String) {
+        try {
+            spUtils.saveData(context, phone, KEY_RECIPIENT_PHONE)
+        } catch (ex: Exception) {
+            android.util.Log.e("SessionManager", "saveRecipientPhone failed", ex)
+        }
+    }
+
     fun getLoginResponse(context: Context): LoginResponse? {
         return spUtils.getData(context, KEY_LOGIN_RESPONSE, LoginResponse::class.java)
     }
@@ -53,6 +62,15 @@ class SessionManager private constructor() {
 
     fun getRecipientName(context: Context): String? {
         return spUtils.getData(context, KEY_RECIPIENT_NAME, String::class.java)
+    }
+
+    fun getRecipientPhone(context: Context): String? {
+        return try {
+            spUtils.getData(context, KEY_RECIPIENT_PHONE, String::class.java)
+        } catch (ex: Exception) {
+            android.util.Log.e("SessionManager", "getRecipientPhone failed", ex)
+            null
+        }
     }
 
     fun getAccessToken(context: Context): String? {
@@ -177,7 +195,7 @@ class SessionManager private constructor() {
             if (persistent != null) {
                 return java.util.UUID.fromString(persistent)
             }
-            
+
             // Fall back to session cart ID
             val stored = spUtils.getData(context, KEY_CART_ID, String::class.java)
             if (stored != null) {

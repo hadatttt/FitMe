@@ -39,6 +39,7 @@ class MainRepository {
     private val reviewApi = ApiClient.retrofit.create(ReviewApiService::class.java)
     private val orderApi = ApiClient.retrofit.create(OrderApiService::class.java)
     private val momoApi = ApiClient.retrofit.create(com.pbl6.fitme.network.MomoApiService::class.java)
+    private val paymentApi = ApiClient.retrofit.create(com.pbl6.fitme.network.PaymentApiService::class.java)
 
     fun createCartForNewUser(userId: String, onResult: (String?) -> Unit) {
         cartApi.createCartForUser(userId).enqueue(object : Callback<com.pbl6.fitme.network.ShoppingCartResponse> {
@@ -728,6 +729,34 @@ class MainRepository {
             override fun onFailure(call: Call<MomoResponse>, t: Throwable) {
                 android.util.Log.e("MainRepository", "createMomoPayment network error", t)
                 onResult(null)
+            }
+        })
+    }
+
+    // Create a payment record (used by client for COD or explicit client-side creation)
+    fun createPayment(token: String, orderId: String, paymentMethod: String, amount: Double, paymentStatus: String? = null, onResult: (Boolean) -> Unit) {
+        val bearer = "Bearer $token"
+        // Build simple map to avoid creating additional DTO mapping issues
+        val payload = mutableMapOf<String, Any>(
+            "orderId" to orderId,
+            "paymentMethod" to paymentMethod,
+            "amount" to amount
+        )
+        if (paymentStatus != null) payload["paymentStatus"] = paymentStatus
+
+        paymentApi.createPayment(bearer, payload).enqueue(object : Callback<BaseResponse<String>> {
+            override fun onResponse(call: Call<BaseResponse<String>>, response: Response<BaseResponse<String>>) {
+                if (response.isSuccessful) {
+                    onResult(true)
+                } else {
+                    android.util.Log.e("MainRepository", "createPayment failed: ${response.code()}")
+                    onResult(false)
+                }
+            }
+
+            override fun onFailure(call: Call<BaseResponse<String>>, t: Throwable) {
+                android.util.Log.e("MainRepository", "createPayment network error", t)
+                onResult(false)
             }
         })
     }

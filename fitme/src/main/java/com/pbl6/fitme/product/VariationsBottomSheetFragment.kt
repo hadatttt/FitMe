@@ -1,11 +1,14 @@
 package com.pbl6.fitme.product
 
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.lifecycle.ViewModelProvider
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -13,15 +16,13 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.pbl6.fitme.R
 import com.pbl6.fitme.model.Product
 import com.pbl6.fitme.model.ProductVariant
+import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.navigate
 import java.io.Serializable
 
 class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
 
-    // ViewModel được chia sẻ từ ProductDetailFragment
-    private val viewModel: ProductDetailViewModel by lazy {
-        ViewModelProvider(requireParentFragment()).get(ProductDetailViewModel::class.java)
-    }
+    // Bỏ ViewModel, dùng trực tiếp SessionManager để tránh lỗi requireParentFragment()
 
     private var currentProduct: Product? = null
     private var selectedColor: String? = null
@@ -48,34 +49,32 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate layout bạn đã tạo
         return inflater.inflate(R.layout.dialog_buy, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Lấy dữ liệu product từ arguments
-        currentProduct = arguments?.getSerializable(ARG_PRODUCT) as? Product
+        // 1. Lấy dữ liệu an toàn
+        arguments?.let {
+            currentProduct = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                it.getSerializable(ARG_PRODUCT, Product::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                it.getSerializable(ARG_PRODUCT) as? Product
+            }
+        }
+
         if (currentProduct == null) {
+            Toast.makeText(context, "Không tải được sản phẩm", Toast.LENGTH_SHORT).show()
             dismiss()
             return
         }
-        
-        android.util.Log.d("VariationsBottomSheet", "Product loaded: id=${currentProduct?.productId}")
-        android.util.Log.d("VariationsBottomSheet", "Available variants: ${currentProduct?.variants?.map { "${it.color}/${it.size}" }}")
 
-        // Ánh xạ Views
         bindViews(view)
-
-        // Khởi tạo Adapters và RecyclerViews
         initAdapters()
         initRecyclerViews()
-
-        // Cài đặt Listeners
         initListeners()
-
-        // Hiển thị dữ liệu
         populateUI()
     }
 
@@ -93,10 +92,11 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
     }
 
     private fun initAdapters() {
-        colorAdapter = ColorAdapter(emptyList()) { color ->
+        // Khởi tạo Adapter với list rỗng ban đầu
+        colorAdapter = ColorAdapter(arrayListOf()) { color ->
             onColorSelected(color)
         }
-        sizeAdapter = SizeAdapter(emptyList()) { size ->
+        sizeAdapter = SizeAdapter(arrayListOf()) { size ->
             onSizeSelected(size)
         }
     }
@@ -110,63 +110,10 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
     }
 
     private fun initListeners() {
-        btnCloseSheet.setOnClickListener {
-            dismiss() // Đóng dialog
-        }
+        btnCloseSheet.setOnClickListener { dismiss() }
 
         btnBuyNowSheet.setOnClickListener {
-            if (selectedVariant == null) {
-                Toast.makeText(context, "Vui lòng chọn màu và size", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            // Double check variant exists in product
-            val existingVariant = currentProduct?.variants?.find { it.variantId == selectedVariant?.variantId }
-            if (existingVariant == null) {
-                android.util.Log.e("VariationsBottomSheet", "Selected variant ${selectedVariant?.variantId} not found in product variants")
-                Toast.makeText(context, "Lỗi chọn sản phẩm, vui lòng thử lại", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            // Validate variant data
-            android.util.Log.d("VariationsBottomSheet", "Validating variant: id=${existingVariant.variantId} color=${existingVariant.color} size=${existingVariant.size} stock=${existingVariant.stockQuantity}")
-
-            // Lấy token: ưu tiên ViewModel (nếu được gán), nếu không có thì dùng SessionManager
-            val token = viewModel.getAccessToken?.let { it1 -> it1(requireContext()) }
-                ?: com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
-            if (token.isNullOrBlank()) {
-                Toast.makeText(context, "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            
-            android.util.Log.d("VariationsBottomSheet", "Token: ${token.take(10)}...")
-
-            // Điều hướng trực tiếp tới Checkout với payload buy-now (product id, variant id, quantity)
-            selectedVariant?.let { variant ->
-                val quantity = tvQty.text.toString().toIntOrNull() ?: 1
-                val productIdStr = currentProduct?.productId?.toString() ?: ""
-                val variantIdStr = variant.variantId.toString()
-                android.util.Log.d("VariationsBottomSheet", "BuyNow navigate: productId=$productIdStr variantId=$variantIdStr qty=$quantity")
-                val bundle = android.os.Bundle().apply {
-                    putString("buy_now_product_id", productIdStr)
-                    putString("buy_now_variant_id", variantIdStr)
-                    putInt("buy_now_quantity", quantity)
-                    // pass selected size and color so Checkout can render quickly
-                    putString("buy_now_size", selectedSize)
-                    putString("buy_now_color", selectedColor)
-                    // additionally pass visible product info (price, name, image) to avoid extra fetch
-                    try {
-                        putDouble("buy_now_price", variant.price)
-                        putInt("buy_now_stock", variant.stockQuantity)  // Thêm stock để kiểm tra giới hạn
-                    } catch (_: Exception) { putDouble("buy_now_price", 0.0) }
-                    putString("buy_now_product_name", currentProduct?.productName ?: "")
-                    putString("buy_now_image_url", currentProduct?.mainImageUrl ?: "")
-                }
-                // Điều hướng trực tiếp tới Checkout sử dụng NavController (đảm bảo bundle được truyền)
-                navigate(R.id.checkoutFragment, bundle)
-                
-            }
-            dismiss() // Đóng dialog
+            handleBuyNow()
         }
 
         btnPlus.setOnClickListener {
@@ -175,7 +122,7 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
             if (current < max) {
                 tvQty.text = (current + 1).toString()
             } else {
-                Toast.makeText(context, "Đã đạt giới hạn tồn kho", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Chỉ còn $max sản phẩm", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -187,11 +134,49 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
         }
     }
 
+    private fun handleBuyNow() {
+        if (selectedVariant == null) {
+            Toast.makeText(context, "Vui lòng chọn màu và size", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
+        if (token.isNullOrBlank()) {
+            Toast.makeText(context, "Vui lòng đăng nhập để mua hàng", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        selectedVariant?.let { variant ->
+            val quantity = tvQty.text.toString().toIntOrNull() ?: 1
+
+            val bundle = Bundle().apply {
+                putString("buy_now_product_id", currentProduct?.productId.toString())
+                putString("buy_now_variant_id", variant.variantId.toString())
+                putInt("buy_now_quantity", quantity)
+                // Các thông tin phụ trợ để hiển thị nhanh bên checkout
+                putString("buy_now_size", selectedSize)
+                putString("buy_now_color", selectedColor)
+                putDouble("buy_now_price", variant.price)
+                putString("buy_now_product_name", currentProduct?.productName ?: "")
+                putString("buy_now_image_url", currentProduct?.images?.firstOrNull()?.imageUrl ?: "")
+            }
+
+            // Navigate
+            try {
+                navigate(R.id.checkoutFragment, bundle)
+                dismiss()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Lỗi điều hướng: ${e.message}", Toast.LENGTH_SHORT).show()
+                e.printStackTrace()
+            }
+        }
+    }
+
     private fun populateUI() {
         currentProduct?.let { p ->
-            // Tải ảnh đầu tiên của sản phẩm
-            Glide.with(this)
+            Glide.with(requireContext()) // Dùng requireContext an toàn hơn 'this'
                 .load(p.images.firstOrNull()?.imageUrl)
+                .placeholder(R.drawable.ic_launcher_background) // Thêm placeholder nếu cần
                 .into(ivProductSheet)
 
             if (p.variants.isNotEmpty()) {
@@ -201,160 +186,178 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
                 colorAdapter.updateData(allColors)
                 sizeAdapter.updateData(allSizes)
 
-                // Tự động chọn size đầu tiên
+                // Auto select logic
                 val defaultSize = allSizes.firstOrNull()
                 if (defaultSize != null) {
                     sizeAdapter.setSelected(defaultSize)
-                    onSizeSelected(defaultSize) // Thao tác này sẽ tự động chọn màu đầu tiên
+                    onSizeSelected(defaultSize)
                 }
+            } else {
+                tvPriceSheet.text = "Hết hàng"
+                btnBuyNowSheet.isEnabled = false
             }
         }
     }
 
-    // --- SAO CHÉP LOGIC TỪ ProductDetailFragment SANG ---
-
     private fun onColorSelected(color: String) {
-        android.util.Log.d("VariationsBottomSheet", "Color selected: $color")
         selectedColor = color
         val variants = currentProduct?.variants ?: return
+
+        // Filter sizes available for this color
         val availableSizes = variants.filter { it.color == color }.map { it.size }.distinct()
-        android.util.Log.d("VariationsBottomSheet", "Available sizes for color $color: $availableSizes")
         sizeAdapter.updateAvailable(availableSizes)
+
+        // Reset size selection if current size not available in this color
         if (selectedSize !in availableSizes) {
             selectedSize = availableSizes.firstOrNull()
-            android.util.Log.d("VariationsBottomSheet", "Auto-selecting first available size: $selectedSize")
             sizeAdapter.setSelected(selectedSize)
         }
         updatePriceAndVariant()
     }
 
     private fun onSizeSelected(size: String) {
-        android.util.Log.d("VariationsBottomSheet", "Size selected: $size")
         selectedSize = size
         val variants = currentProduct?.variants ?: return
+
+        // Filter colors available for this size
         val availableColors = variants.filter { it.size == size }.map { it.color }.distinct()
-        android.util.Log.d("VariationsBottomSheet", "Available colors for size $size: $availableColors")
         colorAdapter.updateAvailable(availableColors)
+
+        // Reset color selection if current color not available in this size
         if (selectedColor !in availableColors) {
             selectedColor = availableColors.firstOrNull()
-            android.util.Log.d("VariationsBottomSheet", "Auto-selecting first available color: $selectedColor")
             colorAdapter.setSelected(selectedColor)
         }
         updatePriceAndVariant()
     }
 
     private fun updatePriceAndVariant() {
-        android.util.Log.d("VariationsBottomSheet", "Updating variant: color=$selectedColor size=$selectedSize")
-        val variant = currentProduct?.variants?.find { it.color == selectedColor && it.size == selectedSize }
+        val variant = currentProduct?.variants?.find {
+            it.color == selectedColor && it.size == selectedSize
+        }
+
         if (variant != null) {
             selectedVariant = variant
-            android.util.Log.d("VariationsBottomSheet", "Selected variant: id=${variant.variantId} price=${variant.price} stock=${variant.stockQuantity}")
-            tvPriceSheet.text = variant.price.toString() // Định dạng tiền tệ
+            tvPriceSheet.text = String.format("$%.2f", variant.price)
             tvStockSheet.text = "Kho: ${variant.stockQuantity}"
+            btnBuyNowSheet.isEnabled = variant.stockQuantity > 0
         } else {
             selectedVariant = null
-            android.util.Log.d("VariationsBottomSheet", "No variant found for color=$selectedColor size=$selectedSize")
             tvPriceSheet.text = "Không có sẵn"
-            tvStockSheet.text = "Kho: 0"
+            tvStockSheet.text = "Kho: -"
+            btnBuyNowSheet.isEnabled = false
         }
+
+        // Reset qty về 1 mỗi khi đổi variant
+        tvQty.text = "1"
     }
 
-    // --- SAO CHÉP CÁC LỚP ADAPTER VÀO ĐÂY ---
+    // ================== ADAPTER CLASSES (FULL CODE) ==================
 
-    // (Sao chép y hệt lớp ColorAdapter từ ProductDetailFragment của bạn vào đây)
     class ColorAdapter(
         private var items: List<String>,
         private val onSelect: (String) -> Unit
     ) : RecyclerView.Adapter<ColorAdapter.VH>() {
-        // ... Dán toàn bộ code của ColorAdapter vào đây ...
+
         private var selectedPos = RecyclerView.NO_POSITION
         private var availableItems: List<String> = items
+        private var selectedItem: String? = null
+
         fun updateData(newItems: List<String>) {
             items = newItems
-            availableItems = newItems
+            availableItems = newItems // Reset available
             selectedPos = RecyclerView.NO_POSITION
+            selectedItem = null
             notifyDataSetChanged()
         }
+
         fun updateAvailable(available: List<String>) {
             availableItems = available
             notifyDataSetChanged()
         }
+
         fun setSelected(item: String?) {
+            selectedItem = item
             val newPos = items.indexOf(item)
             if (newPos != selectedPos) {
-                val oldPos = selectedPos
                 selectedPos = newPos
-                if (oldPos >= 0) notifyItemChanged(oldPos)
-                if (selectedPos >= 0) notifyItemChanged(selectedPos)
+                notifyDataSetChanged() // Refresh toàn bộ để vẽ lại background
             }
         }
+
         inner class VH(view: View) : RecyclerView.ViewHolder(view) {
-            val txt: TextView = view.findViewById(R.id.tvVariation) // Đảm bảo R.id.tvVariation có trong item_variant.xml
+            val txt: TextView = view.findViewById(R.id.tvVariation)
             init {
                 itemView.setOnClickListener {
                     val position = adapterPosition
                     if (position != RecyclerView.NO_POSITION) {
                         val item = items[position]
+                        // Chỉ cho click nếu có hàng
                         if (availableItems.contains(item)) {
-                            if (position != selectedPos) {
-                                val prev = selectedPos
-                                selectedPos = position
-                                if(prev != RecyclerView.NO_POSITION) notifyItemChanged(prev)
-                                notifyItemChanged(selectedPos)
-                                onSelect(item)
-                            }
+                            setSelected(item)
+                            onSelect(item)
                         }
                     }
                 }
             }
         }
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
             val v = LayoutInflater.from(parent.context).inflate(R.layout.item_variant, parent, false)
             return VH(v)
         }
+
         override fun onBindViewHolder(holder: VH, position: Int) {
             val item = items[position]
             val isAvailable = availableItems.contains(item)
+            val isSelected = (item == selectedItem)
+
             holder.txt.text = item
             holder.txt.isEnabled = isAvailable
-            holder.txt.alpha = if (isAvailable) 1f else 0.4f
-            holder.txt.setBackgroundResource(
-                if (position == selectedPos && isAvailable)
-                    R.drawable.bg_selected_variant
-                else
-                    R.drawable.bg_outer_circle
-            )
+            holder.txt.alpha = if (isAvailable) 1.0f else 0.3f
+
+            // Xử lý background
+            if (isSelected && isAvailable) {
+                holder.txt.setBackgroundResource(R.drawable.bg_selected_variant) // File drawable viền màu/đậm
+                holder.txt.setTextColor(Color.WHITE) // Ví dụ: chọn thì chữ trắng
+            } else {
+                holder.txt.setBackgroundResource(R.drawable.bg_outer_circle) // File drawable viền thường
+                holder.txt.setTextColor(Color.BLACK)
+            }
         }
+
         override fun getItemCount() = items.size
     }
 
-    // (Sao chép y hệt lớp SizeAdapter từ ProductDetailFragment của bạn vào đây)
     class SizeAdapter(
         private var items: List<String>,
         private val onSelect: (String) -> Unit
     ) : RecyclerView.Adapter<SizeAdapter.VH>() {
-        // ... Dán toàn bộ code của SizeAdapter vào đây ...
+
         private var selectedPos = RecyclerView.NO_POSITION
         private var availableItems: List<String> = items
+        private var selectedItem: String? = null
+
         fun updateData(newItems: List<String>) {
             items = newItems
             availableItems = newItems
             selectedPos = RecyclerView.NO_POSITION
+            selectedItem = null
             notifyDataSetChanged()
         }
+
         fun updateAvailable(available: List<String>) {
             availableItems = available
             notifyDataSetChanged()
         }
+
         fun setSelected(item: String?) {
+            selectedItem = item
             val newPos = items.indexOf(item)
-            if (newPos != selectedPos) {
-                val oldPos = selectedPos
-                selectedPos = newPos
-                if (oldPos >= 0) notifyItemChanged(oldPos)
-                if (selectedPos >= 0) notifyItemChanged(selectedPos)
-            }
+            selectedPos = newPos
+            notifyDataSetChanged()
         }
+
         inner class VH(view: View) : RecyclerView.ViewHolder(view) {
             val txt: TextView = view.findViewById(R.id.tvVariation)
             init {
@@ -363,36 +366,37 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
                     if (position != RecyclerView.NO_POSITION) {
                         val item = items[position]
                         if (availableItems.contains(item)) {
-                            if (position != selectedPos) {
-                                val prev = selectedPos
-                                selectedPos = position
-                                if(prev != RecyclerView.NO_POSITION) notifyItemChanged(prev)
-                                notifyItemChanged(selectedPos)
-                                onSelect(item)
-                            }
+                            setSelected(item)
+                            onSelect(item)
                         }
                     }
                 }
             }
         }
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
             val v = LayoutInflater.from(parent.context).inflate(R.layout.item_variant, parent, false)
             return VH(v)
         }
+
         override fun onBindViewHolder(holder: VH, position: Int) {
             val item = items[position]
             val isAvailable = availableItems.contains(item)
+            val isSelected = (item == selectedItem)
+
             holder.txt.text = item
             holder.txt.isEnabled = isAvailable
-            holder.txt.alpha = if (isAvailable) 1f else 0.4f
-            holder.txt.setBackgroundResource(
-                if (position == selectedPos && isAvailable)
-                    R.drawable.bg_selected_variant
-                else
-                    R.drawable.bg_outer_circle
-            )
-            // LƯU Ý: Tôi đã xóa setOnClickListener ở đây vì bạn đã có nó trong khối init
+            holder.txt.alpha = if (isAvailable) 1.0f else 0.3f
+
+            if (isSelected && isAvailable) {
+                holder.txt.setBackgroundResource(R.drawable.bg_selected_variant)
+                holder.txt.setTextColor(Color.WHITE)
+            } else {
+                holder.txt.setBackgroundResource(R.drawable.bg_outer_circle)
+                holder.txt.setTextColor(Color.BLACK)
+            }
         }
+
         override fun getItemCount() = items.size
     }
 

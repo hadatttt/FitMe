@@ -50,7 +50,10 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         mainRepository.getOrderById(token, orderId) { order ->
             activity?.runOnUiThread {
                 if (order == null) {
+                    android.util.Log.e("OrderDetailFragment", "getOrderById returned null for orderId=$orderId")
                 } else {
+                    android.util.Log.d("OrderDetailFragment", "Order loaded: $order")
+                    android.util.Log.d("OrderDetailFragment", "Payment fields: method=${order.paymentMethod} status=${order.paymentStatus} amount=${order.paymentAmount}")
                     bindOrder(order)
                 }
             }
@@ -81,18 +84,34 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
 
         // Delivery Info Card — use nested ShippingAddress from model
         val ship = order.shippingAddress
-        binding.txtCustomerName.text = ship.recipientName.ifBlank { "N/A" }
-        binding.txtPhoneNumber.text = ship.phone.ifBlank { "N/A" }
+            // Delivery Info Card — use nested ShippingAddress from model, fallback to session values if missing
+            val session = SessionManager.getInstance()
+            val fallbackName = session.getRecipientName(requireContext()) ?: ""
+            val fallbackPhone = session.getRecipientPhone(requireContext()) ?: ""
+            val customerName = ship.recipientName.takeIf { it.isNotBlank() } ?: fallbackName
+            val phoneNumber = ship.phone.takeIf { it.isNotBlank() } ?: fallbackPhone
+            binding.txtCustomerName.text = "Recipient Name: "+customerName.ifBlank { "N/A" }
+            binding.txtPhoneNumber.text = "Phone number: "+phoneNumber.ifBlank { "N/A" }
+        // Compose a readable address from available fields
+            // Email: prefer order.userEmail, otherwise use session-stored email
+            val sessionEmail = SessionManager.getInstance().getUserEmail(requireContext())
+            binding.txtUserEmail.text = "User: ${order.userEmail ?: sessionEmail ?: "N/A"}"
         val addrParts = listOfNotNull(
             ship.addressLine1.takeIf { it.isNotBlank() },
             ship.addressLine2.takeIf { it.isNotBlank() },
+            ship.city.takeIf { it.isNotBlank() },
+            ship.stateProvince.takeIf { it.isNotBlank() },
+            ship.postalCode.takeIf { it.isNotBlank() },
             ship.country.takeIf { it.isNotBlank() }
         )
-        binding.txtAddress.text = if (addrParts.isEmpty()) "N/A" else addrParts.joinToString(", ")
+        binding.txtAddress.text = "Country: " + if (addrParts.isEmpty()) "N/A" else addrParts.joinToString(", ")
+        // If backend provided a formatted shippingAddressDetails, show it too
         try {
-            binding.txtShippingAddressDetails.text = order.shippingAddressDetails ?: ""
+            binding.txtShippingAddressDetails.text = "Address: " + (order.shippingAddressDetails ?: "")
             binding.txtShippingAddressDetails.visibility = if ((order.shippingAddressDetails ?: "").isBlank()) View.GONE else View.VISIBLE
         } catch (_: Exception) { }
+
+        // Order Items - prefer server `orderItems` if present, otherwise support older `items` key
         val items = when {
             !order.orderItems.isNullOrEmpty() -> order.orderItems
             !order.items.isNullOrEmpty() -> order.items
@@ -100,16 +119,39 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         }
         val adapter = OrderItemsAdapter(items)
         binding.recyclerOrderItems.adapter = adapter
+
+        // Payment Summary
         val subtotal = order.subtotal ?: 0.0
         val shippingFee = order.shippingFee ?: 0.0
         val total = order.totalAmount ?: (subtotal + shippingFee)
+
         binding.txtSubtotal.text = "\$${String.format("%.2f", subtotal)}"
         binding.txtShippingFee.text = "\$${String.format("%.2f", shippingFee)}"
         binding.txtTotal.text = "\$${String.format("%.2f", total)}"
         binding.txtDiscount.text = "\$${String.format("%.2f", order.discountAmount ?: 0.0)}"
         binding.txtCouponCode.text = "Coupon: ${order.couponId ?: "-"}"
         binding.txtOrderNotes.text = "Notes: ${order.orderNotes ?: "-"}"
-    binding.txtPaymentMethod.text = "Payment Method: N/A"
+    // Show payment method if provided by backend
+    val rawMethod = when {
+        !order.paymentMethod.isNullOrBlank() -> order.paymentMethod
+        !order.paymentStatus.isNullOrBlank() -> order.paymentStatus
+        else -> null
+    }
+    val paymentMethodText = when (rawMethod?.uppercase()) {
+        "COD", "CASHONDELIVERY", "CASH_ON_DELIVERY" -> "Cash on Delivery"
+        "VNPAY", "VN_PAY" -> "VNPay"
+        "MOMO" -> "Momo"
+        "PENDING" -> "Pending"
+        "COMPLETED" -> "Completed"
+        "FAILED" -> "Failed"
+        null -> "N/A"
+        else -> rawMethod
+    }
+
+    binding.txtPaymentMethod.text = "Payment Method: $paymentMethodText"
+    binding.txtPaymentMethod.visibility = View.VISIBLE
+
+        // Set status color based on order status
         val statusColor = when(order.status?.uppercase() ?: order.orderStatus?.uppercase()) {
             "PENDING" -> R.color.status_pending
             "CONFIRMED" -> R.color.status_confirmed
