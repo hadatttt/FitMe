@@ -43,6 +43,7 @@ android {
 
 dependencies {
     implementation(project(":app"))
+    implementation("com.airbnb.android:lottie:6.0.0")
     // Android
     api(libs.androidx.core.ktx)
     api(libs.androidx.appcompat)

@@ -194,5 +194,17 @@
                 android:textSize="10sp"
                 android:visibility="visible" />
     </FrameLayout>
+    <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/giftLottie"
+            android:layout_width="@dimen/_60sdp"
+            android:layout_height="@dimen/_60sdp"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_gravity="center"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true"
+            app:lottie_rawRes="@raw/gif" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

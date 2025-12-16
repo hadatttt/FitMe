@@ -14,6 +14,7 @@ import com.pbl6.fitme.R
 import com.pbl6.fitme.model.CartItem
 import com.pbl6.fitme.databinding.FragmentCheckoutBinding
 import com.pbl6.fitme.model.ShippingAddress
+import com.pbl6.fitme.repository.CouponRepository
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.popBackStack
@@ -27,6 +28,11 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
     private val addressRepository = com.pbl6.fitme.repository.AddressRepository()
     private var dataLoaded: Boolean = false
+    private val couponRepository = CouponRepository() // Khởi tạo Repo
+    private var couponAdapter: CouponAdapter? = null // Cần tạo class Adapter riêng cho Coupon
+    private var selectedCoupon: Coupon? = null // Lưu coupon đang chọn
+    private var discountAmount: Double = 0.0 // Lưu số tiền giảm giá
+
 
     // FIX: Đổi từ lateinit sang nullable để tránh crash nếu chưa load xong
     private var useraddress: ShippingAddress? = null
@@ -131,6 +137,9 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     }
 
     override fun initListener() {
+        binding.ivBack.singleClick {
+            popBackStack()
+        }
         binding.btnEditAddress.singleClick {
             navigate(R.id.shippingAddressFragment)
         }

@@ -9,6 +9,7 @@ import android.provider.MediaStore
 import android.text.Editable
 import android.util.Log
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -22,8 +23,17 @@ import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.onBackPressed
 import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.utils.singleClick
+import java.util.Locale
 
 class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
+
+    // --- Variables for Data Caching ---
+    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
+    private var allProducts: List<Product> = emptyList() // Lưu danh sách gốc tất cả sản phẩm
+    private var allCategories: List<Category> = emptyList() // Lưu danh sách gốc tất cả danh mục
+    private var currentGenderFilter: String = "WOMAN" // Mặc định là WOMAN
+
+    private lateinit var productAdapter: ProductAdapter
 
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -50,17 +60,18 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
         highlightSelectedTab(R.id.home_id)
+
+        // Cập nhật giao diện Tab mặc định
+        updateGenderTabUI(currentGenderFilter)
+
         setupRecyclerViews()
     }
-
-    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
-    private var allProducts: List<Product> = emptyList()
-    private lateinit var productAdapter: ProductAdapter
 
     private fun setupRecyclerViews() {
         val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
 
         if (!token.isNullOrBlank()) {
+            // 1. Setup Adapter cho Sản phẩm
             productAdapter = ProductAdapter()
             binding.rvItems.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 2)
             binding.rvItems.adapter = productAdapter
@@ -71,26 +82,27 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
                 }
                 navigate(R.id.productDetailFragment, bundle)
             }
+
+            // 2. Tải Danh mục (Category)
             mainRepository.getCategories(token) { categories: List<Category>? ->
                 activity?.runOnUiThread {
                     if (categories != null) {
-                        Log.d("HomeFragment", "Categories: $categories")
+                        Log.d("HomeFragment", "Categories loaded: ${categories.size}")
+                        allCategories = categories // Lưu lại danh sách gốc
+
+                        // Setup LayoutManager cho Category
                         binding.rvCategories.layoutManager =
                             androidx.recyclerview.widget.LinearLayoutManager(requireContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
 
-                        binding.rvCategories.adapter = CategoryAdapter(categories) { selectedCategory ->
-                            val catId = selectedCategory.categoryId
-                            if (catId != null) {
-                                loadProductsByCategory(token, catId.toString())
-                                Toast.makeText(requireContext(), "Đang tải: ${selectedCategory.categoryName}", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                        // Lọc và hiển thị Category theo Tab hiện tại (WOMAN)
+                        filterCategoriesAndDisplay(currentGenderFilter, token)
                     } else {
                         Toast.makeText(requireContext(), "Không lấy được danh mục", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
 
+            // 3. Tải tất cả Sản phẩm
             loadAllProducts(token)
 
         } else {
@@ -102,9 +114,10 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         mainRepository.getProducts(token) { products: List<Product>? ->
             activity?.runOnUiThread {
                 if (products != null) {
-                    Log.d("HomeFragment", "All Products: ${products.size}")
+                    Log.d("HomeFragment", "All Products loaded: ${products.size}")
                     allProducts = products
-                    productAdapter.setList(products)
+                    // Hiển thị sản phẩm lọc theo Tab hiện tại luôn
+                    filterProductsByGender(currentGenderFilter)
                 } else {
                     Toast.makeText(requireContext(), "Không lấy được sản phẩm", Toast.LENGTH_SHORT).show()
                 }
@@ -112,21 +125,14 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         }
     }
 
-    // --- UPDATE: Hàm mới - Load sản phẩm theo Category ID ---
     private fun loadProductsByCategory(token: String, categoryId: String) {
-        // Có thể thêm loading bar ở đây nếu muốn
         mainRepository.getProductsByCategory(token, categoryId) { products: List<Product>? ->
             activity?.runOnUiThread {
                 if (products != null) {
-                    Log.d("HomeFragment", "Category Products: ${products.size}")
-                    // Cập nhật biến allProducts để chức năng tìm kiếm (filterProducts) vẫn hoạt động trên danh sách mới này
-                    allProducts = products
+                    // Khi click vào danh mục cụ thể, chỉ hiển thị sản phẩm của danh mục đó
                     productAdapter.setList(products)
-
-                    // Cuộn lên đầu trang
                     binding.rvItems.scrollToPosition(0)
                 } else {
-                    // Nếu API trả về null hoặc lỗi -> Xóa danh sách cũ
                     productAdapter.setList(emptyList())
                     Toast.makeText(requireContext(), "Không có sản phẩm nào", Toast.LENGTH_SHORT).show()
                 }
@@ -134,11 +140,61 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         }
     }
 
+    // --- LOGIC LỌC (QUAN TRỌNG) ---
+
+    // 1. Lọc và hiển thị Categories
+    private fun filterCategoriesAndDisplay(gender: String, token: String) {
+        val filteredCats = allCategories.filter { cat ->
+            val name = cat.categoryName?.lowercase(Locale.ROOT) ?: ""
+            // Logic lọc theo từ khóa
+            when (gender) {
+                "WOMAN" -> name.contains("women") || name.contains("woman") || name.contains("lady") || name.contains("girl") || name.contains("dress") || name.contains("skirt")
+                "MAN" -> name.contains("men") || name.contains("man") || name.contains("boy") || name.contains("gentle") || name.contains("shirt")
+                "KID" -> name.contains("kids's") || name.contains("baby") || name.contains("child")
+                else -> true
+            }
+        }
+
+        // Cập nhật Adapter Category
+        binding.rvCategories.adapter = CategoryAdapter(filteredCats) { selectedCategory ->
+            val catId = selectedCategory.categoryId
+            if (catId != null) {
+                loadProductsByCategory(token, catId.toString())
+                Toast.makeText(requireContext(), "Đang tải: ${selectedCategory.categoryName}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // 2. Lọc và hiển thị Products (cho list New Arrivals)
+    private fun filterProductsByGender(gender: String) {
+        val filteredProducts = allProducts.filter { p ->
+            val name = p.productName?.lowercase(Locale.ROOT) ?: ""
+            // Kiểm tra tên sản phẩm
+            when (gender) {
+                // Với Woman: lấy những cái có chữ nữ, váy... VÀ loại bỏ những cái có chữ Men/Man (để tránh nhầm lẫn nếu tên là "Woman looking at Man shirt")
+                "WOMAN" -> !name.contains("men") && !name.contains("man") &&
+                        (name.contains("women") || name.contains("woman") || name.contains("lady") || name.contains("girl") || name.contains("dress") || name.contains("skirt"))
+                "MAN" -> name.contains("men") || name.contains("man") || name.contains("boy")
+                "KID" -> name.contains("kid") || name.contains("baby")
+                else -> true
+            }
+        }
+
+        // Nếu lọc xong mà rỗng (do tên sản phẩm đặt không chuẩn), có thể hiển thị allProducts hoặc để trống.
+        // Ở đây mình để trống để đúng logic lọc.
+        productAdapter.setList(filteredProducts)
+    }
+
     override fun initListener() {
         onBackPressed {
             hideToolbar()
             popBackStack()
         }
+
+        // --- Bắt sự kiện Click cho 3 Tab ---
+        binding.tvTabWoman.setOnClickListener { onGenderTabSelected("WOMAN") }
+        binding.tvTabMan.setOnClickListener { onGenderTabSelected("MAN") }
+        binding.tvTabKid.setOnClickListener { onGenderTabSelected("KID") }
 
         // Search logic
         binding.etSearchInput.addTextChangedListener(object : TextWatcher {
@@ -170,24 +226,18 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
             popup.show()
         }
 
-        // --- UPDATE: Xử lý click vào nút "All Items" (hoặc tiêu đề danh sách) để reset về load tất cả ---
+        // Click "All Items" -> Reset về list của Gender hiện tại
         binding.tvAllItems.singleClick {
-            val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
-            if (!token.isNullOrBlank()) {
-                loadAllProducts(token)
-                Toast.makeText(requireContext(), "Hiển thị tất cả sản phẩm", Toast.LENGTH_SHORT).show()
-            }
+            filterProductsByGender(currentGenderFilter)
+            Toast.makeText(requireContext(), "All $currentGenderFilter Items", Toast.LENGTH_SHORT).show()
         }
 
-        // ===== Toolbar click logic (Giữ nguyên) =====
-        requireActivity().findViewById<View>(R.id.home_id).singleClick {
-            highlightSelectedTab(R.id.home_id)
-        }
+        // Toolbar logic
+        requireActivity().findViewById<View>(R.id.home_id).singleClick { highlightSelectedTab(R.id.home_id) }
         requireActivity().findViewById<View>(R.id.wish_id).singleClick {
             highlightSelectedTab(R.id.wish_id)
             navigate(R.id.wishlistFragment)
         }
-
         requireActivity().findViewById<View>(R.id.cart_id).singleClick {
             highlightSelectedTab(R.id.cart_id)
             navigate(R.id.cartFragment)
@@ -198,7 +248,40 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         }
     }
 
-    override fun initData() { }
+    override fun initData() {
+
+    }
+
+    // Xử lý khi chọn Tab
+    private fun onGenderTabSelected(gender: String) {
+        if (currentGenderFilter == gender) return // Đang chọn rồi thì thôi
+
+        currentGenderFilter = gender
+        updateGenderTabUI(gender) // Đổi màu chữ
+
+        val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext()) ?: ""
+
+        // 1. Lọc lại Category
+        filterCategoriesAndDisplay(gender, token)
+
+        // 2. Lọc lại List sản phẩm bên dưới
+        filterProductsByGender(gender)
+    }
+
+    // Đổi màu chữ đậm/nhạt cho Tab
+    private fun updateGenderTabUI(selectedGender: String) {
+        val selectedColor = ContextCompat.getColor(requireContext(), R.color.black)
+        val unselectedColor = ContextCompat.getColor(requireContext(), android.R.color.darker_gray)
+
+        fun updateStyle(tv: TextView, isSelected: Boolean) {
+            tv.setTextColor(if (isSelected) selectedColor else unselectedColor)
+            tv.setTypeface(null, if (isSelected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        }
+
+        updateStyle(binding.tvTabWoman, selectedGender == "WOMAN")
+        updateStyle(binding.tvTabMan, selectedGender == "MAN")
+        updateStyle(binding.tvTabKid, selectedGender == "KID")
+    }
 
     private fun highlightSelectedTab(selectedId: Int) {
         val ids = listOf(R.id.home_id, R.id.wish_id, R.id.cart_id, R.id.person_id)
@@ -214,40 +297,39 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         }
     }
 
-    private fun openCamera() {
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        cameraLauncher.launch(intent)
-    }
-
+    // Sort functions (Sort trên toàn bộ list rồi lọc lại theo gender để đảm bảo đúng view)
     private fun sortByNameAsc() {
-        val sorted = allProducts.sortedBy { it.productName?.lowercase() }
-        allProducts = sorted
-        productAdapter.setList(sorted)
+        allProducts = allProducts.sortedBy { it.productName?.lowercase() }
+        filterProductsByGender(currentGenderFilter)
     }
 
     private fun sortByPriceAsc() {
-        val sorted = allProducts.sortedBy { it.minPrice ?: Double.MAX_VALUE }
-        allProducts = sorted
-        productAdapter.setList(sorted)
+        allProducts = allProducts.sortedBy { it.minPrice ?: Double.MAX_VALUE }
+        filterProductsByGender(currentGenderFilter)
     }
 
     private fun sortByPriceDesc() {
-        val sorted = allProducts.sortedByDescending { it.minPrice ?: Double.MIN_VALUE }
-        allProducts = sorted
-        productAdapter.setList(sorted)
+        allProducts = allProducts.sortedByDescending { it.minPrice ?: Double.MIN_VALUE }
+        filterProductsByGender(currentGenderFilter)
     }
 
     private fun filterProducts(query: String) {
         val q = query.trim().lowercase()
         if (q.isEmpty()) {
-            productAdapter.setList(allProducts)
+            filterProductsByGender(currentGenderFilter)
             return
         }
+        // Khi search text thì search trên toàn bộ (hoặc có thể search trong gender hiện tại tùy logic, ở đây search all)
         val filtered = allProducts.filter { p ->
             val name = try { p.productName ?: "" } catch (e: Exception) { "" }
             name.lowercase().contains(q)
         }
         productAdapter.setList(filtered)
+    }
+
+    private fun openCamera() {
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        cameraLauncher.launch(intent)
     }
 
     private fun hideToolbar() {
