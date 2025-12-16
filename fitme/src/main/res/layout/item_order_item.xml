@@ -1,66 +1,113 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="8dp">
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="16dp"
+        android:background="@android:color/white">
 
-        <ImageView
-            android:id="@+id/img"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:scaleType="centerCrop"
+    <!-- 1. Ảnh sản phẩm (Bo tròn) -->
+    <androidx.cardview.widget.CardView
+            android:id="@+id/cardImg"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="#F5F5F5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="parent">
 
-        <TextView
-            android:id="@+id/txtName"
+        <ImageView
+                android:id="@+id/img"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_splash"
+                tools:ignore="ContentDescription" />
+    </androidx.cardview.widget.CardView>
+
+    <!-- 2. Thông tin (Tên + Phân loại) -->
+    <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Product name"
-            app:layout_constraintStart_toEndOf="@id/img"
-            app:layout_constraintTop_toTopOf="@id/img"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="8dp" />
+            android:orientation="vertical"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintStart_toEndOf="@id/cardImg"
+            app:layout_constraintEnd_toStartOf="@id/priceLayout"
+            app:layout_constraintTop_toTopOf="@id/cardImg"
+            app:layout_constraintBottom_toBottomOf="@id/cardImg">
 
         <TextView
-            android:id="@+id/txtVariant"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Size: S, Color: Blue"
-            app:layout_constraintStart_toEndOf="@id/img"
-            app:layout_constraintTop_toBottomOf="@id/txtName"
-            app:layout_constraintEnd_toStartOf="@id/txtPrice"
-            android:layout_marginStart="8dp"
-            android:textSize="12sp"
-            android:textColor="#666" />
+                android:id="@+id/txtName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nike Air Jordan Low"
+                android:textSize="14sp"
+                android:textColor="#333333"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
 
         <TextView
-            android:id="@+id/txtQty"
+                android:id="@+id/txtVariant"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Size: 42 | Color: Blue"
+                android:textSize="12sp"
+                android:textColor="#888888"
+                android:layout_marginTop="4dp"/>
+
+        <TextView
+                android:id="@+id/txtQty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="x1"
+                android:textSize="13sp"
+                android:textColor="#333333"
+                android:layout_marginTop="4dp"/>
+    </LinearLayout>
+
+    <!-- 3. Giá tiền (Căn phải) -->
+    <LinearLayout
+            android:id="@+id/priceLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Qty"
-            app:layout_constraintStart_toEndOf="@id/img"
-            app:layout_constraintTop_toBottomOf="@id/txtName"
-            android:layout_marginStart="8dp" />
-
-        <TextView
-            android:id="@+id/txtPrice"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="$0.00"
+            android:orientation="vertical"
+            android:gravity="end"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/txtName" />
+            app:layout_constraintTop_toTopOf="@id/cardImg"
+            app:layout_constraintBottom_toBottomOf="@id/cardImg">
 
+        <!-- Giá gốc (có thể gạch ngang nếu muốn) -->
         <TextView
-            android:id="@+id/txtTotalPrice"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="$0.00"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtPrice"
-            android:textStyle="bold" />
+                android:id="@+id/txtPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="$120.00"
+                android:textSize="12sp"
+                android:textColor="#999999"
+                android:visibility="gone"/>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- Tổng tiền item này -->
+        <TextView
+                android:id="@+id/txtTotalPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="$120.00"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#FF6F00"/>
+    </LinearLayout>
+
+    <!-- Đường kẻ mờ ngăn cách (Optional) -->
+    <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F0F0F0"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

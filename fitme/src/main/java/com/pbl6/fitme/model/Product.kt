@@ -3,14 +3,13 @@ package com.pbl6.fitme.model
 import java.io.Serializable
 import java.util.UUID
 
-// Product model with images and reviews as typed objects
 data class Product(
     val productId: UUID,
     val productName: String,
     val createdAt: String? = null,
     val description: String?,
-    val categoryName: String, // mapped from categoryId by API layer
-    val brandName: String,    // mapped from brandId by API layer
+    val categoryName: String,
+    val brandName: String,
     val gender: String? = null,
     val season: String? = null,
     val isActive: Boolean,
@@ -18,11 +17,15 @@ data class Product(
     val variants: List<ProductVariant> = emptyList(),
     val reviews: List<Review> = emptyList()
 ): Serializable {
-    // convenience property returning the main image url or first image
     val mainImageUrl: String?
-        get() = images.firstOrNull { it.isMain == true }?.imageUrl ?: images.firstOrNull()?.imageUrl
-
-    // convenience property returning the lowest variant price if available
+        get() {
+            // Be defensive: Gson may set fields to null even if Kotlin declares non-nullable defaults.
+            val imgs = images as? List<ProductImage> ?: emptyList()
+            return imgs.firstOrNull { it.isMain == true }?.imageUrl ?: imgs.firstOrNull()?.imageUrl
+        }
     val minPrice: Double?
-        get() = variants.minByOrNull { it.price }?.price
+        get() {
+            val vars = variants as? List<ProductVariant> ?: emptyList()
+            return vars.minByOrNull { it.price }?.price
+        }
 }

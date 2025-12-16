@@ -11,6 +11,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.DELETE
 import retrofit2.http.Path
 
 data class WishlistResponse(
@@ -30,8 +31,8 @@ data class WishlistItemResponse(
 interface WishlistApiService {
     @POST("wishlists")
     fun createWishlist(
-        @Header("user-id") userId: String, // ✔ đúng
-        @Header("Authorization") bearer: String, // ✔ đúng header chuẩn
+        @retrofit2.http.Query("userEmail") userEmail: String,
+        @Header("Authorization") bearer: String,
         @Body request: WishlistRequest
     ): Call<WishlistResponse>
 
@@ -53,4 +54,10 @@ interface WishlistApiService {
         @Header("Authorization") bearer: String,
         @Path("wishlistId") wishlistId: String
     ): Call<List<WishlistItem>>
+
+    @DELETE("wishlists/items/{wishlistItemId}")
+    fun removeWishlistItem(
+        @Header("Authorization") bearer: String,
+        @Path("wishlistItemId") wishlistItemId: String
+    ): Call<Void>
 }

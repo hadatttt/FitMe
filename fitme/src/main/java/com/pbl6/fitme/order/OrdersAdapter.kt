@@ -1,5 +1,6 @@
 package com.pbl6.fitme.order
 
+import android.os.Bundle
 import com.bumptech.glide.Glide
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.ItemOrderBinding
@@ -58,7 +59,7 @@ class OrdersAdapter : BaseRecyclerViewAdapter<Order, ItemOrderBinding>() {
             } catch (e: Exception) {
                 (item.totalAmount ?: 0.0).toString()
             }
-            binding.txtPrice.text = "Total Price: $${total}"
+            binding.txtPrice.text = "Total Price: \$${total}"
 
             binding.txtStatus.text = item.status ?: item.orderStatus ?: ""
 
@@ -113,10 +114,8 @@ class OrdersAdapter : BaseRecyclerViewAdapter<Order, ItemOrderBinding>() {
                 val ctx = binding.root.context
                 when (stateLabel) {
                     "Cancel" -> {
-                        // Update order status to CANCELLED
                         val activity = ctx as? FragmentActivity
                         activity?.let {
-                            // Show confirmation dialog
                             android.app.AlertDialog.Builder(activity)
                                 .setTitle("Cancel Order")
                                 .setMessage("Are you sure you want to cancel this order?")
@@ -132,20 +131,25 @@ class OrdersAdapter : BaseRecyclerViewAdapter<Order, ItemOrderBinding>() {
                         updateOrderStatus(item, "DELIVERED", ctx)
                     }
                     "Review" -> {
-                        val activity = ctx as? FragmentActivity
-                        activity?.let {
-                            val sheet = ReviewBottomSheetFragment()
-                            val args = android.os.Bundle()
-                            args.putString("order_id", item.orderId ?: "")
-                            sheet.arguments = args
-                            sheet.show(it.supportFragmentManager, "ReviewBottomSheet")
-                            return@singleClick
+                        val activity = ctx as? FragmentActivity ?: return@singleClick
+                        val item = item.orderItems.firstOrNull() ?: item.items.firstOrNull()
+                        val variantId = item?.variantId
+                        val productName = item?.productName
+                        val productImage = item?.productImageUrl
+                        android.util.Log.d("OrdersAdapter", "Navigating to reviewFragment with productId=$variantId")
+                        val bundle = Bundle().apply {
+                            putString("variant_id", variantId)
+                            putString("product_name", productName)
+                            putString("product_image_url", productImage)
                         }
+
+                        val navHostFragment = activity.supportFragmentManager.findFragmentById(R.id.navHostFragment)
+                        navHostFragment?.navigate(R.id.reviewFragment, bundle)
                     }
+
                     "Reorder" -> {
                         val activity = ctx as? FragmentActivity
                         activity?.let {
-                            // Create a new order with the same items
                             val fragment = it.supportFragmentManager.findFragmentById(R.id.navHostFragment)
                             fragment?.let { navFragment ->
                                 val bundle = android.os.Bundle().apply {

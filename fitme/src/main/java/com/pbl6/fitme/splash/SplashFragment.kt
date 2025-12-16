@@ -27,7 +27,6 @@ class SplashFragment : BaseFragment <FragmentSplashBinding, SplashViewModel>() {
                     NotificationHelper.showSettingsDialog(requireActivity())
                 }
             } else {
-                // Permission granted, schedule notifications
                 getNotificationDailyConfig()
             }
         }
@@ -57,9 +56,9 @@ class SplashFragment : BaseFragment <FragmentSplashBinding, SplashViewModel>() {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val token = task.result
-                Log.d("FCM", "Token: $token")
+                Log.d("FCM_TAG", "Token hiện tại: $token")
             } else {
-                Log.e("FCM", "Lỗi lấy token", task.exception)
+                Log.e("FCM_TAG", "Lỗi lấy token", task.exception)
             }
         }
         collectLatestFlow(viewModel.schedulerNotificationData) { data ->

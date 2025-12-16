@@ -34,10 +34,17 @@ interface CartApiService {
         @Body req: AddCartRequest
     ): Call<CartItem>
 
+    // New endpoint: get cart by profile/user id (backend controller at /carts/user/{userId})
+    @GET("carts/user/{userId}")
+    fun getCartByUser(
+        @Header("Authorization") token: String,
+        @Path("userId") userId: String
+    ): Call<ShoppingCartResponse>
     // Xóa item trong giỏ
     @DELETE("cart-items/{cartItemId}")
     fun removeCartItem(
         @Header("Authorization") token: String,
         @Path("cartItemId") cartItemId: String
     ): Call<Void>
+
 }

@@ -72,6 +72,10 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+
+    // Facebook Login
+    implementation("com.facebook.android:facebook-login:16.2.0")
 
     // Firebase Cloud Messaging
     implementation(platform("com.google.firebase:firebase-bom:32.3.1"))

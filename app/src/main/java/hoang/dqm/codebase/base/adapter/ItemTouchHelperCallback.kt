@@ -18,11 +18,9 @@ class ItemTouchHelperCallback(private var adapter: ItemTouchListener) :
             ItemTouchHelper.DOWN or ItemTouchHelper.UP or ItemTouchHelper.START or ItemTouchHelper.END
         )
     }
-
     override fun isLongPressDragEnabled(): Boolean {
         return true
     }
-
     override fun onMove(
         recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder,
         target: RecyclerView.ViewHolder

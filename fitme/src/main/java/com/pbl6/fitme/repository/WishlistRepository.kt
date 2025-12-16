@@ -24,7 +24,7 @@ class WishlistRepository {
             return
         }
 
-        fun extractUserIdFromJwt(jwt: String?): String? {
+        fun extractUserEmailFromJwt(jwt: String?): String? {
             if (jwt == null) return null
             try {
                 val parts = jwt.split('.')
@@ -33,7 +33,7 @@ class WishlistRepository {
                 val decoded = android.util.Base64.decode(payload, android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP)
                 val json = String(decoded, Charsets.UTF_8)
                 val obj = JSONObject(json)
-                val candidates = listOf("userId", "user_id", "sub", "id")
+                val candidates = listOf("email", "userEmail", "user_email", "userId", "user_id", "sub", "id")
                 for (k in candidates) {
                     if (obj.has(k)) return obj.get(k).toString()
                 }
@@ -43,14 +43,14 @@ class WishlistRepository {
             return null
         }
 
-        val userId = extractUserIdFromJwt(token)
-        if (userId == null) {
+        val userEmail = extractUserEmailFromJwt(token)
+        if (userEmail == null) {
             onResult(null)
             return
         }
 
         val bearer = "Bearer $token"
-        wishlistApiService.getWishlistsByUser(bearer, userId).enqueue(object : Callback<List<WishlistDto>> {
+        wishlistApiService.getWishlistsByUser(bearer, userEmail).enqueue(object : Callback<List<WishlistDto>> {
             override fun onResponse(call: Call<List<WishlistDto>>, response: Response<List<WishlistDto>>) {
                 if (response.isSuccessful) {
                     val list = response.body() ?: emptyList()
@@ -79,6 +79,69 @@ class WishlistRepository {
 
             override fun onFailure(call: Call<List<WishlistDto>>, t: Throwable) {
                 onResult(null)
+            }
+        })
+    }
+
+    /**
+     * Fetch wishlist items for the supplied profileId (explicit), bypassing JWT claim extraction.
+     */
+    fun getWishlistByProfile(token: String?, userEmail: String?, onResult: (List<WishlistItem>?) -> Unit) {
+        if (token == null || userEmail.isNullOrBlank()) {
+            onResult(null)
+            return
+        }
+
+        val bearer = "Bearer $token"
+        wishlistApiService.getWishlistsByUser(bearer, userEmail).enqueue(object : Callback<List<WishlistDto>> {
+            override fun onResponse(call: Call<List<WishlistDto>>, response: Response<List<WishlistDto>>) {
+                if (response.isSuccessful) {
+                    val list = response.body() ?: emptyList()
+                    if (list.isNotEmpty()) {
+                        val wishlistId = list[0].wishlistId.toString()
+                        wishlistApiService.getWishlistItems(bearer, wishlistId).enqueue(object : Callback<List<WishlistItem>> {
+                            override fun onResponse(call: Call<List<WishlistItem>>, response: Response<List<WishlistItem>>) {
+                                if (response.isSuccessful) {
+                                    onResult(response.body())
+                                } else {
+                                    onResult(null)
+                                }
+                            }
+
+                            override fun onFailure(call: Call<List<WishlistItem>>, t: Throwable) {
+                                onResult(null)
+                            }
+                        })
+                    } else {
+                        onResult(emptyList())
+                    }
+                } else {
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<List<WishlistDto>>, t: Throwable) {
+                onResult(null)
+            }
+        })
+    }
+
+    /**
+     * Remove a wishlist item by wishlistItemId. Calls callback with true on success.
+     */
+    fun removeWishlistItem(token: String?, wishlistItemId: String, onResult: (Boolean) -> Unit) {
+        if (token == null) {
+            onResult(false)
+            return
+        }
+        val bearer = "Bearer $token"
+        wishlistApiService.removeWishlistItem(bearer, wishlistItemId).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                onResult(response.isSuccessful)
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                onResult(false)
             }
         })
     }

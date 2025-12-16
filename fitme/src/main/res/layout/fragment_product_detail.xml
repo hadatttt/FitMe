@@ -99,7 +99,7 @@
                     android:id="@+id/tvNoReviews"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Chưa có đánh giá nào."
+                    android:text="Nothings to show"
                     android:padding="16dp"
                     android:gravity="center" />
             <TextView
@@ -176,5 +176,13 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:background="@drawable/bg_circle_blue"/>
-
+        <ImageView
+                android:layout_width="0dp"
+                android:id="@+id/btn_try"
+                android:layout_height="0dp"
+                app:layout_constraintHeight_percent="0.1"
+                app:layout_constraintDimensionRatio="1:1"
+                app:layout_constraintBottom_toTopOf="@id/layoutButtons"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:src="@drawable/img_try"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

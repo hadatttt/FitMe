@@ -19,12 +19,28 @@ class ContactInforFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        // Load existing values: recipient name, phone, email
+        val session = com.pbl6.fitme.session.SessionManager.getInstance()
+        val recipient = session.getRecipientName(requireContext()) ?: ""
+        val phone = session.getRecipientPhone(requireContext()) ?: ""
+        val email = session.getUserEmail(requireContext()) ?: ""
+
+        binding.etRecipientName.setText(recipient)
+        binding.etCity.setText(phone)
+        // Show email but do not allow editing here
+        binding.etAddress.setText(email)
+        binding.etAddress.isEnabled = false
+
         binding.btnSave.setOnClickListener {
-            val recipient = binding.etRecipientName.text?.toString()?.trim() ?: ""
-            if (recipient.isNotBlank()) {
-                com.pbl6.fitme.session.SessionManager.getInstance().saveRecipientName(requireContext(), recipient)
+            val newRecipient = binding.etRecipientName.text?.toString()?.trim() ?: ""
+            val newPhone = binding.etCity.text?.toString()?.trim() ?: ""
+
+            if (newRecipient.isNotBlank()) {
+                session.saveRecipientName(requireContext(), newRecipient)
             }
-            // optionally save email/phone here as well
+            // allow empty phone but still save trimmed value
+            session.saveRecipientPhone(requireContext(), newPhone)
+
             popBackStack()
         }
     }

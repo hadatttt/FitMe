@@ -3,7 +3,7 @@ package com.pbl6.fitme.repository
 import android.util.Log
 import com.pbl6.fitme.model.Review
 import com.pbl6.fitme.network.ApiClient
-import com.pbl6.fitme.network.BaseResponse
+import com.pbl6.fitme.network.CreateReviewRequest
 import com.pbl6.fitme.network.ReviewApiService
 import retrofit2.Call
 import retrofit2.Callback
@@ -11,31 +11,63 @@ import retrofit2.Response
 
 class ReviewRepository {
 
-    private val reviewApi = ApiClient.retrofit.create(ReviewApiService::class.java)
+    private val api = ApiClient.retrofit.create(ReviewApiService::class.java)
 
+    // GET reviews by product
     fun getReviewsByProduct(token: String, productId: String, onResult: (List<Review>?) -> Unit) {
         val bearerToken = "Bearer $token"
 
-        reviewApi.getReviewsByProduct(bearerToken, productId)
-            .enqueue(object : Callback<List<Review>> { // <--- ĐÃ SỬA
+        api.getReviewsByProduct(bearerToken, productId)
+            .enqueue(object : Callback<List<Review>> {
                 override fun onResponse(
-                    call: Call<List<Review>>, // <--- ĐÃ SỬA
-                    response: Response<List<Review>> // <--- ĐÃ SỬA
+                    call: Call<List<Review>>,
+                    response: Response<List<Review>>
                 ) {
                     if (response.isSuccessful) {
-                        // Trả về thẳng response.body() vì nó đã là List<Review>
-                        onResult(response.body()) // <--- ĐÃ SỬA
+                        onResult(response.body())
                     } else {
-                        Log.e("ReviewRepository", "getReviewsByProduct failed code=${response.code()}")
+                        Log.e("ReviewRepository", "getReviews failed code=${response.code()}")
                         onResult(null)
                     }
                 }
 
-                override fun onFailure(call: Call<List<Review>>, t: Throwable) { // <--- ĐÃ SỬA
-                    Log.e("ReviewRepository", "getReviewsByProduct network failure", t)
+                override fun onFailure(call: Call<List<Review>>, t: Throwable) {
+                    Log.e("ReviewRepository", "getReviews failed", t)
                     onResult(null)
                 }
             })
     }
+
+    fun createReview(
+        userEmail: String,
+        productId: String,
+        rating: Int,
+        comment: String,
+        onResult: (Review?) -> Unit
+    ) {
+        val request = CreateReviewRequest(
+            productId = productId,
+            rating = rating,
+            comment = comment
+        )
+
+        api.createReview(userEmail, request)
+            .enqueue(object : Callback<Review> {
+                override fun onResponse(call: Call<Review>, response: Response<Review>) {
+                    if (response.isSuccessful) {
+                        onResult(response.body())
+                    } else {
+                        Log.e("ReviewRepository", "createReview failed code=${response.code()}")
+                        onResult(null)
+                    }
+                }
+
+                override fun onFailure(call: Call<Review>, t: Throwable) {
+                    Log.e("ReviewRepository", "createReview network error", t)
+                    onResult(null)
+                }
+            })
+    }
+
 
 }

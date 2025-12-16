@@ -28,8 +28,7 @@ class WishlistProductAdapter(
         val btnRemove: ImageView = view.findViewById(R.id.btnRemove)
         val txtTitle: TextView = view.findViewById(R.id.txtTitle_wl)
         val txtPrice: TextView = view.findViewById(R.id.txtPrice_wl)
-        val btnColor: TextView = view.findViewById(R.id.btnColor)
-        val btnSize: TextView = view.findViewById(R.id.btnSize)
+
         val btnAddToCart: ImageView = view.findViewById(R.id.btnAddToCart)
     }
 
@@ -42,17 +41,28 @@ class WishlistProductAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         val product = productMap[item.productId]
-        // Nếu có variantId, bạn có thể truyền thêm vào WishlistItem hoặc map theo productId
-        val variant = variantMap.values.find { it.variantId == item.productId }
+        // Find a variant that belongs to the product. WishlistItem contains only productId
+        // so choose a variant whose productId matches the wishlist item productId.
+        val variant = variantMap.values.find { it.productId == item.productId }
 
         holder.txtTitle.text = product?.productName ?: "Unknown"
-        holder.txtPrice.text = variant?.price?.let { "$${String.format("%.2f", it)}" } ?: ""
-        holder.btnColor.text = variant?.color ?: ""
-        holder.btnSize.text = variant?.size ?: ""
-        Glide.with(holder.imgProduct.context)
-            .load(R.drawable.ic_splash) // Nếu có imageUrl thì thay bằng product.imageUrl
-            .placeholder(R.drawable.ic_splash)
-            .into(holder.imgProduct)
+        holder.txtPrice.text = variant?.price?.let { "\$${String.format("%.2f", it)}" } ?: ""
+
+
+
+        // Load product image if available, otherwise use placeholder
+        val imageUrl = product?.mainImageUrl ?: product?.images?.firstOrNull()?.imageUrl
+        if (!imageUrl.isNullOrBlank()) {
+            Glide.with(holder.imgProduct.context)
+                .load(imageUrl)
+                .placeholder(R.drawable.ic_splash)
+                .into(holder.imgProduct)
+        } else {
+            Glide.with(holder.imgProduct.context)
+                .load(R.drawable.ic_splash)
+                .placeholder(R.drawable.ic_splash)
+                .into(holder.imgProduct)
+        }
 
         holder.btnRemove.singleClick {
             val pos = holder.bindingAdapterPosition

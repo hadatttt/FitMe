@@ -27,6 +27,7 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
     private var selectedColor: String? = null
     private var selectedSize: String? = null
     private var selectedVariant: ProductVariant? = null
+    private var autoAdd: Boolean = false
 
     private lateinit var colorAdapter: VariationsBottomSheetFragment.ColorAdapter
     private lateinit var sizeAdapter: VariationsBottomSheetFragment.SizeAdapter
@@ -56,6 +57,7 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         currentProduct = arguments?.getSerializable(ARG_PRODUCT) as? Product
+        autoAdd = arguments?.getBoolean(ARG_AUTO_ADD) ?: false
         if (currentProduct == null) {
             dismiss()
             return
@@ -70,6 +72,29 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
         initRecyclerViews()
         initListeners()
         populateUI()
+
+        // If opened with autoAdd flag, and a variant is already selected, perform add-to-cart automatically
+        if (autoAdd) {
+            // Ensure selection and price updated
+            if (selectedVariant == null) {
+                // Attempt to pick first available variant
+                val pick = currentProduct?.variants?.firstOrNull()
+                if (pick != null) {
+                    selectedVariant = pick
+                }
+            }
+
+            // If selectedVariant is available, perform the same logic as clicking the button
+            selectedVariant?.let {
+                val token = SessionManager.getInstance().getAccessToken(requireContext())
+                if (!token.isNullOrBlank()) {
+                    val quantity = tvQty.text.toString().toIntOrNull() ?: 1
+                    viewModel.addToCart(requireContext(), token, it.variantId, quantity)
+                }
+            }
+            dismiss()
+            return
+        }
     }
 
     private fun bindViews(view: View) {
@@ -201,11 +226,13 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
 
     companion object {
         private const val ARG_PRODUCT = "arg_product"
+        private const val ARG_AUTO_ADD = "arg_auto_add"
 
-        fun newInstance(product: Product): AddToCartBottomSheetFragment {
+        fun newInstance(product: Product, autoAdd: Boolean = false): AddToCartBottomSheetFragment {
             return AddToCartBottomSheetFragment().apply {
                 arguments = Bundle().apply {
                     putSerializable(ARG_PRODUCT, product as Serializable)
+                    putBoolean(ARG_AUTO_ADD, autoAdd)
                 }
             }
         }

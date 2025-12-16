@@ -1,7 +1,6 @@
 package com.pbl6.fitme.repository
 
 import android.util.Log
-import com.pbl6.fitme.model.AddCartRequest
 import com.pbl6.fitme.model.AddWishlistRequest
 import com.pbl6.fitme.network.BaseResponse
 import com.pbl6.fitme.model.CartItem
@@ -13,8 +12,8 @@ import com.pbl6.fitme.model.ProductImage
 import com.pbl6.fitme.model.ProductResponse
 import com.pbl6.fitme.model.ProductVariant
 import com.pbl6.fitme.model.VNPayResponse
+import com.pbl6.fitme.model.MomoResponse
 import com.pbl6.fitme.model.WishlistItem
-import com.pbl6.fitme.model.WishlistRequest
 import com.pbl6.fitme.network.ApiClient
 import com.pbl6.fitme.network.CartApiService
 import com.pbl6.fitme.network.CategoryApiService
@@ -24,7 +23,6 @@ import com.pbl6.fitme.network.ProductImageApiService
 import com.pbl6.fitme.network.ProductVariantApiService
 import com.pbl6.fitme.network.ReviewApiService
 import com.pbl6.fitme.network.WishlistApiService
-import com.pbl6.fitme.network.WishlistResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -40,8 +38,9 @@ class MainRepository {
     private val productImageApi = ApiClient.retrofit.create(ProductImageApiService::class.java)
     private val reviewApi = ApiClient.retrofit.create(ReviewApiService::class.java)
     private val orderApi = ApiClient.retrofit.create(OrderApiService::class.java)
+    private val momoApi = ApiClient.retrofit.create(com.pbl6.fitme.network.MomoApiService::class.java)
+    private val paymentApi = ApiClient.retrofit.create(com.pbl6.fitme.network.PaymentApiService::class.java)
 
-    // Create shopping cart for newly registered user
     fun createCartForNewUser(userId: String, onResult: (String?) -> Unit) {
         cartApi.createCartForUser(userId).enqueue(object : Callback<com.pbl6.fitme.network.ShoppingCartResponse> {
             override fun onResponse(call: Call<com.pbl6.fitme.network.ShoppingCartResponse>, response: Response<com.pbl6.fitme.network.ShoppingCartResponse>) {
@@ -62,7 +61,6 @@ class MainRepository {
         })
     }
 
-    // 🧩 Lấy danh sách biến thể sản phẩm
     fun getProductVariants(token: String, onResult: (List<ProductVariant>?) -> Unit) {
         val bearerToken = "Bearer $token"
         variantApi.getProductVariants(bearerToken).enqueue(object : Callback<BaseResponse<List<ProductVariant>>> {
@@ -100,7 +98,6 @@ class MainRepository {
         })
     }
 
-    // Debug helper: log element classes of a raw product response list (useful when BE returns mixed tuples)
     fun debugPrintProductResponseElements(elements: List<Any>?) {
         if (elements == null) return
         elements.forEachIndexed { idx, el ->
@@ -108,7 +105,6 @@ class MainRepository {
         }
     }
 
-    // 🛍️ Lấy danh sách sản phẩm (có token)
     fun getProducts(token: String, onResult: (List<Product>?) -> Unit) {
         val bearerToken = "Bearer $token"
         productApi.getProducts(bearerToken)
@@ -236,6 +232,67 @@ class MainRepository {
         })
     }
 
+    // Fetch product by variant id (uses backend /products/by-variant/{variantId})
+    fun getProductByVariantId(token: String, variantId: String, onResult: (Product?) -> Unit) {
+        val bearer = "Bearer $token"
+        productApi.getProductByVariant(bearer, variantId).enqueue(object : Callback<BaseResponse<com.pbl6.fitme.model.ProductResponse>> {
+            override fun onResponse(call: Call<BaseResponse<com.pbl6.fitme.model.ProductResponse>>, response: Response<BaseResponse<com.pbl6.fitme.model.ProductResponse>>) {
+                if (response.isSuccessful) {
+                    val pr = response.body()?.result
+                    if (pr == null) {
+                        onResult(null)
+                        return
+                    }
+
+                    val images = pr.images.mapIndexed { idx, url ->
+                        com.pbl6.fitme.model.ProductImage(
+                            imageId = idx.toLong() * -1,
+                            createdAt = null,
+                            imageUrl = url,
+                            isMain = idx == 0,
+                            updatedAt = null,
+                            productId = pr.productId
+                        )
+                    }
+
+                    val variants = pr.variants.map { vr ->
+                        com.pbl6.fitme.model.ProductVariant(
+                            variantId = vr.variantId,
+                            color = vr.color,
+                            size = vr.size,
+                            price = vr.price,
+                            stockQuantity = vr.stockQuantity,
+                            productId = pr.productId
+                        )
+                    }
+
+                    val product = com.pbl6.fitme.model.Product(
+                        productId = pr.productId,
+                        createdAt = pr.createdAt,
+                        productName = pr.productName,
+                        description = pr.description,
+                        categoryName = pr.categoryName,
+                        brandName = pr.brandName,
+                        gender = pr.gender,
+                        season = pr.season,
+                        isActive = pr.isActive,
+                        images = images,
+                        variants = variants
+                    )
+
+                    onResult(product)
+                } else {
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<BaseResponse<com.pbl6.fitme.model.ProductResponse>>, t: Throwable) {
+                android.util.Log.e("MainRepository", "getProductByVariantId network error", t)
+                onResult(null)
+            }
+        })
+    }
+
     // Fetch user profile by email and save userId (profileId) into SessionManager
     // Note: UserResponse.userId is actually the profileId (not accountId), which is needed for wishlist operations
     fun fetchAndStoreUserId(token: String?, email: String?, onResult: (String?) -> Unit) {
@@ -299,6 +356,69 @@ class MainRepository {
                 }
             })
     }
+    fun getProductsByCategory(token: String, categoryId: String, onResult: (List<Product>?) -> Unit) {
+        val bearerToken = "Bearer $token"
+        productApi.getProductsByCategory(bearerToken, categoryId)
+            .enqueue(object : Callback<BaseResponse<List<ProductResponse>>> {
+
+                override fun onResponse(
+                    call: Call<BaseResponse<List<ProductResponse>>>,
+                    response: Response<BaseResponse<List<ProductResponse>>>
+                ) {
+                    if (response.isSuccessful) {
+                        val respList = response.body()?.result ?: emptyList()
+                        val products = respList.map { pr ->
+                            val images = pr.images.mapIndexed { idx, url ->
+                                ProductImage(
+                                    imageId = idx.toLong() * -1,
+                                    createdAt = null,
+                                    imageUrl = url,
+                                    isMain = idx == 0,
+                                    updatedAt = null,
+                                    productId = pr.productId
+                                )
+                            }
+
+                            val variants = pr.variants.map { vr ->
+                                ProductVariant(
+                                    variantId = vr.variantId,
+                                    color = vr.color,
+                                    size = vr.size,
+                                    price = vr.price,
+                                    stockQuantity = vr.stockQuantity,
+                                    productId = pr.productId
+                                )
+                            }
+
+                            Product(
+                                productId = pr.productId,
+                                productName = pr.productName,
+                                description = pr.description,
+                                categoryName = pr.categoryName,
+                                brandName = pr.brandName,
+                                isActive = pr.isActive,
+                                images = images,
+                                variants = variants
+                            )
+                        }
+
+                        android.util.Log.d("MainRepository", "getProductsByCategory: Found ${products.size} items for catId=$categoryId")
+                        onResult(products)
+                    } else {
+                        android.util.Log.e("MainRepository", "getProductsByCategory failed: ${response.code()}")
+                        onResult(null)
+                    }
+                }
+
+                override fun onFailure(
+                    call: Call<BaseResponse<List<ProductResponse>>>,
+                    t: Throwable
+                ) {
+                    android.util.Log.e("MainRepository", "getProductsByCategory network error", t)
+                    onResult(null)
+                }
+            })
+    }
 
     fun getCartItems(token: String, cartId: String, onResult: (List<CartItem>?) -> Unit) {
         val bearerToken = "Bearer $token"
@@ -314,6 +434,34 @@ class MainRepository {
 
             override fun onFailure(call: Call<List<CartItem>>, t: Throwable) {
                 Log.e("MainRepository", "getCartItems network error", t)
+                onResult(null)
+            }
+        })
+    }
+
+    /**
+     * Fetch server-side shopping cart for the given profile/user ID. Returns the cartId string
+     * via callback or null if not found or on error.
+     */
+    fun getCartByUser(token: String?, profileId: String?, onResult: (String?) -> Unit) {
+        if (token.isNullOrBlank() || profileId.isNullOrBlank()) {
+            onResult(null)
+            return
+        }
+        val bearer = "Bearer $token"
+        cartApi.getCartByUser(bearer, profileId).enqueue(object : Callback<com.pbl6.fitme.network.ShoppingCartResponse> {
+            override fun onResponse(call: Call<com.pbl6.fitme.network.ShoppingCartResponse>, response: Response<com.pbl6.fitme.network.ShoppingCartResponse>) {
+                if (response.isSuccessful) {
+                    val cartId = response.body()?.cartId
+                    onResult(cartId)
+                } else {
+                    android.util.Log.e("MainRepository", "getCartByUser failed: ${response.code()} body=${response.errorBody()?.string()}")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<com.pbl6.fitme.network.ShoppingCartResponse>, t: Throwable) {
+                android.util.Log.e("MainRepository", "getCartByUser network error", t)
                 onResult(null)
             }
         })
@@ -351,110 +499,140 @@ class MainRepository {
             }
         })
     }
-    fun fetchUserWishlistId(token: String, profileId: String, onResult: (String?) -> Unit) {
+
+    // Add product to wishlist (ensures header uses profileId)
+    fun addToWishlist(
+        token: String,
+        userEmail: String?, // user email used by backend
+        req: AddWishlistRequest,
+        onResult: (Boolean) -> Unit
+    ) {
         val bearer = "Bearer $token"
 
-        wishlistApi.getWishlistsByUser(bearer, profileId).enqueue(object : Callback<List<com.pbl6.fitme.model.WishlistDto>> {
+        if (userEmail.isNullOrBlank()) {
+            Log.e("MainRepository", "Cannot add to wishlist: userEmail is null or blank")
+            onResult(false)
+            return
+        }
+
+        Log.d("MainRepository", "addToWishlist: using userEmail=$userEmail")
+
+        // 1) Fetch existing wishlists for the user
+        wishlistApi.getWishlistsByUser(bearer, userEmail).enqueue(object : Callback<List<com.pbl6.fitme.model.WishlistDto>> {
             override fun onResponse(
                 call: Call<List<com.pbl6.fitme.model.WishlistDto>>,
                 response: Response<List<com.pbl6.fitme.model.WishlistDto>>
             ) {
                 if (response.isSuccessful) {
                     val wishlists = response.body() ?: emptyList()
-                    val wishlistId = if (wishlists.isNotEmpty()) {
-                        wishlists[0].wishlistId.toString()
+                    if (wishlists.isNotEmpty()) {
+                        // Use first wishlist
+                        val wishlistId = wishlists[0].wishlistId.toString()
+                        addItemToWishlist(bearer, wishlistId, req, onResult)
                     } else {
-                        null
+                        // No wishlist: create one first
+                        val wishlistReq = com.pbl6.fitme.model.WishlistRequest(name = "My Wishlist")
+                        wishlistApi.createWishlist(userEmail, bearer, wishlistReq)
+                            .enqueue(object : Callback<com.pbl6.fitme.network.WishlistResponse> {
+                                override fun onResponse(
+                                    call: Call<com.pbl6.fitme.network.WishlistResponse>,
+                                    response: Response<com.pbl6.fitme.network.WishlistResponse>
+                                ) {
+                                    if (response.isSuccessful) {
+                                        val createdWishlistId = response.body()?.wishlistId
+                                        if (!createdWishlistId.isNullOrBlank()) {
+                                            addItemToWishlist(bearer, createdWishlistId, req, onResult)
+                                        } else {
+                                            Log.e("MainRepository", "createWishlist returned empty wishlistId")
+                                            onResult(false)
+                                        }
+                                    } else {
+                                        Log.e("MainRepository", "createWishlist failed code=${response.code()} body=${response.errorBody()?.string()}")
+                                        onResult(false)
+                                    }
+                                }
+
+                                
+
+                                override fun onFailure(call: Call<com.pbl6.fitme.network.WishlistResponse>, t: Throwable) {
+                                    Log.e("MainRepository", "createWishlist network failure", t)
+                                    onResult(false)
+                                }
+                            })
                     }
-                    Log.d("MainRepository", "fetchUserWishlistId successful: wishlistId=$wishlistId")
-                    onResult(wishlistId)
                 } else {
-                    Log.e("MainRepository", "fetchUserWishlistId failed code=${response.code()} body=${response.errorBody()?.string()}")
-                    onResult(null)
+                    Log.e("MainRepository", "getWishlistsByUser failed code=${response.code()} body=${response.errorBody()?.string()}")
+                    onResult(false)
                 }
             }
 
             override fun onFailure(call: Call<List<com.pbl6.fitme.model.WishlistDto>>, t: Throwable) {
-                Log.e("MainRepository", "fetchUserWishlistId network failure", t)
-                onResult(null)
+                Log.e("MainRepository", "getWishlistsByUser network failure", t)
+                onResult(false)
             }
         })
     }
-    fun createWishlist(
-        token: String,
-        userId: String,
-        req: WishlistRequest,
-        onResult: (String?) -> Unit
-    ) {
+
+    /**
+     * Create a new wishlist for the given profile (user) and return the created wishlistId as String
+     * via the callback, or null on error.
+     */
+    fun createWishlist(token: String?, userEmail: String?, req: com.pbl6.fitme.model.WishlistRequest, onResult: (String?) -> Unit) {
+        if (token.isNullOrBlank() || userEmail.isNullOrBlank()) {
+            onResult(null)
+            return
+        }
         val bearer = "Bearer $token"
-        wishlistApi.createWishlist(userId, bearer, req).enqueue(object : Callback<WishlistResponse> {
-            override fun onResponse(
-                call: Call<WishlistResponse>,
-                response: Response<WishlistResponse>
-            ) {
+        wishlistApi.createWishlist(userEmail, bearer, req).enqueue(object : Callback<com.pbl6.fitme.network.WishlistResponse> {
+            override fun onResponse(call: Call<com.pbl6.fitme.network.WishlistResponse>, response: Response<com.pbl6.fitme.network.WishlistResponse>) {
                 if (response.isSuccessful) {
-                    val wishlistId = response.body()?.wishlistId
-                    Log.d("MainRepository", "createWishlist SUCCESS, ID: $wishlistId")
-                    onResult(wishlistId)
+                    val createdId = response.body()?.wishlistId
+                    onResult(createdId)
                 } else {
-                    Log.e("MainRepository", "createWishlist failed code=${response.code()} body=${response.errorBody()?.string()}")
+                    Log.e("MainRepository", "createWishlist failed: ${response.code()} body=${response.errorBody()?.string()}")
                     onResult(null)
                 }
             }
 
-            override fun onFailure(call: Call<WishlistResponse>, t: Throwable) { // Sửa kiểu
+            override fun onFailure(call: Call<com.pbl6.fitme.network.WishlistResponse>, t: Throwable) {
                 Log.e("MainRepository", "createWishlist network failure", t)
                 onResult(null)
             }
         })
     }
-//    fun addToWishlist(
-//        token: String,
-//        profileId: String,
-//        req: AddWishlistRequest,
-//        onResult: (Boolean) -> Unit
-//    ) {
-//        val bearer = "Bearer $token"
-//
-//        Log.d("MainRepository", "addToWishlist: profileId=$profileId, productId=${req.productId}")
-//
-//        // 1) Lấy Wishlist ID của người dùng
-//        fetchUserWishlistId(token, profileId) { wishlistId ->
-//            if (wishlistId != null) {
-//                // 2) Đã có Wishlist: Thêm sản phẩm vào Wishlist đó
-//                Log.d("MainRepository", "Using existing wishlistId=$wishlistId")
-//                addItemToWishlist(bearer, wishlistId, req, onResult)
-//            } else {
-//                // 3) Chưa có Wishlist: Tạo mới bằng cách gọi hàm public createWishlist
-//                Log.d("MainRepository", "No wishlist found. Creating default wishlist.")
-//                val wishlistReq = com.pbl6.fitme.model.WishlistRequest(name = "My Wishlist")
-//
-//                // ⚠️ THAY THẾ KHỐI LỆNH TRỰC TIẾP bằng cách gọi hàm public createWishlist
-//                createWishlist(token, profileId, wishlistReq) { createSuccess ->
-//                    if (createSuccess) {
-//                        // Sau khi tạo thành công, phải LẤY LẠI ID và sau đó thêm sản phẩm.
-//                        // Việc này cần gọi lại fetchUserWishlistId (hoặc API tạo trả về ID).
-//                        // Vì hàm createWishlist public hiện tại chỉ trả về Boolean, ta phải gọi lại fetch.
-//                        fetchUserWishlistId(token, profileId) { newWishlistId ->
-//                            if (newWishlistId != null) {
-//                                Log.d("MainRepository", "Wishlist created: id=$newWishlistId. Adding item.")
-//                                // 4) Tạo xong thì thêm sản phẩm vào
-//                                addItemToWishlist(bearer, newWishlistId, req, onResult)
-//                            } else {
-//                                Log.e("MainRepository", "createWishlist returned success but cannot fetch ID.")
-//                                onResult(false)
-//                            }
-//                        }
-//                    } else {
-//                        Log.e("MainRepository", "createWishlist failed via public method.")
-//                        onResult(false)
-//                    }
-//                }
-//            }
-//        }
-//    }
+
+    /**
+     * Fetch the first wishlist ID for the given user/profile. Returns the wishlistId as String
+     * or null if none exists or on error.
+     */
+    fun fetchUserWishlistId(token: String?, userEmail: String?, onResult: (String?) -> Unit) {
+        if (token.isNullOrBlank() || userEmail.isNullOrBlank()) {
+            onResult(null)
+            return
+        }
+        val bearer = "Bearer $token"
+        wishlistApi.getWishlistsByUser(bearer, userEmail).enqueue(object : Callback<List<com.pbl6.fitme.model.WishlistDto>> {
+            override fun onResponse(call: Call<List<com.pbl6.fitme.model.WishlistDto>>, response: Response<List<com.pbl6.fitme.model.WishlistDto>>) {
+                if (response.isSuccessful) {
+                    val list = response.body() ?: emptyList()
+                    if (list.isNotEmpty()) {
+                        onResult(list[0].wishlistId.toString())
+                    } else {
+                        onResult(null)
+                    }
+                } else {
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<List<com.pbl6.fitme.model.WishlistDto>>, t: Throwable) {
+                onResult(null)
+            }
+        })
+    }
 
     // Helper to add item to wishlist by wishlistId
+    // made public so callers (ViewModels) can add items given a bearer or via public wrapper
     fun addItemToWishlist(
         bearer: String,
         wishlistId: String,
@@ -531,6 +709,54 @@ class MainRepository {
             override fun onFailure(call: Call<BaseResponse<VNPayResponse>>, t: Throwable) {
                 android.util.Log.e("MainRepository", "createVNPayPayment network error", t)
                 onResult(null)
+            }
+        })
+    }
+
+    // Create Momo payment (calls backend /momopay/create)
+    fun createMomoPayment(token: String, amount: Long, userEmail: String, orderId: String?, onResult: (MomoResponse?) -> Unit) {
+        val bearer = "Bearer $token"
+        momoApi.createMomoPayment(bearer, amount, userEmail, orderId).enqueue(object : Callback<MomoResponse> {
+            override fun onResponse(call: Call<MomoResponse>, response: Response<MomoResponse>) {
+                if (response.isSuccessful) {
+                    onResult(response.body())
+                } else {
+                    android.util.Log.e("MainRepository", "createMomoPayment failed: ${response.code()}")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<MomoResponse>, t: Throwable) {
+                android.util.Log.e("MainRepository", "createMomoPayment network error", t)
+                onResult(null)
+            }
+        })
+    }
+
+    // Create a payment record (used by client for COD or explicit client-side creation)
+    fun createPayment(token: String, orderId: String, paymentMethod: String, amount: Double, paymentStatus: String? = null, onResult: (Boolean) -> Unit) {
+        val bearer = "Bearer $token"
+        // Build simple map to avoid creating additional DTO mapping issues
+        val payload = mutableMapOf<String, Any>(
+            "orderId" to orderId,
+            "paymentMethod" to paymentMethod,
+            "amount" to amount
+        )
+        if (paymentStatus != null) payload["paymentStatus"] = paymentStatus
+
+        paymentApi.createPayment(bearer, payload).enqueue(object : Callback<BaseResponse<String>> {
+            override fun onResponse(call: Call<BaseResponse<String>>, response: Response<BaseResponse<String>>) {
+                if (response.isSuccessful) {
+                    onResult(true)
+                } else {
+                    android.util.Log.e("MainRepository", "createPayment failed: ${response.code()}")
+                    onResult(false)
+                }
+            }
+
+            override fun onFailure(call: Call<BaseResponse<String>>, t: Throwable) {
+                android.util.Log.e("MainRepository", "createPayment network error", t)
+                onResult(false)
             }
         })
     }

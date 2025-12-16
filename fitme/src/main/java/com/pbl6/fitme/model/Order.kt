@@ -33,7 +33,12 @@ data class Order(
     val totalAmount: Double = 0.0,
     val discountAmount: Double = 0.0,
     val shippingFee: Double = 0.0,
-    val orderNotes: String = ""
+    val orderNotes: String = "",
+    // payment info from backend
+    val paymentId: String? = null,
+    val paymentMethod: String? = null,
+    val paymentStatus: String? = null,
+    val paymentAmount: Double? = null
 ) : Serializable
 
 data class ShippingAddress(
