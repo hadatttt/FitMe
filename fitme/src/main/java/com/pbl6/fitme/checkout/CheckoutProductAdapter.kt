@@ -23,7 +23,6 @@ class CheckoutProductAdapter(
     ) {
         variantMap = newVariantMap
         productMap = newProductMap
-        // data for items may have changed; ask the adapter to rebind visible views
         notifyDataSetChanged()
     }
 

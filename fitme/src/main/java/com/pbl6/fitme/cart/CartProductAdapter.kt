@@ -47,14 +47,12 @@ class CartProductAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val cartItem = items[position]
         val variant = variantMap[cartItem.variantId]
-        val product = variant?.let { productMap[it.productId] }  // Fixed: use productId not variantId
-
+        val product = variant?.let { productMap[it.productId] }
         holder.txtTitle.text = product?.productName ?: "Unknown"
         holder.txtDetail.text = variant?.let { "${it.color} - Size: ${it.size}" } ?: ""
         holder.txtPrice.text = variant?.price?.let { "$${String.format("%.2f", it)}" } ?: ""
         holder.txtQuantity.text = cartItem.quantity.toString()
-        
-        // Load product image from first product image or use placeholder
+
         val imageUrl = product?.images?.firstOrNull()?.imageUrl
         Glide.with(holder.imgProduct.context)
             .load(imageUrl ?: R.drawable.ic_splash)

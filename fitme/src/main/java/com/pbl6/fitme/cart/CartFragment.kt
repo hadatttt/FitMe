@@ -150,8 +150,6 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
 
     override fun initData() {
     }
-
-    // ===== Helpers =====
     private fun updateCartView() {
         binding.thump.text = "Cart (${cartItems.size})"
 
