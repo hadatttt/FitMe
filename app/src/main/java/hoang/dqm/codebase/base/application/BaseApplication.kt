@@ -16,7 +16,6 @@ abstract class BaseApplication : Application(), DefaultLifecycleObserver {
 
     override fun onCreate() {
         super<Application>.onCreate()
-
     }
 }
 

@@ -20,4 +20,6 @@
     <string name="i_got_it_text">I got it</string>
     <string name="permission_denied_text">Permission denied!</string>
     <string name="title_cancel">Cancel</string>
+    <string name="text_day">Day %d</string>
+    <string name="spin_left">Spin Left %d</string>
 </resources>

@@ -22,3 +22,5 @@ dependencyResolutionManagement {
 rootProject.name = "FitMe"
 include(":fitme")
 include(":app")
+include(":dailycheckin")
+include(":slotmachinegame")

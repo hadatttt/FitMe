@@ -43,6 +43,8 @@ android {
 
 dependencies {
     implementation(project(":app"))
+    implementation(project(":dailycheckin"))
+    implementation(project(":slotmachinegame"))
     implementation("com.airbnb.android:lottie:6.0.0")
     // Android
     api(libs.androidx.core.ktx)
@@ -60,11 +62,6 @@ dependencies {
     // Navigation
     api(libs.androidx.navigation.fragment.ktx)
     api(libs.androidx.navigation.ui.ktx)
-
-    // Coroutines
-
-    // Utils
-
     api(libs.permissionx)
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

@@ -8,10 +8,12 @@ import androidx.annotation.RequiresApi
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import com.pbl6.fitme.R
+import com.pbl6.fitme.checkin.CheckInDialogFragment
 import com.pbl6.fitme.databinding.FragmentSplashBinding
 import com.pbl6.fitme.service.AppPreferences
 import com.pbl6.fitme.service.NotificationHelper
 import com.pbl6.fitme.service.NotificationWorker
+import com.pbl6.fitme.untils.AppSharePref
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.utils.collectLatestFlow
@@ -71,13 +73,17 @@ class SplashFragment : BaseFragment <FragmentSplashBinding, SplashViewModel>() {
     }
     override fun initListener() {
         binding.ivRegister.singleClick {
-            navigate(R.id.registerFragment)
+            navigate(R.id.slotMachineGameFragment)
         }
         binding.ivNextLogin.singleClick {
             navigate(R.id.loginFragment)
         }
     }
     override fun initData() {
+        if (!AppSharePref(requireContext()).isTodaySaved(requireContext())) {
+            val dialog = CheckInDialogFragment()
+            dialog.show(parentFragmentManager, "CheckInDialog")
+        }
     }
 }
 

@@ -147,5 +147,9 @@
             android:id="@+id/aiViewFragment"
             android:name="com.pbl6.fitme.ai.AiViewFragment"
             android:label="AiViewFragment" />
+    <fragment
+            android:id="@+id/slotMachineGameFragment"
+            android:name="com.pbl6.fitme.slotmachinegame.SlotMachineGameFragment"
+            android:label="SlotMachineGameFragment" />
 
 </navigation>

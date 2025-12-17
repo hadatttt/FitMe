@@ -11,7 +11,9 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/dailycheckin" />
             <option value="$PROJECT_DIR$/fitme" />
+            <option value="$PROJECT_DIR$/slotmachinegame" />
           </set>
         </option>
       </GradleProjectSettings>

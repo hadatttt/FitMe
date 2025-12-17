@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.model.CartItem
 import com.pbl6.fitme.databinding.FragmentCheckoutBinding
+import com.pbl6.fitme.model.Coupon
 import com.pbl6.fitme.model.ShippingAddress
 import com.pbl6.fitme.repository.CouponRepository
 import hoang.dqm.codebase.base.activity.BaseFragment

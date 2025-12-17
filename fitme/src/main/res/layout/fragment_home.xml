@@ -163,37 +163,18 @@
             app:layout_constraintTop_toBottomOf="@id/titleLayout"
             tools:listitem="@layout/item_product" />
 
-    <FrameLayout
-            android:id="@+id/fl_cart"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="24dp"
-            android:layout_marginBottom="24dp"
-            android:background="@drawable/bg_circle_shadow"
-            android:elevation="6dp"
-            android:padding="12dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
-
-        <ImageView
-                android:id="@+id/iv_shopping"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:src="@drawable/ic_cart"
-                app:tint="@color/white"/>
-
-        <TextView
-                android:id="@+id/tv_cart_badge"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_gravity="top|end"
-                android:background="@drawable/bg_red_badge"
-                android:gravity="center"
-                android:text="1"
-                android:textColor="@android:color/white"
-                android:textSize="10sp"
-                android:visibility="visible" />
-    </FrameLayout>
+<ImageView
+        android:id="@+id/btn_slot"
+        android:layout_width="@dimen/_60sdp"
+        android:layout_height="@dimen/_60sdp"
+        android:src="@drawable/ic_slot"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.8"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginEnd="@dimen/_20sdp"
+        app:layout_constraintHeight_percent="0.2"
+    />
     <com.airbnb.lottie.LottieAnimationView
             android:id="@+id/giftLottie"
             android:layout_width="@dimen/_60sdp"
