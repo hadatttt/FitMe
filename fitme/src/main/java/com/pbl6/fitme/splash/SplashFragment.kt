@@ -73,17 +73,14 @@ class SplashFragment : BaseFragment <FragmentSplashBinding, SplashViewModel>() {
     }
     override fun initListener() {
         binding.ivRegister.singleClick {
-            navigate(R.id.slotMachineGameFragment)
+            navigate(R.id.registerFragment)
         }
         binding.ivNextLogin.singleClick {
             navigate(R.id.loginFragment)
         }
     }
     override fun initData() {
-        if (!AppSharePref(requireContext()).isTodaySaved(requireContext())) {
-            val dialog = CheckInDialogFragment()
-            dialog.show(parentFragmentManager, "CheckInDialog")
-        }
+
     }
 }
 

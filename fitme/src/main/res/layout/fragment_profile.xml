@@ -27,9 +27,12 @@
                 android:src="@drawable/image"
                 android:scaleType="centerCrop"
                 android:background="@drawable/bg_circle_while"
+                android:layout_marginStart="16dp"
                 android:layout_weight="1"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintEnd_toStartOf="@+id/txtHello" />
         <ImageView
                 android:id="@+id/btnSetting"
                 android:layout_width="wrap_content"
@@ -70,31 +73,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="5dp">
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_bluelight"
-                android:padding="12dp"
-                android:layout_marginTop="8dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Announcement: Lorem ipsum dolor sit amet..."
-                    android:textSize="14sp"/>
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/iv_see_all_notification"
-                    android:layout_width="@dimen/_25sdp"
-                    android:layout_height="@dimen/_25sdp"
-                    android:padding="@dimen/_7sdp"
-                    android:src="@drawable/ic_next"
-                    android:layout_marginStart="@dimen/_10sdp"
-                    android:background="@drawable/bg_circle_blue"/>
-
-            </LinearLayout>
 
             <!-- Thanh trên cùng -->
             <LinearLayout
@@ -120,6 +98,7 @@
                         android:textColor="#000000" />
 
                 <TextView
+                        android:id="@+id/detail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Detail >"
@@ -403,24 +382,5 @@
         app:layout_constraintVertical_bias="0.7"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <ImageView
-            android:id="@+id/iv_shopping"
-            android:layout_width="@dimen/_40sdp"
-            android:layout_height="@dimen/_40sdp"
-            android:src="@drawable/shop" />
-
-        <TextView
-            android:id="@+id/tv_cart_badge"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:layout_gravity="top|end"
-            android:fontFamily="@font/baloo2_semibold"
-            android:gravity="center"
-            android:text="1"
-            android:textSize="12sp"
-            android:textColor="@android:color/black"
-            android:visibility="visible" />
-    </FrameLayout>
+        app:layout_constraintTop_toTopOf="parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

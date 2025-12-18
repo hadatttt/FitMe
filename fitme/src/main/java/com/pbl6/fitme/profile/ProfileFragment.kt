@@ -2,11 +2,16 @@ package com.pbl6.fitme.profile
 
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import androidx.core.content.ContextCompat
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.model.GlideUrl
+import com.bumptech.glide.load.model.LazyHeaders
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentProfileBinding
 import com.pbl6.fitme.model.Product
+import com.pbl6.fitme.repository.MainRepository
+import com.pbl6.fitme.repository.RecommendRepository
+import com.pbl6.fitme.repository.UserRepository
 import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
@@ -16,40 +21,52 @@ import hoang.dqm.codebase.utils.setDraggableWithClick
 import hoang.dqm.codebase.utils.singleClick
 
 class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>() {
-    private val mainRepository = com.pbl6.fitme.repository.MainRepository()
-    private val recommendRepository = com.pbl6.fitme.repository.RecommendRepository()
+
+    // Khai báo các Repository
+    private val mainRepository = MainRepository()
+    private val recommendRepository = RecommendRepository()
+    private val userRepository = UserRepository() // Thêm repo này để lấy info user
+
     private lateinit var productAdapter: ProductAdapter
 
     override fun initView() {
-        val session = SessionManager.getInstance()
-        val token = session.getAccessToken(requireContext())
-        Log.d("SessionManager", "AccessToken = $token")
+        // Setup Toolbar và Tab
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
         highlightSelectedTab(R.id.person_id)
 
+        // Setup RecyclerView sản phẩm
         setupRecyclerViews()
     }
 
     override fun onResume() {
         super.onResume()
-        // Cập nhật số lượng đơn hàng mỗi khi màn hình hiện lên
+        // Cập nhật lại dữ liệu mỗi khi màn hình hiện lên (quay lại từ Settings hoặc Cart)
         updateOrderBadges()
+        fetchUserProfile()
     }
 
     override fun initListener() {
+        // Nút Back
         onBackPressed {
             hideToolbar()
             popBackStack()
         }
+
+        // Nút Cart kéo thả
         binding.flCart.setDraggableWithClick {
             navigate(R.id.cartFragment)
         }
+
+        // Nút Setting -> Chuyển sang màn hình cài đặt
         binding.btnSetting.singleClick {
             navigate(R.id.settingsFragment)
         }
-        binding.ivSeeAllNotification.singleClick {
+        binding.detail.singleClick {
+            navigateToOrder("pending")
         }
+
+        // Logic Bottom Navigation (Giữ nguyên)
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
             highlightSelectedTab(R.id.home_id)
             navigate(R.id.homeFragment)
@@ -66,7 +83,7 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             highlightSelectedTab(R.id.person_id)
         }
 
-        // Click events for Order Statuses
+        // Click vào các trạng thái đơn hàng
         binding.llStatusPending.singleClick { navigateToOrder("pending") }
         binding.llStatusConfirmed.singleClick { navigateToOrder("confirmed") }
         binding.llStatusProcessing.singleClick { navigateToOrder("processing") }
@@ -75,14 +92,52 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         binding.llStatusCancelled.singleClick { navigateToOrder("cancelled") }
     }
 
-    private fun navigateToOrder(status: String) {
-        val bundle = android.os.Bundle().apply { putString("order_status", status) }
-        navigate(R.id.ordersFragment, bundle)
+    // --- 1. LOGIC LẤY THÔNG TIN USER (MỚI) ---
+    // --- 1. LOGIC LẤY THÔNG TIN USER ---
+    private fun fetchUserProfile() {
+        val session = SessionManager.getInstance()
+        // Lấy token ở đây để truyền vào Glide
+        val token = session.getAccessToken(requireContext())
+        val userId = session.getUserId(requireContext())?.toString()
+
+        if (!token.isNullOrBlank() && !userId.isNullOrBlank()) {
+            userRepository.getUserDetail(token, userId) { user ->
+                activity?.runOnUiThread {
+                    user?.let { userInfo ->
+                        // 1. Cập nhật tên
+                        binding.txtHello.text = "Hello, ${userInfo.fullName ?: "User"}!"
+
+                        // 2. Cập nhật Avatar
+                        userInfo.avatarUrl?.let { url ->
+                            // Xử lý đường dẫn URL
+                            val baseUrl = "http://10.48.170.90:8080/api" // Đảm bảo IP đúng
+                            val fullPath = if (url.startsWith("/")) url else "/$url"
+                            val stringUrl = "$baseUrl$fullPath"
+
+                            // --- KHẮC PHỤC LỖI MISSING HEADER TẠI ĐÂY ---
+                            // Tạo GlideUrl có chứa Header Authorization
+                            val glideUrl = GlideUrl(
+                                stringUrl,
+                                LazyHeaders.Builder()
+                                    .addHeader("Authorization", "Bearer $token")
+                                    .build()
+                            )
+
+                            // Load ảnh dùng glideUrl thay vì stringUrl
+                            Glide.with(requireContext())
+                                .load(glideUrl)
+                                .placeholder(R.drawable.image)
+                                .error(R.drawable.image)
+                                .circleCrop()
+                                .into(binding.imgAvatar)
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    override fun initData() {
-    }
-
+    // --- 2. LOGIC BADGE ĐƠN HÀNG ---
     private fun updateOrderBadges() {
         val token = SessionManager.getInstance().getAccessToken(requireContext())
         val email = SessionManager.getInstance().getUserEmail(requireContext())
@@ -91,7 +146,6 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             mainRepository.getOrdersByUser(token, email, null) { orders ->
                 activity?.runOnUiThread {
                     if (orders != null) {
-                        // Helper function to count and set text
                         fun setBadge(textView: android.widget.TextView, statusKey: String) {
                             val count = orders.count {
                                 (it.status ?: it.orderStatus ?: "").equals(statusKey, ignoreCase = true)
@@ -104,7 +158,7 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
                             }
                         }
 
-                        // Map counts to the TextViews created in XML
+                        // Map counts to XML TextViews
                         setBadge(binding.tvCountPending, "pending")
                         setBadge(binding.tvCountConfirmed, "confirmed")
                         setBadge(binding.tvCountProcessing, "processing")
@@ -115,6 +169,12 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
                 }
             }
         }
+    }
+
+    // --- 3. CÁC HÀM HỖ TRỢ KHÁC ---
+    private fun navigateToOrder(status: String) {
+        val bundle = android.os.Bundle().apply { putString("order_status", status) }
+        navigate(R.id.ordersFragment, bundle)
     }
 
     private fun highlightSelectedTab(selectedId: Int) {
@@ -146,49 +206,50 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             }
 
             val userId = SessionManager.getInstance().getUserId(requireContext())?.toString()
-            if (!userId.isNullOrBlank()) {
-                // Request 6 recommendations and display them
-                recommendRepository.getRecommendations(requireContext(), userId, 6) { list ->
-                    activity?.runOnUiThread {
-                        if (!list.isNullOrEmpty()) {
-                                        // Ensure at most 6 items
-                                        val limited = if (list.size > 6) list.take(6) else list
 
-                                        // If some recommended products don't include images, fetch full product details
-                                        val needFetch = limited.filter { it.mainImageUrl.isNullOrBlank() }
-                                        if (needFetch.isEmpty()) {
-                                            productAdapter.setList(limited)
-                                        } else {
-                                            val mutable = limited.toMutableList()
-                                            var remaining = needFetch.size
-                                            needFetch.forEach { rec ->
-                                                mainRepository.getProductById(token, rec.productId.toString()) { full ->
-                                                    activity?.runOnUiThread {
-                                                        if (full != null) {
-                                                            val idx = mutable.indexOfFirst { it.productId == rec.productId }
-                                                            if (idx >= 0) mutable[idx] = full
-                                                        }
-                                                        remaining -= 1
-                                                        if (remaining <= 0) {
-                                                            productAdapter.setList(mutable)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
+            // Logic lấy Recommendation hoặc Top Products
+            val loadDataCallback: (List<Product>?) -> Unit = { list ->
+                activity?.runOnUiThread {
+                    if (!list.isNullOrEmpty()) {
+                        val limited = if (list.size > 6) list.take(6) else list
+
+                        // Kiểm tra nếu sản phẩm thiếu ảnh thì gọi API lấy chi tiết
+                        val needFetch = limited.filter { it.mainImageUrl.isNullOrBlank() }
+                        if (needFetch.isEmpty()) {
+                            productAdapter.setList(limited)
                         } else {
-                            // fallback to top products if no recommendations
-                            mainRepository.getProducts(token) { products: List<Product>? ->
-                                activity?.runOnUiThread {
-                                    if (products != null) productAdapter.setList(products.take(6))
+                            val mutable = limited.toMutableList()
+                            var remaining = needFetch.size
+                            needFetch.forEach { rec ->
+                                mainRepository.getProductById(token, rec.productId.toString()) { full ->
+                                    activity?.runOnUiThread {
+                                        if (full != null) {
+                                            val idx = mutable.indexOfFirst { it.productId == rec.productId }
+                                            if (idx >= 0) mutable[idx] = full
+                                        }
+                                        remaining -= 1
+                                        if (remaining <= 0) {
+                                            productAdapter.setList(mutable)
+                                        }
+                                    }
                                 }
+                            }
+                        }
+                    } else {
+                        // Fallback nếu không có recommendation
+                        mainRepository.getProducts(token) { products ->
+                            activity?.runOnUiThread {
+                                if (products != null) productAdapter.setList(products.take(6))
                             }
                         }
                     }
                 }
+            }
+
+            if (!userId.isNullOrBlank()) {
+                recommendRepository.getRecommendations(requireContext(), userId, 6, loadDataCallback)
             } else {
-                // No user id: show top 6 products
-                mainRepository.getProducts(token) { products: List<Product>? ->
+                mainRepository.getProducts(token) { products ->
                     activity?.runOnUiThread {
                         if (products != null) productAdapter.setList(products.take(6))
                     }
@@ -200,5 +261,9 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
     private fun hideToolbar() {
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.GONE
+    }
+
+    override fun initData() {
+        // Data đã được load trong onResume và initView
     }
 }

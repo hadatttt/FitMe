@@ -19,7 +19,6 @@ data class Order(
     // shipping & coupon
     val shippingAddressId: String = "",
     val shippingAddress: ShippingAddress = ShippingAddress(),
-    val couponId: String = "",
     // Added to mirror backend OrderResponse
     val shippingAddressDetails: String? = null,
     val couponCode: String? = null,

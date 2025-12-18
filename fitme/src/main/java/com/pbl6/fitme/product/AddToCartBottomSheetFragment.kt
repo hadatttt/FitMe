@@ -83,8 +83,6 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
                     selectedVariant = pick
                 }
             }
-
-            // If selectedVariant is available, perform the same logic as clicking the button
             selectedVariant?.let {
                 val token = SessionManager.getInstance().getAccessToken(requireContext())
                 if (!token.isNullOrBlank()) {

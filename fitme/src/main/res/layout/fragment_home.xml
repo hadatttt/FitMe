@@ -60,13 +60,6 @@
 
         </LinearLayout>
 
-        <ImageView
-                android:id="@+id/ivCamera"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_camera"
-                android:contentDescription="Camera"
-                app:tint="@color/black" />
     </LinearLayout>
 
     <LinearLayout

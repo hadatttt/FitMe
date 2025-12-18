@@ -92,9 +92,9 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
 
                     it.avatarUrl?.let { url ->
                         val fullUrl = if (url.startsWith("/")) {
-                            "http://2.2:8080/api$url"
+                            "http://10.48.170.90:8080/api$url"
                         } else {
-                            "http://10.48.170.90/api/$url"
+                            "http://10.48.170.90:8080/api/$url"
                         }
                         Glide.with(requireContext())
                             .load(fullUrl)
@@ -190,11 +190,9 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
         val fullName = binding.etFullName.text.toString()
         val dateOfBirth = binding.etDateOfBirth.text.toString()
         val phone = binding.etPhone.text.toString()
-        val password = ""
 
         val params = HashMap<String, RequestBody>()
         params["username"] = username.toRequestBody("text/plain".toMediaType())
-        params["password"] = password.toRequestBody("text/plain".toMediaType())
         params["email"] = email.toRequestBody("text/plain".toMediaType())
         params["fullName"] = fullName.toRequestBody("text/plain".toMediaType())
         params["dateOfBirth"] = dateOfBirth.toRequestBody("text/plain".toMediaType())

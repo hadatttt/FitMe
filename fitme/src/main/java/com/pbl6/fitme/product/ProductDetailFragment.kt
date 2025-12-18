@@ -75,9 +75,7 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             }
         }
 
-        // --- SỬA LỖI: Thêm viewLifecycleOwner vào tất cả các hàm observe ---
 
-        // 1. Product Detail
         viewModel.product.observe(viewLifecycleOwner) { product ->
             product?.let {
                 currentProduct = it

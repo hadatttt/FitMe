@@ -319,10 +319,8 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
             // Xử lý background
             if (isSelected && isAvailable) {
                 holder.txt.setBackgroundResource(R.drawable.bg_selected_variant) // File drawable viền màu/đậm
-                holder.txt.setTextColor(Color.WHITE) // Ví dụ: chọn thì chữ trắng
             } else {
-                holder.txt.setBackgroundResource(R.drawable.bg_outer_circle) // File drawable viền thường
-                holder.txt.setTextColor(Color.BLACK)
+                holder.txt.setBackgroundResource(R.drawable.bg_variant) // File drawable viền thường
             }
         }
 
@@ -389,11 +387,9 @@ class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
             holder.txt.alpha = if (isAvailable) 1.0f else 0.3f
 
             if (isSelected && isAvailable) {
-                holder.txt.setBackgroundResource(R.drawable.bg_selected_variant)
-                holder.txt.setTextColor(Color.WHITE)
+                holder.txt.setBackgroundResource(R.drawable.bg_selected_variant) // File drawable viền màu/đậm
             } else {
-                holder.txt.setBackgroundResource(R.drawable.bg_outer_circle)
-                holder.txt.setTextColor(Color.BLACK)
+                holder.txt.setBackgroundResource(R.drawable.bg_variant) // File drawable viền thường
             }
         }
 

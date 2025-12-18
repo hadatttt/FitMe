@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.pbl6.fitme.databinding.FragmentContactInforBinding
 import hoang.dqm.codebase.base.activity.popBackStack
+import hoang.dqm.codebase.utils.singleClick
 
 class ContactInforFragment : Fragment() {
     private var _binding: FragmentContactInforBinding? = null
@@ -30,7 +31,9 @@ class ContactInforFragment : Fragment() {
         // Show email but do not allow editing here
         binding.etAddress.setText(email)
         binding.etAddress.isEnabled = false
-
+        binding.ivBack.singleClick {
+            popBackStack()
+        }
         binding.btnSave.setOnClickListener {
             val newRecipient = binding.etRecipientName.text?.toString()?.trim() ?: ""
             val newPhone = binding.etCity.text?.toString()?.trim() ?: ""

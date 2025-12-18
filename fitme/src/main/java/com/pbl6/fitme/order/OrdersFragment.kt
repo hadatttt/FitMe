@@ -44,7 +44,7 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
                                     orderStatus = newStatus,
                                     shippingAddressId = order.shippingAddressId ?: "",
                                     shippingAddress = order.shippingAddress ?: ShippingAddress(),
-                                    couponId = "",
+                                    couponCode = order.couponCode,
                                     orderItems = order.orderItems ?: emptyList(),
                                     items = order.items ?: emptyList(),
                                     subtotal = order.subtotal ?: 0.0,

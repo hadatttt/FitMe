@@ -1,7 +1,9 @@
 package com.pbl6.fitme.product
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.pbl6.fitme.model.AddCartRequest
@@ -172,6 +174,7 @@ class ProductDetailViewModel : BaseViewModel() {
         handleAddToCartComplexLogic(context, token, profileId, cartId, request, variantId, quantity)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun handleAddToCartComplexLogic(context: Context, token: String, profileId: String?, localCartId: String?, request: AddCartRequest, variantId: UUID, quantity: Int) {
         // Copy logic addToCart cũ của bạn vào đây
         // Khi thành công:

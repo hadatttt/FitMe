@@ -129,7 +129,7 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         binding.txtShippingFee.text = "\$${String.format("%.2f", shippingFee)}"
         binding.txtTotal.text = "\$${String.format("%.2f", total)}"
         binding.txtDiscount.text = "\$${String.format("%.2f", order.discountAmount ?: 0.0)}"
-        binding.txtCouponCode.text = "Coupon: ${order.couponId ?: "-"}"
+        binding.txtCouponCode.text = "Coupon: ${order.couponCode ?: "-"}"
         binding.txtOrderNotes.text = "Notes: ${order.orderNotes ?: "-"}"
     // Show payment method if provided by backend
     val rawMethod = when {
