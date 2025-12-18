@@ -4,11 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentSettingsBinding
+import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.utils.singleClick
@@ -29,69 +30,76 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         hideToolbar()
-        val allItems = listOf(
-            // Personal
-            SettingOption("Profile"),
-            SettingOption("Shipping Address"),
-            SettingOption("Payment methods"),
+        initListeners()
+    }
 
-            // Shop
-            SettingOption("Country", "Vietnam", SettingType.TITLE_WITH_VALUE),
-            SettingOption("Currency", "$ USD", SettingType.TITLE_WITH_VALUE),
-            SettingOption("Sizes", "UK", SettingType.TITLE_WITH_VALUE),
-            SettingOption("Terms and Conditions"),
-
-            // Account
-            SettingOption("Language", "English", SettingType.TITLE_WITH_VALUE),
-            SettingOption("About ESHOP"),
-            SettingOption("Logout")
-        )
-
-        binding.recyclerSettings.apply {
-            layoutManager = LinearLayoutManager(requireContext())
-            adapter = SettingsAdapter(allItems) { item ->
-                handleItemClick(item)
-            }
+    private fun initListeners() {
+        // Close Button
+        binding.ivBack.singleClick {
+            popBackStack()
         }
-        binding.ivClose.singleClick {
-            requireActivity().supportFragmentManager.popBackStack()
+
+        // Profile
+        binding.itemProfile.singleClick {
+            navigate(R.id.SettingProfileFragment)
+        }
+
+        // Shipping Address
+        binding.itemShipping.singleClick {
+            navigate(R.id.shippingAddressFragment)
+        }
+
+        // Change Password
+        binding.itemChangePassword.singleClick {
+//            // Thay thế 'changePasswordFragment' bằng ID thực tế trong nav_graph của bạn
+//            navigate(R.id.changePasswordFragment)
+        }
+
+        // Logout
+        binding.itemLogout.singleClick {
+            showLogoutDialog()
         }
     }
 
-    private fun handleItemClick(item: SettingOption) {
-        when (item.title) {
-            "Profile" -> navigate(R.id.SettingProfileFragment)
-            "Shipping Address" -> navigate(R.id.shippingAddressFragment)
-//            "Payment methods" -> navigate(R.id.contactInforFragment)
-//            "Terms and Conditions" -> navigate(R.id.action_settings_to_terms)
-//            "About Slada" -> navigate(R.id.action_settings_to_about)
-            "Logout" -> showLogoutDialog()
-            else -> Toast.makeText(requireContext(), "Clicked: ${item.title}", Toast.LENGTH_SHORT).show()
-        }
-    }
     private fun showLogoutDialog() {
+        // Inflate custom layout cho dialog
         val dlgView = layoutInflater.inflate(R.layout.dialog_logout, null)
-        val dlg = android.app.AlertDialog.Builder(requireContext()).create()
-        dlg.setView(dlgView)
-        val btnCancel = dlgView.findViewById<android.widget.Button>(R.id.btnCancel)
-        val btnLogout = dlgView.findViewById<android.widget.Button>(R.id.btnLogout)
+
+        val dlg = android.app.AlertDialog.Builder(requireContext())
+            .setView(dlgView)
+            .create()
+
+        // Làm tròn góc cho dialog nếu muốn đẹp hơn
+        dlg.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val btnCancel = dlgView.findViewById<Button>(R.id.btnCancel)
+        val btnLogout = dlgView.findViewById<Button>(R.id.btnLogout)
 
         btnCancel.setOnClickListener { dlg.dismiss() }
+
         btnLogout.setOnClickListener {
-            com.pbl6.fitme.session.SessionManager.getInstance().clearSession(requireContext())
+            // Xử lý clear session
+            SessionManager.getInstance().clearSession(requireContext())
+
             dlg.dismiss()
-            Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Đã đăng xuất", Toast.LENGTH_SHORT).show()
+
+            // Điều hướng về màn hình Splash hoặc Login
             navigate(R.id.splashFragment)
         }
 
         dlg.show()
     }
+
+    private fun hideToolbar() {
+        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
+        if (toolbar != null) {
+            toolbar.visibility = View.GONE
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-    private fun hideToolbar() {
-        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
-        toolbar.visibility = View.GONE
     }
 }
