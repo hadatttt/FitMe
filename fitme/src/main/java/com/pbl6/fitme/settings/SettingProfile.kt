@@ -34,9 +34,6 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
     private val userRepository = UserRepository()
     private var avatarFile: File? = null
 
-    // --- 1. LOGIC CAMERA GIỐNG HOME FRAGMENT ---
-
-    // Launcher nhận kết quả từ Camera (Trả về Bitmap)
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {

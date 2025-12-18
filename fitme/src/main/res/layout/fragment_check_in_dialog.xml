@@ -40,8 +40,8 @@
 
                 <ImageView
                     android:id="@+id/ic_diamond"
-                    android:layout_width="@dimen/_20sdp"
-                    android:layout_height="@dimen/_20sdp"
+                    android:layout_width="@dimen/_30sdp"
+                    android:layout_height="@dimen/_30sdp"
                     android:scaleType="fitXY"
                     android:src="@drawable/ic_coin"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -57,7 +57,7 @@
                     android:fontFamily="@font/baloo2_semibold"
                     android:gravity="start|center"
                     android:textColor="@color/white"
-                    android:textSize="@dimen/_12ssp"
+                    android:textSize="@dimen/_14ssp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintHorizontal_chainStyle="packed"
@@ -73,6 +73,7 @@
                 android:padding="4dp"
                 android:background="@drawable/ic_close"
                 app:layout_constraintDimensionRatio="1:1"
+                android:backgroundTint="@color/white"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -109,7 +110,7 @@
             <ImageView
                 android:id="@+id/btn_claim"
                 android:layout_width="0dp"
-                android:layout_height="@dimen/_20sdp"
+                android:layout_height="@dimen/_30sdp"
                 android:layout_marginTop="@dimen/_16dp"
                 android:scaleType="fitXY"
                 android:background="@drawable/bg_circle_blue"
@@ -126,7 +127,7 @@
                 android:text="Claim"
                 android:textAllCaps="true"
                 android:textColor="@color/white"
-                android:textSize="@dimen/_10ssp"
+                android:textSize="@dimen/_14ssp"
                 app:layout_constraintBottom_toBottomOf="@id/btn_claim"
                 app:layout_constraintEnd_toEndOf="@id/btn_claim"
                 app:layout_constraintStart_toStartOf="@id/btn_claim"
