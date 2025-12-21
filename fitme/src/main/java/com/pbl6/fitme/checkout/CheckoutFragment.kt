@@ -145,32 +145,32 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        val hasItems = binding.rvCart.adapter?.itemCount ?: 0
-        if (!dataLoaded || hasItems == 0) {
-            initData()
-        }
-        // ... (Giữ nguyên logic check orderId cũ)
-        viewModel.getCurrentOrderId()?.let { orderId ->
-            val token = SessionManager.getInstance().getAccessToken(requireContext())
-            if (!token.isNullOrBlank()) {
-                mainRepository.getOrderById(token, orderId.toString()) { order ->
-                    activity?.runOnUiThread {
-                        if (order != null) {
-                            viewModel.clearCurrentOrderId()
-                            try {
-                                val bundle = android.os.Bundle()
-                                bundle.putString("order_id", order.orderId ?: "")
-                                navigate(R.id.orderDetailFragment, bundle)
-                            } catch (_: Exception) {}
-                        }
-                    }
-                }
-            }
-        }
-        // ... (Giữ nguyên logic refresh contact info)
-    }
+//    override fun onResume() {
+//        super.onResume()
+//        val hasItems = binding.rvCart.adapter?.itemCount ?: 0
+//        if (!dataLoaded || hasItems == 0) {
+//            initData()
+//        }
+//        // ... (Giữ nguyên logic check orderId cũ)
+//        viewModel.getCurrentOrderId()?.let { orderId ->
+//            val token = SessionManager.getInstance().getAccessToken(requireContext())
+//            if (!token.isNullOrBlank()) {
+//                mainRepository.getOrderById(token, orderId.toString()) { order ->
+//                    activity?.runOnUiThread {
+//                        if (order != null) {
+//                            viewModel.clearCurrentOrderId()
+//                            try {
+//                                val bundle = android.os.Bundle()
+//                                bundle.putString("order_id", order.orderId ?: "")
+//                                navigate(R.id.orderDetailFragment, bundle)
+//                            } catch (_: Exception) {}
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        // ... (Giữ nguyên logic refresh contact info)
+//    }
 
     override fun initListener() {
         binding.ivBack.singleClick { popBackStack() }
@@ -418,8 +418,10 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     }
 
     // Paste toàn bộ nội dung hàm initData cũ của bạn vào đây
+// Thay thế toàn bộ hàm superCallInitData cũ bằng hàm này
     private fun superCallInitData() {
         val args = arguments
+        // Các tham số cũ
         val buyProductId = args?.getString("buy_now_product_id")
         val buyVariantId = args?.getString("buy_now_variant_id")
         val buyQuantity = args?.getInt("buy_now_quantity") ?: 1
@@ -427,8 +429,12 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         val cartVariantIds = args?.getStringArrayList("cart_variant_ids")
         val cartVariantQuantities = args?.getIntegerArrayList("cart_variant_quantities")
 
+        // --- THAM SỐ MỚI CHO REORDER ---
+        val reorderId = args?.getString("reorder_id")
+
         val token = SessionManager.getInstance().getAccessToken(requireContext())
 
+        // 1. Tải danh sách Product và Variant trước (Logic cũ)
         mainRepository.getProducts(token ?: "") { products ->
             activity?.runOnUiThread {
                 productMap = products?.associateBy { it.productId } ?: emptyMap()
@@ -437,8 +443,54 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                     activity?.runOnUiThread {
                         variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
 
-                        if (!buyProductId.isNullOrBlank() && !buyVariantId.isNullOrBlank()) {
-                            // ... (Giữ nguyên Logic Buy Now)
+                        // --- BẮT ĐẦU XỬ LÝ CÁC TRƯỜNG HỢP ---
+
+                        if (!reorderId.isNullOrBlank()) {
+                            // === CASE 1: REORDER (MUA LẠI ĐƠN CŨ) ===
+                            if (!token.isNullOrBlank()) {
+                                mainRepository.getOrderById(token, reorderId) { oldOrder ->
+                                    activity?.runOnUiThread {
+                                        if (oldOrder != null) {
+                                            // Chuyển đổi OrderItem của đơn cũ thành CartItem cho màn hình Checkout
+                                            val reorderItems = mutableListOf<CartItem>()
+
+                                            // Duyệt qua list item của đơn cũ (items hoặc orderItems tùy model)
+                                            val items = if (oldOrder.items.isNotEmpty()) oldOrder.items else oldOrder.orderItems
+
+                                            items.forEach { item ->
+                                                try {
+                                                    // Lấy Variant ID (Model OrderItem trả về String, cần cast sang UUID)
+                                                    // Lưu ý: Đảm bảo model OrderItem có trường variantId
+                                                    val vIdString = item.variantId
+
+                                                    if (!vIdString.isNullOrBlank()) {
+                                                        reorderItems.add(
+                                                            CartItem(
+                                                                cartItemId = UUID.randomUUID(), // Tạo ID mới giả
+                                                                addedAt = null,
+                                                                quantity = item.quantity,
+                                                                cartId = UUID.randomUUID(),
+                                                                variantId = UUID.fromString(vIdString)
+                                                            )
+                                                        )
+                                                    }
+                                                } catch (e: Exception) {
+                                                    e.printStackTrace()
+                                                }
+                                            }
+
+                                            cartItems = reorderItems
+                                            // Tải thông tin chi tiết sản phẩm và hiển thị
+                                            loadProductsForCartItems(token, cartItems)
+                                        } else {
+                                            android.widget.Toast.makeText(requireContext(), "Could not load order details", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (!buyProductId.isNullOrBlank() && !buyVariantId.isNullOrBlank()) {
+                            // === CASE 2: BUY NOW (MUA NGAY) ===
                             try {
                                 val cartItem = CartItem(
                                     cartItemId = UUID.randomUUID(), addedAt = null, quantity = buyQuantity,
@@ -447,8 +499,9 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                 cartItems = listOf(cartItem)
                                 loadProductsForCartItems(token, cartItems)
                             } catch (ex: Exception) { cartItems = emptyList() }
-                        } else if (cartVariantIds != null && cartVariantIds.isNotEmpty()) {
-                            // ... (Giữ nguyên Logic Cart Variants)
+                        }
+                        else if (cartVariantIds != null && cartVariantIds.isNotEmpty()) {
+                            // === CASE 3: CHỌN TỪ GIỎ HÀNG (Truyền ID) ===
                             val list = mutableListOf<CartItem>()
                             cartVariantIds.forEachIndexed { index, vidStr ->
                                 try {
@@ -459,8 +512,8 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                             }
                             cartItems = list
                             loadProductsForCartItems(token, cartItems)
-                        } else if (cartIndices != null && cartIndices.isNotEmpty()) {
-                            // ... (Giữ nguyên Logic Cart Indices)
+                        }
+                        else if (cartIndices != null && cartIndices.isNotEmpty()) {
                             val cartId = SessionManager.getInstance().getOrCreateCartId(requireContext()).toString()
                             mainRepository.getCartItems(token ?: "", cartId) { items ->
                                 activity?.runOnUiThread {
@@ -469,8 +522,8 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                     loadProductsForCartItems(token, cartItems)
                                 }
                             }
-                        } else {
-                            // ... (Giữ nguyên Logic Default)
+                        }
+                        else {
                             val cartId = SessionManager.getInstance().getOrCreateCartId(requireContext()).toString()
                             mainRepository.getCartItems(token ?: "", cartId) { items ->
                                 activity?.runOnUiThread {
@@ -484,8 +537,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             }
         }
     }
-
-    // Helper để code gọn hơn, thay thế cho đoạn lặp code trong initData cũ
     private fun loadProductsForCartItems(token: String?, items: List<CartItem>) {
         val productIdsToFetch = items.mapNotNull {
             variantMap[it.variantId]?.productId

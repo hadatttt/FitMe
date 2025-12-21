@@ -116,9 +116,7 @@ class MainRepository {
                 ) {
                     if (response.isSuccessful) {
                         val respList = response.body()?.result ?: emptyList()
-                        // Map ProductResponse -> Product used by the app
                         val products = respList.map { pr ->
-                            // Convert image string urls into ProductImage objects with placeholder ids
                             val images = pr.images.mapIndexed { idx, url ->
                                 ProductImage(
                                     imageId = idx.toLong() * -1,
@@ -627,6 +625,28 @@ class MainRepository {
 
             override fun onFailure(call: Call<List<com.pbl6.fitme.model.WishlistDto>>, t: Throwable) {
                 onResult(null)
+            }
+        })
+    }
+    fun cancelOrder(token: String, orderId: String, onResult: (Boolean) -> Unit) {
+        val bearer = "Bearer $token"
+
+        // Gọi đúng API cancelOrder vừa thêm ở Bước 1
+        orderApi.cancelOrder(bearer, orderId).enqueue(object : Callback<BaseResponse<Order>> {
+            override fun onResponse(call: Call<BaseResponse<Order>>, response: Response<BaseResponse<Order>>) {
+                if (response.isSuccessful) {
+                    android.util.Log.d("MainRepository", "Order cancelled successfully")
+                    onResult(true)
+                } else {
+                    // Log lỗi để debug (thường là 400 hoặc 403 nếu sai logic)
+                    android.util.Log.e("MainRepository", "cancelOrder failed: ${response.code()} - ${response.errorBody()?.string()}")
+                    onResult(false)
+                }
+            }
+
+            override fun onFailure(call: Call<BaseResponse<Order>>, t: Throwable) {
+                android.util.Log.e("MainRepository", "cancelOrder network error", t)
+                onResult(false)
             }
         })
     }

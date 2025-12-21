@@ -2,7 +2,6 @@ package com.pbl6.fitme.order
 
 import android.os.Bundle
 import android.view.View
-import android.widget.HorizontalScrollView
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
@@ -22,61 +21,25 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
     private var currentOrders: List<Order> = emptyList()
     private var currentStatus: OrderStatus = OrderStatus.PENDING
 
+    // Đưa adapter ra thành property để dễ quản lý
+    private val ordersAdapter by lazy { OrdersAdapter() }
+
     override fun initView() {
-        binding.ivBack.setOnClickListener { popBackStack(R.id.homeFragment) }
         hideToolbar()
 
+        // Setup RecyclerView UI
         binding.recyclerOrders.apply {
             layoutManager = LinearLayoutManager(requireContext())
-            val adapterInstance = OrdersAdapter().apply {
-                setOrderStatusChangeListener(object : OrdersAdapter.OrderStatusChangeListener {
-                    override fun onOrderStatusChanged(orderId: String, newStatus: String) {
-                        currentOrders = currentOrders.map { order ->
-                            if (order.orderId == orderId) {
-                                Order(
-                                    orderId = order.orderId,
-                                    userEmail = order.userEmail ?: "",
-                                    userId = order.userId,
-                                    orderDate = order.orderDate,
-                                    createdAt = order.createdAt,
-                                    updatedAt = order.updatedAt,
-                                    status = newStatus,
-                                    orderStatus = newStatus,
-                                    shippingAddressId = order.shippingAddressId ?: "",
-                                    shippingAddress = order.shippingAddress ?: ShippingAddress(),
-                                    couponCode = order.couponCode,
-                                    orderItems = order.orderItems ?: emptyList(),
-                                    items = order.items ?: emptyList(),
-                                    subtotal = order.subtotal ?: 0.0,
-                                    totalAmount = order.totalAmount ?: 0.0,
-                                    discountAmount = order.discountAmount ?: 0.0,
-                                    shippingFee = order.shippingFee ?: 0.0,
-                                    orderNotes = order.orderNotes ?: ""
-                                )
-                            } else {
-                                order
-                            }
-                        }
-                        updateTabCounts()
-                        displayOrders(currentOrders, currentStatus)
-                    }
-                })
-            }
-            adapter = adapterInstance
+            adapter = ordersAdapter
         }
 
-        binding.apply {
-            tvTabPending.singleClick { loadOrders(OrderStatus.PENDING) }
-            tvTabConfirmed.singleClick { loadOrders(OrderStatus.CONFIRMED) }
-            tvTabProcessing.singleClick { loadOrders(OrderStatus.PROCESSING) }
-            tvTabShipped.singleClick { loadOrders(OrderStatus.SHIPPED) }
-            tvTabDelivered.singleClick { loadOrders(OrderStatus.DELIVERED) }
-            tvTabCancelled.singleClick { loadOrders(OrderStatus.CANCELLED) }
-        }
-
+        // Logic kiểm tra login và load data ban đầu
         val initialStatus = arguments?.getString("order_status")?.let { value ->
             OrderStatus.values().find { it.value.equals(value, ignoreCase = true) }
         } ?: OrderStatus.PENDING
+
+        // Mặc định chọn tab UI ban đầu (dù chưa có data)
+        selectTab(initialStatus)
 
         val token = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
         val email = com.pbl6.fitme.session.SessionManager.getInstance().getUserEmail(requireContext())
@@ -89,6 +52,7 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
         binding.recyclerOrders.visibility = View.GONE
         binding.emptyViewOrder.visibility = View.GONE
 
+        // Gọi API
         mainRepo.getOrdersByUser(token, email, null) { allOrders ->
             activity?.runOnUiThread {
                 if (!allOrders.isNullOrEmpty()) {
@@ -97,7 +61,6 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
                     displayOrders(allOrders, initialStatus)
                 } else {
                     showEmptyState()
-                    // Dù không có đơn hàng, vẫn chọn tab ban đầu để UI đồng bộ
                     selectTab(initialStatus)
                 }
             }
@@ -105,10 +68,62 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
     }
 
     override fun initListener() {
+        // 1. System Navigation Listeners
         onBackPressed { popBackStack() }
+        binding.ivBack.singleClick { popBackStack(R.id.homeFragment) }
+
+        // 2. Tab Click Listeners (Moved from initView)
+        binding.apply {
+            tvTabPending.singleClick { loadOrders(OrderStatus.PENDING) }
+            tvTabConfirmed.singleClick { loadOrders(OrderStatus.CONFIRMED) }
+            tvTabProcessing.singleClick { loadOrders(OrderStatus.PROCESSING) }
+            tvTabShipped.singleClick { loadOrders(OrderStatus.SHIPPED) }
+            tvTabDelivered.singleClick { loadOrders(OrderStatus.DELIVERED) }
+            tvTabCancelled.singleClick { loadOrders(OrderStatus.CANCELLED) }
+        }
+
+        // 3. Adapter Action Listeners
+        ordersAdapter.setOrderStatusChangeListener(object : OrdersAdapter.OrderStatusChangeListener {
+            override fun onOrderStatusChanged(orderId: String, newStatus: String) {
+                handleOrderStatusChange(orderId, newStatus)
+            }
+        })
     }
 
     override fun initData() { }
+
+    // Tách logic xử lý khi status thay đổi ra hàm riêng cho gọn initListener
+    private fun handleOrderStatusChange(orderId: String, newStatus: String) {
+        currentOrders = currentOrders.map { order ->
+            if (order.orderId == orderId) {
+                order.copy(
+                    status = newStatus,
+                    orderStatus = newStatus,
+                    // Lưu ý: data class Order nên dùng copy() nếu có thể để ngắn gọn hơn,
+                    // nhưng nếu structure class Order của bạn không hỗ trợ copy chuẩn thì giữ nguyên cách map thủ công như cũ:
+                    userEmail = order.userEmail ?: "",
+                    userId = order.userId,
+                    orderDate = order.orderDate,
+                    createdAt = order.createdAt,
+                    updatedAt = order.updatedAt,
+                    shippingAddressId = order.shippingAddressId ?: "",
+                    shippingAddress = order.shippingAddress ?: ShippingAddress(),
+                    couponCode = order.couponCode,
+                    orderItems = order.orderItems ?: emptyList(),
+                    items = order.items ?: emptyList(),
+                    subtotal = order.subtotal ?: 0.0,
+                    totalAmount = order.totalAmount ?: 0.0,
+                    discountAmount = order.discountAmount ?: 0.0,
+                    shippingFee = order.shippingFee ?: 0.0,
+                    orderNotes = order.orderNotes ?: ""
+                )
+            } else {
+                order
+            }
+        }
+        updateTabCounts()
+        displayOrders(currentOrders, currentStatus)
+    }
 
     private fun loadOrders(status: OrderStatus) {
         currentStatus = status
@@ -116,7 +131,6 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
             displayOrders(currentOrders, status)
             return
         }
-        // Logic load lại nếu cần thiết (hiện tại đã load all lúc đầu)
     }
 
     private fun displayOrders(orders: List<Order>, status: OrderStatus) {
@@ -130,7 +144,7 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
     }
 
     private fun updateOrdersList(orders: List<Order>) {
-        (binding.recyclerOrders.adapter as? OrdersAdapter)?.setList(orders)
+        ordersAdapter.setList(orders)
         if (orders.isEmpty()) {
             showEmptyState()
         } else {
@@ -185,9 +199,6 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
                 )
             }
 
-            // AUTO SCROLL LOGIC
-            // Giả sử HorizontalScrollView của bạn có id là hsvStatus trong XML
-            // Nếu binding không tìm thấy hsvStatus, hãy thêm id="@+id/hsvStatus" vào thẻ HorizontalScrollView trong fragment_orders.xml
             try {
                 if (selectedView != null) {
                     val scrollX = selectedView!!.left - (binding.scrollTabs.width / 2) + (selectedView!!.width / 2)

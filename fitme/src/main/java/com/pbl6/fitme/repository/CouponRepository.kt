@@ -15,7 +15,6 @@ class CouponRepository {
     fun getAllCoupons(token: String, onResult: (List<Coupon>?) -> Unit) {
         val bearerToken = "Bearer $token"
 
-        // GỌI API ACTIVE (Vì API getAllCoupons yêu cầu quyền Admin)
         couponApiService.getActiveCoupons(bearerToken).enqueue(object : Callback<BaseResponse<List<Coupon>>> {
             override fun onResponse(
                 call: Call<BaseResponse<List<Coupon>>>,
@@ -23,9 +22,8 @@ class CouponRepository {
             ) {
                 if (response.isSuccessful && response.body() != null) {
                     val apiResponse = response.body()
-                    // Kiểm tra code 200 từ Backend
                     if (apiResponse?.code == 200 || apiResponse?.result != null) {
-                        onResult(apiResponse?.result)
+                        onResult(apiResponse.result)
                     } else {
                         Log.e("CouponRepo", "Backend Msg: ${apiResponse?.message}")
                         onResult(null)

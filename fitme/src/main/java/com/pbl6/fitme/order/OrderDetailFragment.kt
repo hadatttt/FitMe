@@ -1,35 +1,35 @@
 package com.pbl6.fitme.order
 
+import android.annotation.SuppressLint
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentOrderDetailBinding
 import com.pbl6.fitme.model.Order
 import com.pbl6.fitme.repository.MainRepository
+import com.pbl6.fitme.repository.UserRepository // 1. Import UserRepository
 import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
-import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.popBackStack
+import hoang.dqm.codebase.utils.singleClick
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetailViewModel>() {
     private val mainRepository = MainRepository()
+    private val userRepository = UserRepository() // 2. Khai báo UserRepository
+
     private val displayFormatter = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
     private val apiDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
 
     override fun initView() {
-        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
-        toolbar.visibility = View.GONE
-
         binding.recyclerOrderItems.layoutManager = LinearLayoutManager(requireContext())
-
-        binding.ivBack.setOnClickListener {
-            popBackStack()
-        }
     }
 
     override fun initListener() {
+        binding.ivBack.singleClick {
+            popBackStack()
+        }
     }
 
     override fun initData() {
@@ -52,20 +52,20 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
                 if (order == null) {
                     android.util.Log.e("OrderDetailFragment", "getOrderById returned null for orderId=$orderId")
                 } else {
-                    android.util.Log.d("OrderDetailFragment", "Order loaded: $order")
-                    android.util.Log.d("OrderDetailFragment", "Payment fields: method=${order.paymentMethod} status=${order.paymentStatus} amount=${order.paymentAmount}")
                     bindOrder(order)
                 }
             }
         }
     }
 
-
-
+    @SuppressLint("SetTextI18n")
     private fun bindOrder(order: Order) {
-        // Order Info Card
+        // --- 1. Kiểm tra Context an toàn (Tránh Crash nếu thoát màn hình sớm) ---
+        val context = context ?: return
+
+        // --- Order Info ---
         binding.txtOrderId.text = "Order ID: #${order.orderId}"
-        // Parse and format the date string
+
         val dateStr = order.createdAt ?: order.orderDate
         val displayDate = try {
             if (dateStr != null) {
@@ -73,29 +73,20 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
                 displayFormatter.format(date)
             } else "N/A"
         } catch (e: Exception) {
-            android.util.Log.e("OrderDetailFragment", "Date parsing error", e)
             dateStr ?: "N/A"
         }
         binding.txtOrderDate.text = "Date: $displayDate"
         binding.txtStatus.text = "Status: ${order.status ?: order.orderStatus ?: "N/A"}"
-        binding.txtUserEmail.text = "User: ${order.userEmail ?: "N/A"}"
+
         binding.txtCreatedAt.text = "Created: ${order.createdAt ?: "N/A"}"
         binding.txtUpdatedAt.text = "Updated: ${order.updatedAt ?: "N/A"}"
 
-        // Delivery Info Card — use nested ShippingAddress from model
+        // --- User Email ---
+        val sessionEmail = SessionManager.getInstance().getUserEmail(context)
+        binding.txtUserEmail.text = "User: ${order.userEmail ?: sessionEmail ?: "N/A"}"
+
+        // --- Address Info ---
         val ship = order.shippingAddress
-            // Delivery Info Card — use nested ShippingAddress from model, fallback to session values if missing
-            val session = SessionManager.getInstance()
-            val fallbackName = session.getRecipientName(requireContext()) ?: ""
-            val fallbackPhone = session.getRecipientPhone(requireContext()) ?: ""
-            val customerName = ship.recipientName.takeIf { it.isNotBlank() } ?: fallbackName
-            val phoneNumber = ship.phone.takeIf { it.isNotBlank() } ?: fallbackPhone
-            binding.txtCustomerName.text = "Recipient Name: "+customerName.ifBlank { "N/A" }
-            binding.txtPhoneNumber.text = "Phone number: "+phoneNumber.ifBlank { "N/A" }
-        // Compose a readable address from available fields
-            // Email: prefer order.userEmail, otherwise use session-stored email
-            val sessionEmail = SessionManager.getInstance().getUserEmail(requireContext())
-            binding.txtUserEmail.text = "User: ${order.userEmail ?: sessionEmail ?: "N/A"}"
         val addrParts = listOfNotNull(
             ship.addressLine1.takeIf { it.isNotBlank() },
             ship.addressLine2.takeIf { it.isNotBlank() },
@@ -105,13 +96,54 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
             ship.country.takeIf { it.isNotBlank() }
         )
         binding.txtAddress.text = "Country: " + if (addrParts.isEmpty()) "N/A" else addrParts.joinToString(", ")
-        // If backend provided a formatted shippingAddressDetails, show it too
+
         try {
-            binding.txtShippingAddressDetails.text = "Address: " + (order.shippingAddressDetails ?: "")
-            binding.txtShippingAddressDetails.visibility = if ((order.shippingAddressDetails ?: "").isBlank()) View.GONE else View.VISIBLE
+            val details = order.shippingAddressDetails ?: ""
+            binding.txtShippingAddressDetails.text = "Address: $details"
+            binding.txtShippingAddressDetails.visibility = if (details.isBlank()) View.GONE else View.VISIBLE
         } catch (_: Exception) { }
 
-        // Order Items - prefer server `orderItems` if present, otherwise support older `items` key
+
+        // --- LOGIC HIỂN THỊ TÊN/SĐT ---
+        // Ưu tiên 1: Lấy từ User Profile (gọi API sau)
+        // Ưu tiên 2: Lấy từ Shipping Address trong Order
+        // Ưu tiên 3: Lấy từ Session (Local)
+
+        val session = SessionManager.getInstance()
+        val fallbackName = ship.recipientName.takeIf { !it.isNullOrBlank() }
+            ?: session.getRecipientName(context) ?: ""
+
+        val fallbackPhone = ship.phone.takeIf { !it.isNullOrBlank() }
+            ?: session.getRecipientPhone(context) ?: ""
+
+        // Gán giá trị ban đầu để User đỡ thấy trống
+        binding.txtCustomerName.text = "Recipient Name: ${fallbackName.ifBlank { "Checking..." }}"
+        binding.txtPhoneNumber.text = "Phone number: ${fallbackPhone.ifBlank { "Checking..." }}"
+
+        // --- GỌI API LẤY USER DETAIL (Đã Fix an toàn) ---
+        val token = session.getAccessToken(context)
+        val userId = session.getUserId(context)
+
+        if (!token.isNullOrBlank()) {
+            userRepository.getUserDetail(token, userId.toString()) { userProfile ->
+                // Kiểm tra lại context và isAdded để tránh Crash nếu user đã thoát
+                activity?.runOnUiThread {
+                    if (!isAdded || getContext() == null) return@runOnUiThread
+
+                    userProfile?.let { user ->
+                        // Chỉ cập nhật nếu dữ liệu API trả về hợp lệ
+                        if (!user.fullName.isNullOrBlank()) {
+                            binding.txtCustomerName.text = "Recipient Name: ${user.fullName}"
+                        }
+                        if (!user.phone.isNullOrBlank()) {
+                            binding.txtPhoneNumber.text = "Phone number: ${user.phone}"
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Order Items ---
         val items = when {
             !order.orderItems.isNullOrEmpty() -> order.orderItems
             !order.items.isNullOrEmpty() -> order.items
@@ -120,7 +152,7 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         val adapter = OrderItemsAdapter(items)
         binding.recyclerOrderItems.adapter = adapter
 
-        // Payment Summary
+        // --- Payment Summary ---
         val subtotal = order.subtotal ?: 0.0
         val shippingFee = order.shippingFee ?: 0.0
         val total = order.totalAmount ?: (subtotal + shippingFee)
@@ -131,27 +163,22 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
         binding.txtDiscount.text = "\$${String.format("%.2f", order.discountAmount ?: 0.0)}"
         binding.txtCouponCode.text = "Coupon: ${order.couponCode ?: "-"}"
         binding.txtOrderNotes.text = "Notes: ${order.orderNotes ?: "-"}"
-    // Show payment method if provided by backend
-    val rawMethod = when {
-        !order.paymentMethod.isNullOrBlank() -> order.paymentMethod
-        !order.paymentStatus.isNullOrBlank() -> order.paymentStatus
-        else -> null
-    }
-    val paymentMethodText = when (rawMethod?.uppercase()) {
-        "COD", "CASHONDELIVERY", "CASH_ON_DELIVERY" -> "Cash on Delivery"
-        "VNPAY", "VN_PAY" -> "VNPay"
-        "MOMO" -> "Momo"
-        "PENDING" -> "Pending"
-        "COMPLETED" -> "Completed"
-        "FAILED" -> "Failed"
-        null -> "N/A"
-        else -> rawMethod
-    }
 
-    binding.txtPaymentMethod.text = "Payment Method: $paymentMethodText"
-    binding.txtPaymentMethod.visibility = View.VISIBLE
+        // Payment Method & Status Color (Giữ nguyên logic cũ của bạn)
+        val rawMethod = when {
+            !order.paymentMethod.isNullOrBlank() -> order.paymentMethod
+            !order.paymentStatus.isNullOrBlank() -> order.paymentStatus
+            else -> null
+        }
+        val paymentMethodText = when (rawMethod?.uppercase()) {
+            "COD", "CASHONDELIVERY", "CASH_ON_DELIVERY" -> "Cash on Delivery"
+            "VNPAY", "VN_PAY" -> "VNPay"
+            "MOMO" -> "Momo"
+            else -> rawMethod ?: "N/A"
+        }
+        binding.txtPaymentMethod.text = "Payment Method: $paymentMethodText"
+        binding.txtPaymentMethod.visibility = View.VISIBLE
 
-        // Set status color based on order status
         val statusColor = when(order.status?.uppercase() ?: order.orderStatus?.uppercase()) {
             "PENDING" -> R.color.status_pending
             "CONFIRMED" -> R.color.status_confirmed
@@ -161,6 +188,7 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
             "CANCELLED" -> R.color.status_cancelled
             else -> R.color.maincolor
         }
+        // Dùng Context an toàn
         binding.txtStatus.setTextColor(resources.getColor(statusColor, null))
     }
 }

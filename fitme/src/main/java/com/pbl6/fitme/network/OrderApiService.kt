@@ -48,4 +48,9 @@ interface OrderApiService {
         @Path("orderId") orderId: String,
         @Query("status") status: String
     ): Call<BaseResponse<Order>>
+    @PUT("orders/{orderId}/cancel")
+    fun cancelOrder(
+        @Header("Authorization") token: String,
+        @Path("orderId") orderId: String
+    ): Call<BaseResponse<Order>>
 }

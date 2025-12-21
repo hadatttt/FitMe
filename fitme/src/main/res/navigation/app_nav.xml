@@ -151,5 +151,9 @@
             android:id="@+id/slotMachineGameFragment"
             android:name="com.pbl6.fitme.slotmachinegame.SlotMachineGameFragment"
             android:label="SlotMachineGameFragment" />
+    <fragment
+            android:id="@+id/voucherFragment"
+            android:name="com.pbl6.fitme.voucher.VoucherFragment"
+            android:label="VoucherFragment" />
 
 </navigation>

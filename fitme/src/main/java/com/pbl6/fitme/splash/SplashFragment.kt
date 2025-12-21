@@ -1,8 +1,11 @@
 package com.pbl6.fitme.splash
 
 import android.Manifest
+import android.app.AlertDialog
 import android.os.Build
 import android.util.Log
+import android.widget.EditText
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import com.google.firebase.FirebaseApp

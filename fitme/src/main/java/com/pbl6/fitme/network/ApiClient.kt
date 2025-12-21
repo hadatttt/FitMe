@@ -2,6 +2,7 @@ package com.pbl6.fitme.network
 
 import android.util.Log
 import com.google.gson.GsonBuilder
+import com.pbl6.fitme.untils.AppConstrain
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -10,7 +11,8 @@ import retrofit2.converter.scalars.ScalarsConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "http://10.48.170.90:8080/api/"
+
+    private const val BASE_URL = AppConstrain.BASE_URL
 
     private val gson = GsonBuilder()
         .setLenient()

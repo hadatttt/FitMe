@@ -40,9 +40,7 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
                 val data: Intent? = result.data
                 val photo: Bitmap? = data?.extras?.get("data") as? Bitmap
                 if (photo != null) {
-                    // Hiển thị lên View
                     binding.imgProfile.setImageBitmap(photo)
-                    // QUAN TRỌNG: Chuyển Bitmap thành File để chuẩn bị Upload
                     avatarFile = bitmapToFile(requireContext(), photo)
                 } else {
                     Toast.makeText(requireContext(), "Cannot capture image", Toast.LENGTH_SHORT).show()
@@ -50,7 +48,6 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
             }
         }
 
-    // Launcher xin quyền Camera
     private val requestCameraPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
@@ -60,7 +57,6 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
             }
         }
 
-    // --- 2. LOGIC GALLERY (GIỮ NGUYÊN) ---
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -81,10 +77,11 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
         userRepository.getUserDetail(token, userId) { user ->
             activity?.runOnUiThread {
                 user?.let {
+                    Log.d("CheckAPI", "DateOfBirth from API: ${it.dateOfBirth}")
+
                     binding.etFullName.setText(it.fullName)
                     binding.etEmail.setText(it.email)
                     binding.etPhone.setText(it.phone)
-                    binding.etAddress.setText(it.address)
                     binding.etDateOfBirth.setText(it.dateOfBirth)
 
                     it.avatarUrl?.let { url ->
@@ -110,8 +107,6 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
         binding.btnSave.setOnClickListener { saveUserChanges() }
     }
 
-    // region: Helper Functions
-
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
         val datePicker = DatePickerDialog(
@@ -134,20 +129,18 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
         builder.setTitle("Choose Avatar")
         builder.setItems(options) { _, which ->
             when (which) {
-                0 -> requestCameraPermission.launch(Manifest.permission.CAMERA) // Gọi xin quyền giống Home
+                0 -> requestCameraPermission.launch(Manifest.permission.CAMERA)
                 1 -> pickImageLauncher.launch("image/*")
             }
         }
         builder.show()
     }
 
-    // Hàm mở Camera đơn giản (giống HomeFragment)
     private fun openCameraIntent() {
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         cameraLauncher.launch(intent)
     }
 
-    // Helper: Chuyển Uri -> File (Cho Gallery)
     private fun uriToFile(context: Context, uri: Uri): File {
         val file = File(context.cacheDir, "temp_avatar_${System.currentTimeMillis()}.jpg")
         context.contentResolver.openInputStream(uri)?.use { input ->
@@ -158,12 +151,10 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
         return file
     }
 
-    // Helper MỚI: Chuyển Bitmap -> File (Cho Camera)
-    // Cần hàm này vì Camera trả về Bitmap nhưng API cần File
     private fun bitmapToFile(context: Context, bitmap: Bitmap): File {
         val file = File(context.cacheDir, "camera_capture_${System.currentTimeMillis()}.jpg")
         val bos = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos) // Nén ảnh thành JPEG
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos)
         val bitmapdata = bos.toByteArray()
 
         val fos = FileOutputStream(file)
@@ -173,14 +164,16 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
         return file
     }
 
-    // endregion
-
     private fun saveUserChanges() {
-        val token = SessionManager.getInstance().getAccessToken(requireContext()) ?: ""
-        val userId = SessionManager.getInstance().getUserId(requireContext())?.toString()
-        if (userId.isNullOrBlank()) return
+        val currentContext = context ?: return
 
-        val roleIds = listOf("6828a645-b7a7-45ab-8568-0268b0085268")
+        val token = SessionManager.getInstance().getAccessToken(currentContext) ?: ""
+        val userId = SessionManager.getInstance().getUserId(currentContext)?.toString()
+
+        if (userId.isNullOrBlank()) {
+            Toast.makeText(currentContext, "User ID not found", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         val username = binding.etEmail.text.toString()
         val email = binding.etEmail.text.toString()
@@ -189,26 +182,36 @@ class SettingProfile : BaseFragment<FragmentSettingProfileBinding, HomeMainViewM
         val phone = binding.etPhone.text.toString()
 
         val params = HashMap<String, RequestBody>()
+
         params["username"] = username.toRequestBody("text/plain".toMediaType())
         params["email"] = email.toRequestBody("text/plain".toMediaType())
         params["fullName"] = fullName.toRequestBody("text/plain".toMediaType())
         params["dateOfBirth"] = dateOfBirth.toRequestBody("text/plain".toMediaType())
         params["phone"] = phone.toRequestBody("text/plain".toMediaType())
-        params["roleIds"] = roleIds.joinToString(",").toRequestBody("text/plain".toMediaType())
 
         val avatarPart = avatarFile?.let {
             val requestFile = it.asRequestBody("image/*".toMediaType())
             MultipartBody.Part.createFormData("avatar", it.name, requestFile)
         }
 
+        binding.btnSave.isEnabled = false
+
         userRepository.updateUser(token, userId, params, avatarPart) { updatedUser ->
             activity?.runOnUiThread {
+                binding.btnSave.isEnabled = true
+
+                if (!isAdded || context == null) return@runOnUiThread
+
                 if (updatedUser != null) {
                     Toast.makeText(requireContext(), "Update success!", Toast.LENGTH_SHORT).show()
-                    avatarFile?.delete()
-                    avatarFile = null
+                    try {
+                        avatarFile?.delete()
+                        avatarFile = null
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 } else {
-                    Toast.makeText(requireContext(), "Update failed!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Update failed! Please check input.", Toast.LENGTH_SHORT).show()
                 }
             }
         }

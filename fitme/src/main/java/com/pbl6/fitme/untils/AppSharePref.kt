@@ -17,7 +17,10 @@ class AppSharePref(private val context: Context) {
         private const val PREF_SESSION_VALID_SHOW_RATE_APP = "sessionValidShowRateApp"
 
         private const val PREF_DIAMOND_COUNT = "diamondCount"
-        private const val PREF_DAILY_GOAL = "dailyGoal"
+        private const val PREF_BASE_URL = "base_url"
+
+        private const val PREF_SERVER_IP = "server_ip"
+        const val DEFAULT_IP = "10.48.170.90:8080"
 
         private const val PREF_WIN_COUNT = "winCount"
         private const val PREF_TOTAL_MATCHES = "totalMatches"
@@ -42,6 +45,19 @@ class AppSharePref(private val context: Context) {
     private val sharePref by lazy {
         context.getSharedPreferences("TrackingSharePref", Context.MODE_PRIVATE)
     }
+    var serverIp: String
+        get() = sharePref.getString(PREF_SERVER_IP, DEFAULT_IP) ?: DEFAULT_IP
+        set(value) {
+            sharePref.edit { putString(PREF_SERVER_IP, value.trim()) }
+        }
+    val apiUrl: String
+        get() {
+            var ip = serverIp
+            // Phòng hờ user nhập cả "http://" thì xóa đi để tránh lỗi double
+            ip = ip.replace("http://", "").replace("https://", "").replace("/", "")
+
+            return "http://$ip/api/"
+        }
     var playerName: String
         get() = sharePref.getString(PREF_NAME, "Player") ?: "Player"
         set(value) {

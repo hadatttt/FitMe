@@ -35,7 +35,6 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
     private var isSpinning = false
 
     override fun initView() {
-        adjustInsetsForBottomNavigation(binding.topNav)
         context?.let {
             viewModel.setSpinsLeft(AppSharePref(it).spinCount)
             viewModel.setDiamondCount(AppSharePref(it).diamondCount)

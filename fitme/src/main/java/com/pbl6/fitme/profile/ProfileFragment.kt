@@ -9,10 +9,12 @@ import com.bumptech.glide.load.model.LazyHeaders
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentProfileBinding
 import com.pbl6.fitme.model.Product
+import com.pbl6.fitme.repository.CouponRepository
 import com.pbl6.fitme.repository.MainRepository
 import com.pbl6.fitme.repository.RecommendRepository
 import com.pbl6.fitme.repository.UserRepository
 import com.pbl6.fitme.session.SessionManager
+import com.pbl6.fitme.untils.AppConstrain
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.onBackPressed
@@ -25,7 +27,8 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
     // Khai báo các Repository
     private val mainRepository = MainRepository()
     private val recommendRepository = RecommendRepository()
-    private val userRepository = UserRepository() // Thêm repo này để lấy info user
+    private val userRepository = UserRepository()
+    private val couponRepository = CouponRepository() // 1. Thêm Repo Coupon
 
     private lateinit var productAdapter: ProductAdapter
 
@@ -41,12 +44,16 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
 
     override fun onResume() {
         super.onResume()
-        // Cập nhật lại dữ liệu mỗi khi màn hình hiện lên (quay lại từ Settings hoặc Cart)
+        // Cập nhật lại dữ liệu mỗi khi màn hình hiện lên
         updateOrderBadges()
         fetchUserProfile()
+        fetchVoucherCount() // 2. Gọi hàm lấy số lượng Voucher
     }
 
     override fun initListener() {
+        binding.llVoucher.singleClick {
+            navigate(R.id.voucherFragment)
+        }
         // Nút Back
         onBackPressed {
             hideToolbar()
@@ -58,15 +65,17 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             navigate(R.id.cartFragment)
         }
 
-        // Nút Setting -> Chuyển sang màn hình cài đặt
+        // Nút Setting
         binding.btnSetting.singleClick {
             navigate(R.id.settingsFragment)
         }
+
+        // Nút Detail Order
         binding.detail.singleClick {
             navigateToOrder("pending")
         }
 
-        // Logic Bottom Navigation (Giữ nguyên)
+        // Logic Bottom Navigation
         requireActivity().findViewById<View>(R.id.home_id).singleClick {
             highlightSelectedTab(R.id.home_id)
             navigate(R.id.homeFragment)
@@ -92,11 +101,31 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         binding.llStatusCancelled.singleClick { navigateToOrder("cancelled") }
     }
 
-    // --- 1. LOGIC LẤY THÔNG TIN USER (MỚI) ---
-    // --- 1. LOGIC LẤY THÔNG TIN USER ---
+    // --- 3. LOGIC LẤY SỐ LƯỢNG VOUCHER (MỚI) ---
+    private fun fetchVoucherCount() {
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
+        if (!token.isNullOrBlank()) {
+            couponRepository.getAllCoupons(token) { coupons ->
+                activity?.runOnUiThread {
+                    // Kiểm tra null binding để tránh crash nếu fragment đã đóng
+                    if (context != null && isAdded) {
+                        if (coupons != null) {
+                            // Chỉ đếm các mã đang hoạt động (isActive = true)
+                            val activeCount = coupons.count { it.isActive }
+                            // Set text cho TextView tv_voucher_count (trong XML bạn đã thêm ID này)
+                            binding.tvVoucher?.text = "$activeCount active >"
+                        } else {
+                            binding.tvVoucher?.text = "0 active >"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // --- 4. LOGIC LẤY THÔNG TIN USER (Đã chuẩn hóa URL) ---
     private fun fetchUserProfile() {
         val session = SessionManager.getInstance()
-        // Lấy token ở đây để truyền vào Glide
         val token = session.getAccessToken(requireContext())
         val userId = session.getUserId(requireContext())?.toString()
 
@@ -109,21 +138,18 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
 
                         // 2. Cập nhật Avatar
                         userInfo.avatarUrl?.let { url ->
-                            // Xử lý đường dẫn URL
-                            val baseUrl = "http://10.48.170.90:8080/api" // Đảm bảo IP đúng
-                            val fullPath = if (url.startsWith("/")) url else "/$url"
-                            val stringUrl = "$baseUrl$fullPath"
+                            // --- SỬ DỤNG APP CONSTRAIN ĐỂ TRÁNH LỖI PATH ---
+                            val domain = AppConstrain.DOMAIN_URL.removeSuffix("/")
+                            val cleanPath = if (url.startsWith("/")) url.substring(1) else url
+                            val finalUrl = if (url.startsWith("http")) url else "$domain/$cleanPath"
 
-                            // --- KHẮC PHỤC LỖI MISSING HEADER TẠI ĐÂY ---
-                            // Tạo GlideUrl có chứa Header Authorization
                             val glideUrl = GlideUrl(
-                                stringUrl,
+                                finalUrl,
                                 LazyHeaders.Builder()
                                     .addHeader("Authorization", "Bearer $token")
                                     .build()
                             )
 
-                            // Load ảnh dùng glideUrl thay vì stringUrl
                             Glide.with(requireContext())
                                 .load(glideUrl)
                                 .placeholder(R.drawable.image)
@@ -137,7 +163,7 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         }
     }
 
-    // --- 2. LOGIC BADGE ĐƠN HÀNG ---
+    // --- 5. LOGIC BADGE ĐƠN HÀNG ---
     private fun updateOrderBadges() {
         val token = SessionManager.getInstance().getAccessToken(requireContext())
         val email = SessionManager.getInstance().getUserEmail(requireContext())
@@ -158,7 +184,6 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
                             }
                         }
 
-                        // Map counts to XML TextViews
                         setBadge(binding.tvCountPending, "pending")
                         setBadge(binding.tvCountConfirmed, "confirmed")
                         setBadge(binding.tvCountProcessing, "processing")
@@ -171,7 +196,7 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         }
     }
 
-    // --- 3. CÁC HÀM HỖ TRỢ KHÁC ---
+    // --- 6. CÁC HÀM HỖ TRỢ KHÁC ---
     private fun navigateToOrder(status: String) {
         val bundle = android.os.Bundle().apply { putString("order_status", status) }
         navigate(R.id.ordersFragment, bundle)
@@ -207,13 +232,11 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
 
             val userId = SessionManager.getInstance().getUserId(requireContext())?.toString()
 
-            // Logic lấy Recommendation hoặc Top Products
             val loadDataCallback: (List<Product>?) -> Unit = { list ->
                 activity?.runOnUiThread {
                     if (!list.isNullOrEmpty()) {
                         val limited = if (list.size > 6) list.take(6) else list
 
-                        // Kiểm tra nếu sản phẩm thiếu ảnh thì gọi API lấy chi tiết
                         val needFetch = limited.filter { it.mainImageUrl.isNullOrBlank() }
                         if (needFetch.isEmpty()) {
                             productAdapter.setList(limited)
@@ -236,7 +259,6 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
                             }
                         }
                     } else {
-                        // Fallback nếu không có recommendation
                         mainRepository.getProducts(token) { products ->
                             activity?.runOnUiThread {
                                 if (products != null) productAdapter.setList(products.take(6))
@@ -264,6 +286,5 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
     }
 
     override fun initData() {
-        // Data đã được load trong onResume và initView
     }
 }
