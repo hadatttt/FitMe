@@ -736,18 +736,35 @@ class MainRepository {
     // Create Momo payment (calls backend /momopay/create)
     fun createMomoPayment(token: String, amount: Long, userEmail: String, orderId: String?, onResult: (MomoResponse?) -> Unit) {
         val bearer = "Bearer $token"
+
+        // 1. Log dữ liệu gửi đi (Request)
+        android.util.Log.d("MainRepository", ">>> SENDING MoMo Request: amount=$amount, email=$userEmail, orderId=$orderId")
+
         momoApi.createMomoPayment(bearer, amount, userEmail, orderId).enqueue(object : Callback<MomoResponse> {
             override fun onResponse(call: Call<MomoResponse>, response: Response<MomoResponse>) {
                 if (response.isSuccessful) {
+                    // 2. Log khi thành công
+                    android.util.Log.d("MainRepository", ">>> MoMo Success Body: ${response.body()}")
                     onResult(response.body())
                 } else {
-                    android.util.Log.e("MainRepository", "createMomoPayment failed: ${response.code()}")
+                    // 3. QUAN TRỌNG: Đọc nội dung lỗi chi tiết từ Server
+                    val errorBody = try {
+                        response.errorBody()?.string()
+                    } catch (e: Exception) {
+                        "Error reading error body: ${e.message}"
+                    }
+
+                    android.util.Log.e("MainRepository", ">>> MoMo Failed Code: ${response.code()}")
+                    android.util.Log.e("MainRepository", ">>> MoMo Error Body: $errorBody")
+
                     onResult(null)
                 }
             }
 
             override fun onFailure(call: Call<MomoResponse>, t: Throwable) {
-                android.util.Log.e("MainRepository", "createMomoPayment network error", t)
+                // 4. Log khi lỗi mạng hoặc crash
+                android.util.Log.e("MainRepository", ">>> MoMo Network/Parse Error: ${t.message}")
+                t.printStackTrace()
                 onResult(null)
             }
         })

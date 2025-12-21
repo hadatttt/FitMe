@@ -2,7 +2,6 @@ package com.pbl6.fitme.slotmachinegame
 
 import android.annotation.SuppressLint
 import android.app.Dialog
-import android.util.Log
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.widget.AppCompatButton
@@ -13,8 +12,7 @@ import com.example.slotmachinegame.imageviewscrolling.SlotData
 import com.example.slotmachinegame.imageviewscrolling.SlotMachineView
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentSlotMachineGameBinding
-import com.pbl6.fitme.repository.UserRepository // 1. Thêm Repo
-import com.pbl6.fitme.session.SessionManager // 2. Thêm Session
+import com.pbl6.fitme.session.SessionManager
 import com.pbl6.fitme.untils.AppSharePref
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.onBackPressed
@@ -27,9 +25,7 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
 
     private val sharedViewModel: SharedNavigationViewModel by activityViewModels()
 
-    // Khai báo UserRepository
-    private val userRepository = UserRepository()
-
+    // Danh sách các icon quay thưởng
     private val listBonusSymbol = listOf(
         SlotData(0, R.drawable.ic_500),
         SlotData(1, R.drawable.ic_1000),
@@ -41,13 +37,18 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
 
     private var isSpinning = false
 
+    private val userToken: String
+        get() = SessionManager.getInstance().getAccessToken(requireContext()) ?: ""
+    private val userId: String
+        get() = SessionManager.getInstance().getUserId(requireContext()).toString()
+
     override fun initView() {
         context?.let {
-            // Spin vẫn lấy từ Local (hoặc bạn muốn lấy từ API thì sửa tương tự)
             viewModel.setSpinsLeft(AppSharePref(it).spinCount)
+        }
 
-            // Diamond (Coin) lấy từ API thay vì AppSharePref
-            fetchUserPoints()
+        if (userToken.isNotEmpty() && userId.isNotEmpty()) {
+            viewModel.fetchUserPoints(userToken, userId)
         }
 
         binding.slotMachine.changeState(isSpinning)
@@ -59,6 +60,7 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
 
         viewModel.diamondCount.observe(viewLifecycleOwner) { diamondCount ->
             binding.tvDiamond.text = diamondCount.toString()
+            context?.let { ctx -> AppSharePref(ctx).diamondCount = diamondCount }
         }
 
         binding.slotMachine.setSpinningMachineCallBack(object :
@@ -78,6 +80,7 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
                         delay(500)
                         val reward = listBonusSymbol.getOrNull(value1)
                         reward?.let { showReward(it) }
+
                         isSpinning = false
                         binding.slotMachine.changeState(isSpinning)
                         updateSpinUI(viewModel.spinsLeft.value ?: 0)
@@ -91,39 +94,8 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
         })
     }
 
-    // --- HÀM LẤY ĐIỂM TỪ API ---
-    private fun fetchUserPoints() {
-        val token = SessionManager.getInstance().getAccessToken(requireContext())
-        val userId = SessionManager.getInstance().getUserId(requireContext())?.toString()
-
-        if (!token.isNullOrBlank() && !userId.isNullOrBlank()) {
-            userRepository.getUserPoints(token, userId) { points ->
-                activity?.runOnUiThread {
-                    val currentPoints = points ?: 0
-                    viewModel.setDiamondCount(currentPoints)
-
-                    context?.let { ctx -> AppSharePref(ctx).diamondCount = currentPoints }
-                }
-            }
-        } else {
-            context?.let { viewModel.setDiamondCount(AppSharePref(it).diamondCount) }
-        }
-    }
-
-    // --- HÀM LƯU ĐIỂM LÊN API (Cần Backend hỗ trợ API update points) ---
-    private fun savePointsToApi(addedPoints: Int) {
-        // Lưu ý: Hiện tại UserRepository của bạn chưa có hàm cộng điểm (Add Points).
-        // Bạn chỉ có hàm update thông tin user hoặc lấy điểm.
-        // Tạm thời mình sẽ chỉ log ra đây. Bạn cần viết thêm API update điểm bên backend và repository.
-
-        val currentTotal = (viewModel.diamondCount.value ?: 0)
-        Log.d("SlotMachine", "User won $addedPoints points. New Total: $currentTotal")
-
-        // TODO: Gọi API lưu điểm mới lên server tại đây để tránh mất điểm khi thoát app
-        // Ví dụ: userRepository.updateUserPoints(token, userId, currentTotal) { ... }
-    }
-
     override fun initListener() {
+        // Sự kiện click vào máy quay (để quay)
         binding.slotMachine.setOnImageClickListener {
             val currentSpins = viewModel.spinsLeft.value ?: 0
             if (isSpinning) return@setOnImageClickListener
@@ -131,6 +103,8 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
                 binding.slotMachine.setValueRandom(5, 15)
             }
         }
+
+        // Sự kiện click nút Spin
         binding.btnspin.singleClick {
             if (isSpinning) return@singleClick
 
@@ -139,7 +113,7 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
             if (spins > 0) {
                 binding.slotMachine.setValueRandom(5, 15)
             } else {
-                Toast.makeText(context, "Not enough spins", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Bạn đã hết lượt quay!", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -153,12 +127,10 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
     }
 
     private fun handleBack() {
+        // Chỉ cần lưu số lượt quay vào Local (vì Server không quản lý spinCount trong context này)
         val currentSpins = viewModel.spinsLeft.value ?: 0
-        val currentDiamond = viewModel.diamondCount.value ?: 0
-
         context?.let {
             AppSharePref(it).spinCount = currentSpins
-            // AppSharePref(it).diamondCount = currentDiamond // Không cần lưu local đè nữa nếu đã dùng API
         }
 
         sharedViewModel.isGoMystery = false
@@ -167,7 +139,12 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
 
     @SuppressLint("StringFormatInvalid")
     private fun updateSpinUI(spinsLeft: Int) {
-        binding.tvSpinsLeft.text = getString(R.string.spin_left, spinsLeft)
+        // Đảm bảo string resource R.string.spin_left có format (ví dụ: "Spins: %d")
+        binding.tvSpinsLeft.text = try {
+            getString(R.string.spin_left, spinsLeft)
+        } catch (e: Exception) {
+            "Spins: $spinsLeft"
+        }
         binding.btnspin.isEnabled = !isSpinning
     }
 
@@ -186,30 +163,28 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
 
             imvCenter.setImageResource(data.resDrawable)
 
-            // Xử lý phần thưởng
-            var pointsWon = 0
-            when (data.resDrawable) {
-                R.drawable.ic_500 -> {
-                    pointsWon = 500 // Sửa lại logic điểm cho khớp với hình (vd hình 500 thì cộng 500)
-                    viewModel.incrementDiamondCount(pointsWon)
+            // --- LOGIC CỘNG ĐIỂM QUA VIEWMODEL ---
+            if (userToken.isNotEmpty() && userId.isNotEmpty()) {
+                when (data.resDrawable) {
+                    R.drawable.ic_500 -> {
+                        viewModel.incrementDiamondCount(userToken, userId, 500)
+                    }
+                    R.drawable.ic_1000 -> {
+                        viewModel.incrementDiamondCount(userToken, userId, 1000)
+                    }
+                    R.drawable.ic_2000 -> {
+                        viewModel.incrementDiamondCount(userToken, userId, 2000)
+                    }
+                    R.drawable.ic_5000 -> {
+                        viewModel.incrementDiamondCount(userToken, userId, 5000)
+                        viewModel.increaseSpinsLeft()
+                        Toast.makeText(ctx, "Lucky,+ 1 spin", Toast.LENGTH_SHORT).show()
+                    }
+                    else -> {
+                        // Các trường hợp khác (nếu có)
+                    }
                 }
-                R.drawable.ic_1000 -> {
-                    pointsWon = 1000
-                    viewModel.incrementDiamondCount(pointsWon)
-                }
-                R.drawable.ic_2000 -> {
-                    pointsWon = 2000
-                    viewModel.incrementDiamondCount(pointsWon)
-                }
-                R.drawable.ic_5000 -> {
-                    // Nếu là spin thì không cộng điểm
-                    viewModel.increaseSpinsLeft()
-                }
-            }
-
-            // Nếu có điểm thưởng, gọi hàm lưu (Placeholder)
-            if (pointsWon > 0) {
-                savePointsToApi(pointsWon)
+            } else {
             }
 
             btnClose.setOnClickListener {
@@ -221,5 +196,6 @@ class SlotMachineGameFragment : BaseFragment<FragmentSlotMachineGameBinding, Slo
     }
 
     override fun initData() {
+        // Init data logic if needed
     }
 }

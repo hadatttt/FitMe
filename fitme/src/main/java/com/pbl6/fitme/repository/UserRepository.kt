@@ -2,7 +2,6 @@ package com.pbl6.fitme.repository
 
 import android.util.Log
 import com.pbl6.fitme.model.UserResponse
-
 import com.pbl6.fitme.network.ApiClient
 import com.pbl6.fitme.network.BaseResponse
 import com.pbl6.fitme.network.UserApiService
@@ -46,6 +45,7 @@ class UserRepository {
             }
         })
     }
+
     fun updateUser(
         token: String,
         userId: String,
@@ -75,12 +75,13 @@ class UserRepository {
                 }
             })
     }
+
+    // Hàm lấy điểm (GET) - Server trả về Double (số coin thực tế)
     fun getUserPoints(token: String, userId: String, onResult: (Int?) -> Unit) {
         val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
 
         Log.d("UserRepo", ">>> Requesting Points for UserID: $userId")
 
-        // QUAN TRỌNG: Đổi <Int> thành <Double> để nhận số lẻ từ Backend
         userApiService.getUserPoints(bearerToken, userId).enqueue(object : Callback<BaseResponse<Double>> {
             override fun onResponse(
                 call: Call<BaseResponse<Double>>,
@@ -94,26 +95,24 @@ class UserRepository {
                     Log.d("UserRepo", ">>> API Code: ${apiResponse?.code}")
                     Log.d("UserRepo", ">>> API Result (Raw Coin): ${apiResponse?.result}")
 
-                    // Chấp nhận code 200, 0 hoặc 1000
                     if (apiResponse?.code == 200 || apiResponse?.code == 0 || apiResponse?.code == 1000) {
 
-                        // 1. Lấy giá trị Coin gốc (Double), nếu null thì bằng 0.0
+                        // 1. Lấy giá trị Coin gốc
                         val rawCoin: Double = apiResponse?.result ?: 0.0
 
-                        // 2. Nhân với 25.000
-                        val calculatedVal = rawCoin * 25000
+                        // 2. Nhân với 25 (Tỷ lệ mới)
+                        val calculatedVal = rawCoin * 1000
 
-                        // 3. Quy tròn (round) và chuyển về Int
+                        // 3. Quy tròn và chuyển về Int
                         val finalPoints = kotlin.math.round(calculatedVal).toInt()
 
-                        Log.d("UserRepo", ">>> Converted: $rawCoin * 25000 = $finalPoints points")
+                        Log.d("UserRepo", ">>> Converted: $rawCoin * 25 = $finalPoints points")
                         onResult(finalPoints)
                     } else {
                         Log.e("UserRepo", ">>> API Logic Error: Code is not 200/0/1000")
                         onResult(0)
                     }
                 } else {
-                    // Xử lý lỗi HTTP
                     try {
                         val errorStr = response.errorBody()?.string()
                         Log.e("UserRepo", ">>> HTTP Error Body: $errorStr")
@@ -131,6 +130,52 @@ class UserRepository {
             }
         })
     }
+
+    // --- SỬA LOGIC Ở ĐÂY ---
+    // Hàm cập nhật điểm (PUT) - Server trả về result = 0 (Int), không phải số dư mới
+    fun updateUserPoints(token: String, userId: String, points: Int, onResult: (Int?) -> Unit) {
+        val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+
+        // 1. QUY ĐỔI: Points -> Coin (Chia 25)
+        val coinToSend = points / 1000.0
+
+        Log.d("UserRepo", ">>> Request Update: $points Points -> Sending $coinToSend Coin to API")
+
+        // GỌI API VỚI KIỂU <Int>
+        userApiService.updateUserPoints(bearerToken, userId, coinToSend).enqueue(object : Callback<BaseResponse<Int>> {
+            override fun onResponse(
+                call: Call<BaseResponse<Int>>,
+                response: Response<BaseResponse<Int>>
+            ) {
+                if (response.isSuccessful && response.body() != null) {
+                    val apiResponse = response.body()
+
+                    // Kiểm tra code thành công
+                    if (apiResponse?.code == 200 || apiResponse?.code == 0 || apiResponse?.code == 1000) {
+
+                        // Thành công: result trả về 0. Ta trả về luôn giá trị này để báo thành công.
+                        // KHÔNG NHÂN CHIA GÌ CẢ.
+                        val resultStatus = apiResponse?.result // Thường là 0
+
+                        Log.d("UserRepo", ">>> Update Success. API Status Result: $resultStatus")
+                        onResult(resultStatus)
+                    } else {
+                        Log.e("UserRepo", ">>> Update Failed Logic: ${apiResponse?.message}")
+                        onResult(null)
+                    }
+                } else {
+                    Log.e("UserRepo", ">>> Update Failed HTTP: ${response.code()}")
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<BaseResponse<Int>>, t: Throwable) {
+                Log.e("UserRepo", ">>> Network Failure: ${t.message}")
+                onResult(null)
+            }
+        })
+    }
+
     fun createUpdateUserParts(
         username: String,
         password: String,

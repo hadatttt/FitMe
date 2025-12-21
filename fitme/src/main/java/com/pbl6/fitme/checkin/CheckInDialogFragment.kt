@@ -17,6 +17,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.example.dailycheckin.utils.DailyCheckIn
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentCheckInDialogBinding
+import com.pbl6.fitme.repository.UserRepository
+import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.utils.singleClick
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -29,16 +31,17 @@ class CheckInDialogFragment : DialogFragment() {
     private var adapter: CheckInAdapter? = null
     private var currentWeekStartIndex = 0
 
+    // Khởi tạo Repository
+    private val userRepository = UserRepository()
     private val viewModel: CheckInViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         binding = FragmentCheckInDialogBinding.inflate(inflater, container, false)
-
-
         return binding.root
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NORMAL, R.style.FullScreenTransparentDialog)
@@ -59,6 +62,9 @@ class CheckInDialogFragment : DialogFragment() {
         adapter = CheckInAdapter()
         binding.rvCheckIn.adapter = adapter
         binding.rvCheckIn.layoutManager = GridLayoutManager(requireContext(), 3)
+
+        // --- 1. GỌI HÀM LẤY ĐIỂM NGAY KHI MỞ DIALOG ---
+        fetchCurrentPoints()
 
         lifecycleScope.launch(Dispatchers.IO) {
             val fullList = DailyCheckIn.getListCheckIn(requireContext())
@@ -83,6 +89,7 @@ class CheckInDialogFragment : DialogFragment() {
                 }
             }
         }
+
         binding.btnClaim.singleClick {
             val todayDate = LocalDate.now()
             val todayItem = adapter?.dataList?.find { it.date == todayDate }
@@ -90,8 +97,11 @@ class CheckInDialogFragment : DialogFragment() {
                 disableClaimButton()
                 return@singleClick
             }
+
+            // Disable nút tạm thời để tránh spam click
+            binding.btnClaim.isEnabled = false
+
             callCheckInApi(todayDate)
-            updateUiAfterCheckIn()
         }
 
         binding.btnClose.singleClick {
@@ -99,24 +109,65 @@ class CheckInDialogFragment : DialogFragment() {
         }
     }
 
+    // --- HÀM MỚI: Lấy điểm hiện tại hiển thị lên UI ---
+    private fun fetchCurrentPoints() {
+        val context = context ?: return
+        val token = SessionManager.getInstance().getAccessToken(context)
+        val userId = SessionManager.getInstance().getUserId(context).toString()
 
+        if (!token.isNullOrEmpty() && userId.isNotEmpty()) {
+            userRepository.getUserPoints(token, userId) { points ->
+                // Cập nhật UI trên Main Thread
+                activity?.runOnUiThread {
+                    val currentPoints = points ?: 0
+                    // Giả sử TextView hiển thị điểm tên là tvDiamond
+                    binding.tvDiamondCollection.text = currentPoints.toString()
+                }
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun callCheckInApi(date: LocalDate) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                // TODO: Viết logic gọi API POST Check-in tại đây
-                // Ví dụ:
-                // val response = repository.postCheckIn(date.toString())
-                // if (response.isSuccessful) { ... }
+        val context = requireContext()
+        val token = SessionManager.getInstance().getAccessToken(context)
+        val userId = SessionManager.getInstance().getUserId(context).toString()
 
-                // Log kiểm tra
-                // Log.d("CheckIn", "Calling API for date: $date")
+        if (token.isNullOrEmpty() || userId.isEmpty()) {
+            binding.btnClaim.isEnabled = true
+            return
+        }
 
-                // Lưu trạng thái vào local để lần sau mở app hiển thị đúng (Tùy chọn)
-                DailyCheckIn.checkIn(requireContext(), date)
+        // BƯỚC 1: Lấy điểm hiện tại
+        userRepository.getUserPoints(token, userId) { currentPoints ->
+            val points = currentPoints ?: 0
 
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    binding.btnClaim.isEnabled = true
+            // BƯỚC 2: Tính toán điểm mới (Cộng 100)
+            val newPoints = points + 200  // <--- Đây là số điểm đúng (ví dụ: 100)
+
+            // BƯỚC 3: Gửi lên Server
+            userRepository.updateUserPoints(token, userId, newPoints) { resultCode ->
+                // resultCode trả về 0 (Thành công). Đừng dùng biến này để hiển thị điểm!
+
+                if (resultCode != null) {
+                    // --- THÀNH CÔNG ---
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        DailyCheckIn.checkIn(context, date)
+
+                        withContext(Dispatchers.Main) {
+
+                            // --- SỬA Ở ĐÂY ---
+                            binding.tvDiamondCollection.text = newPoints.toString()
+
+                            updateUiAfterCheckIn()
+                        }
+                    }
+                } else {
+                    // --- THẤT BẠI ---
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        showToast("Lỗi kết nối!")
+                        binding.btnClaim.isEnabled = true
+                    }
                 }
             }
         }
@@ -138,6 +189,7 @@ class CheckInDialogFragment : DialogFragment() {
 
     private fun disableClaimButton() {
         binding.btnClaim.isEnabled = false
+        binding.btnClaim.alpha = 0.5f // Làm mờ nút đi một chút
     }
 
     private fun showToast(msg: String) {

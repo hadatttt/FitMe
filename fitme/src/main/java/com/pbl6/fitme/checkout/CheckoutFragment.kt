@@ -2,6 +2,7 @@ package com.pbl6.fitme.checkout
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -192,17 +193,30 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             val finalCalculations = calculateFinalTotal()
             val totalAmount = finalCalculations.first
 
-            val orderItems = cartItems.map { cartItem ->
-                val unified = createUnifiedVariantMap()
+            val unified = createUnifiedVariantMap()
+            val orderItems = cartItems.mapNotNull { cartItem ->
                 val variant = unified[cartItem.variantId]
-                val product = variant?.let { productMap[it.productId] }
-                com.pbl6.fitme.model.OrderItem(
-                    productId = product?.productId?.toString(),
-                    quantity = cartItem.quantity,
-                    unitPrice = variant?.price ?: 0.0,
-                    color = variant?.color,
-                    size = variant?.size
-                )
+                val product = variant?.let { v ->
+                    productMap.values.find { p -> p.productId.toString() == v.productId.toString() }
+                }
+
+                if (variant != null && product != null) {
+                    com.pbl6.fitme.model.OrderItem(
+                        productId = product.productId.toString(),
+                        quantity = cartItem.quantity,
+                        unitPrice = variant.price,
+                        color = variant.color,
+                        size = variant.size
+                    )
+                } else {
+                    null
+                }
+            }
+
+            if (orderItems.isEmpty()) {
+                binding.btnCheckout.isEnabled = true
+                Toast.makeText(requireContext(), "Data error. Please reload cart.", Toast.LENGTH_SHORT).show()
+                return@singleClick
             }
 
             val order = Order(
@@ -281,7 +295,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
 
     private fun updateTotalPrice() {
         val (finalTotal, pointDiscountUsd) = calculateFinalTotal()
-        val potentialDiscountUsd = currentUserPoints / EXCHANGE_RATE
+        val potentialDiscountUsd = currentUserPoints / 1000.0
 
         binding.txtTotal.text = "Total \$${String.format("%.2f", finalTotal)}"
 
@@ -323,7 +337,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         var pointDiscountUsd = 0.0
 
         if (isUsePoints && currentUserPoints > 0) {
-            val potentialUsd = currentUserPoints / EXCHANGE_RATE
+            val potentialUsd = currentUserPoints / 1000.0
             pointDiscountUsd = minOf(potentialUsd, subTotalAfterCoupon)
         }
 
@@ -477,8 +491,12 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             activity?.runOnUiThread {
                 binding.btnCheckout.isEnabled = true
                 if (momoResp?.payUrl != null) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(momoResp.payUrl))
-                    startActivity(intent)
+
+                    val bundle = Bundle().apply {
+                        putString("payment_url", momoResp.payUrl)
+                        putString("payment_provider", "MOMO")
+                    }
+                    navigate(R.id.paymentWebViewFragment, bundle)
                 } else {
                     Toast.makeText(requireContext(), "Momo failed", Toast.LENGTH_SHORT).show()
                 }
@@ -491,8 +509,10 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             activity?.runOnUiThread {
                 binding.btnCheckout.isEnabled = true
                 if (vnResp?.paymentUrl != null) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(vnResp.paymentUrl))
-                    startActivity(intent)
+                    val bundle = Bundle().apply {
+                        putString("payment_url", vnResp.paymentUrl)
+                    }
+                    navigate(R.id.paymentWebViewFragment, bundle)
                 } else {
                     Toast.makeText(requireContext(), "VNPay failed", Toast.LENGTH_SHORT).show()
                 }

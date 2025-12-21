@@ -15,6 +15,7 @@ import retrofit2.http.Body
 import retrofit2.http.Multipart
 import retrofit2.http.Part
 import retrofit2.http.PartMap
+import retrofit2.http.Query
 import java.io.File
 
 interface UserApiService {
@@ -27,6 +28,12 @@ interface UserApiService {
         @PartMap params: Map<String, @JvmSuppressWildcards RequestBody>,
         @Part avatar: MultipartBody.Part? = null
     ): Call<BaseResponse<UserResponse>>
+    @PUT("users/{userId}/points")
+    fun updateUserPoints(
+        @Header("Authorization") token: String,
+        @Path("userId") userId: String,
+        @Query("points") points: Double
+    ): Call<BaseResponse<Int>>
     @GET("users/points/{userId}")
     fun getUserPoints(
         @Header("Authorization") token: String,
