@@ -28,7 +28,7 @@ class OrderDetailFragment : BaseFragment<FragmentOrderDetailBinding, OrderDetail
 
     override fun initListener() {
         binding.ivBack.singleClick {
-            popBackStack()
+            popBackStack(R.id.homeFragment)
         }
     }
 

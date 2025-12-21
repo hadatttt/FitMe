@@ -149,7 +149,6 @@ class CheckInDialogFragment : DialogFragment() {
             userRepository.updateUserPoints(token, userId, newPoints) { resultCode ->
                 // resultCode trả về 0 (Thành công). Đừng dùng biến này để hiển thị điểm!
 
-                if (resultCode != null) {
                     // --- THÀNH CÔNG ---
                     lifecycleScope.launch(Dispatchers.IO) {
                         DailyCheckIn.checkIn(context, date)
@@ -162,13 +161,6 @@ class CheckInDialogFragment : DialogFragment() {
                             updateUiAfterCheckIn()
                         }
                     }
-                } else {
-                    // --- THẤT BẠI ---
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        showToast("Lỗi kết nối!")
-                        binding.btnClaim.isEnabled = true
-                    }
-                }
             }
         }
     }

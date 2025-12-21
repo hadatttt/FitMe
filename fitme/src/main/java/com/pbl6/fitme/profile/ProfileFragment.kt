@@ -135,25 +135,16 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
 
                         // 2. Cập nhật Avatar
                         userInfo.avatarUrl?.let { url ->
-                            // --- SỬ DỤNG APP CONSTRAIN ĐỂ TRÁNH LỖI PATH ---
-                            val domain = AppConstrain.DOMAIN_URL.removeSuffix("/")
-                            val cleanPath = if (url.startsWith("/")) url.substring(1) else url
-                            val finalUrl = if (url.startsWith("http")) url else "$domain/$cleanPath"
-
-                            val glideUrl = GlideUrl(
-                                finalUrl,
-                                LazyHeaders.Builder()
-                                    .addHeader("Authorization", "Bearer $token")
-                                    .build()
-                            )
-
-                            Glide.with(requireContext())
-                                .load(glideUrl)
-                                .placeholder(R.drawable.image)
-                                .error(R.drawable.image)
-                                .circleCrop()
-                                .into(binding.imgAvatar)
-                        }
+                                val fullUrl = if (url.startsWith("/")) {
+                                    "http://10.48.170.90:8080/api$url"
+                                } else {
+                                    "http://10.48.170.90:8080/api/$url"
+                                }
+                                Glide.with(requireContext())
+                                    .load(fullUrl)
+                                    .circleCrop()
+                                    .into(binding.imgAvatar)
+                            }
                     }
                 }
             }
