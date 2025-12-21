@@ -1,5 +1,6 @@
 package com.pbl6.fitme.home
 
+import android.animation.ObjectAnimator
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
@@ -9,7 +10,6 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.checkin.CheckInDialogFragment
 import com.pbl6.fitme.databinding.FragmentHomeBinding
@@ -22,29 +22,41 @@ import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.utils.setDraggableWithClick
 import hoang.dqm.codebase.utils.singleClick
+import android.animation.AnimatorListenerAdapter
+import com.pbl6.fitme.untils.TimerHelper
+
 
 class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
 
     private lateinit var productAdapter: ProductAdapter
     private var isProductMode = false // Biến theo dõi trạng thái hiện tại
-
+    private var isRewardFalling = false
+    private val giftTimer = TimerHelper(30000L)
+    private val giftHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val giftRunnable = object : Runnable {
+        override fun run() {
+            // Gọi hàm rơi quà
+            dropGiftZigzag()
+            // Tự động lặp lại sau 15 giây (15000ms)
+            giftHandler.postDelayed(this, 15000L)
+        }
+    }
     override fun initView() {
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
         highlightSelectedTab(R.id.home_id)
 
-        // Mặc định hiển thị Category Mode
         toggleViewMode(showProducts = false)
 
         setupRecyclerViews()
         observeViewModel()
-
         val token = SessionManager.getInstance().getAccessToken(requireContext())
         if (token.isNullOrBlank()) {
             Toast.makeText(requireContext(), "Please login", Toast.LENGTH_LONG).show()
         } else {
             viewModel.fetchData(token)
         }
+        giftHandler.postDelayed(giftRunnable, 15000L)
     }
 
     override fun initData() {
@@ -87,6 +99,9 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
     }
 
     override fun initListener() {
+        binding.giftLottie.singleClick {
+            navigate(R.id.voucherFragment)
+        }
         // Xử lý nút Back cứng của điện thoại
         requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -224,7 +239,62 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         }
         popup.show()
     }
+    private fun dropGiftZigzag() {
+        if (isRewardFalling) {
+            return
+        }
+        isRewardFalling = true
 
+        val giftView = binding.giftLottie
+
+        giftView.visibility = View.VISIBLE
+        giftView.cancelAnimation()
+        giftView.playAnimation()
+        val parentView = binding.root
+        val screenWidth = parentView.width
+        val screenHeight = parentView.height
+        val giftWidth = if (giftView.width > 0) giftView.width else 200
+        val startX = (0..(screenWidth - giftWidth)).random().toFloat()
+        giftView.x = startX
+        giftView.translationY = -300f
+        val fallAnim = ObjectAnimator.ofFloat(
+            giftView,
+            "translationY",
+            -300f,
+            screenHeight.toFloat()
+        ).apply {
+            duration = 20000
+        }
+        val zigzagOffset = 100.toFloat()
+        val zigzagAnim = ObjectAnimator.ofFloat(
+            giftView,
+            "x",
+            startX,
+            startX - zigzagOffset,
+            startX + zigzagOffset
+        ).apply {
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            repeatMode = android.animation.ValueAnimator.REVERSE
+            duration = (500..800).random().toLong()
+        }
+        zigzagAnim.setFloatValues(startX - zigzagOffset, startX + zigzagOffset)
+        val set = android.animation.AnimatorSet()
+        set.playTogether(fallAnim, zigzagAnim)
+        fallAnim.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: android.animation.Animator) {
+                zigzagAnim.cancel()
+                giftView.visibility = View.GONE
+                giftView.cancelAnimation()
+                isRewardFalling = false
+            }
+
+            override fun onAnimationCancel(animation: android.animation.Animator) {
+                isRewardFalling = false
+            }
+        })
+
+        set.start()
+    }
     private fun hideToolbar() {
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.GONE

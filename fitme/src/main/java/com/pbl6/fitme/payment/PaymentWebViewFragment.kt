@@ -1,4 +1,4 @@
-package com.pbl6.fitme.checkout
+package com.pbl6.fitme.payment
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -82,13 +82,8 @@ class PaymentWebViewFragment : BaseFragment<FragmentPaymentWebViewBinding, HomeM
 
     private fun handleVNPayResult(url: String) {
         val bundle = Bundle()
-        if (url.contains("vnp_ResponseCode=00")) {
-            Toast.makeText(requireContext(), "Thanh toán VNPay thành công!", Toast.LENGTH_LONG).show()
-            bundle.putString("order_status", "processing")
-        } else {
-            Toast.makeText(requireContext(), "Thanh toán thất bại hoặc đã hủy", Toast.LENGTH_LONG).show()
-            bundle.putString("order_status", "pending")
-        }
+        Toast.makeText(requireContext(), "VNPay payment successful!", Toast.LENGTH_LONG).show()
+        bundle.putString("order_status", "pending")
         navigate(R.id.ordersFragment, bundle)
     }
 

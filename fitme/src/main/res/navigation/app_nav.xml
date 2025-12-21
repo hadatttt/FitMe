@@ -145,7 +145,7 @@
             android:label="VoucherFragment" />
     <fragment
             android:id="@+id/paymentWebViewFragment"
-            android:name="com.pbl6.fitme.checkout.PaymentWebViewFragment"
+            android:name="com.pbl6.fitme.payment.PaymentWebViewFragment"
             android:label="PaymentWebViewFragment" />
 
 </navigation>

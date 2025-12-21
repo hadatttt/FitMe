@@ -170,9 +170,10 @@
             android:id="@+id/iv_back"
             android:layout_width="@dimen/_40sdp"
             android:layout_height="@dimen/_40sdp"
-            android:padding="@dimen/_7sdp"
+            android:padding="@dimen/_8sdp"
             android:src="@drawable/ic_back"
-            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:background="@drawable/bg_circle_blue"/>

@@ -11,7 +11,7 @@
             android:id="@+id/iv_back"
             android:layout_width="@dimen/_40sdp"
             android:layout_height="@dimen/_40sdp"
-            android:padding="@dimen/_7sdp"
+            android:padding="@dimen/_8sdp"
             android:src="@drawable/ic_back"
             android:background="@drawable/bg_circle_blue"
             app:layout_constraintTop_toTopOf="parent"

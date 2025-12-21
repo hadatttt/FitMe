@@ -1,20 +1,14 @@
 package com.pbl6.fitme.product
 
-import android.content.Context
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.pbl6.fitme.model.AddCartRequest
 import com.pbl6.fitme.model.AddWishlistRequest
 import com.pbl6.fitme.model.Product
 import com.pbl6.fitme.model.Review
-import com.pbl6.fitme.model.WishlistRequest
 import com.pbl6.fitme.repository.MainRepository
 import com.pbl6.fitme.repository.ReviewRepository
 import com.pbl6.fitme.repository.WishlistRepository
-import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.viewmodel.BaseViewModel
 import java.util.UUID
 
@@ -37,35 +31,35 @@ class ProductDetailViewModel : BaseViewModel() {
     // Wishlist State
     private val _isFavorite = MutableLiveData<Boolean>(false)
     val isFavorite: LiveData<Boolean> = _isFavorite
-    private var currentWishlistItemId: String? = null // Lưu nội bộ để dùng khi xóa
+    private var currentWishlistItemId: String? = null // Stored internally for deletion
 
     // Events
     val onAddToCartSuccess = MutableLiveData<Boolean>()
     val onBuyNowSuccess = MutableLiveData<Boolean>()
-    val toastMessage = MutableLiveData<String>() // Để Fragment hiện Toast
+    val toastMessage = MutableLiveData<String>() // Used by Fragment to show Toasts
 
-    // Biến để tracking ID hiện tại, giúp caching
+    // Tracking variable for current ID to help with caching
     private var loadedProductId: String? = null
 
     /**
-     * Hàm main để load dữ liệu.
-     * Logic: Chỉ gọi API nếu productId thay đổi hoặc dữ liệu chưa có.
+     * Main function to load data.
+     * Logic: Only calls API if productId changes or data is missing.
      */
     fun loadData(token: String, productId: String, userEmail: String?) {
-        // CACHING CHECK: Nếu ID trùng và đã có product data -> Không làm gì cả (giữ nguyên data cũ)
+        // CACHING CHECK: If ID is the same and product data exists -> Do nothing (use cache)
         if (loadedProductId == productId && _product.value != null) {
             Log.d("ProductDetailVM", "Data already exists for ID: $productId. Using cache.")
             return
         }
 
-        // Nếu ID mới hoặc chưa có data -> Reset và gọi API
+        // If new ID or no data -> Reset and call APIs
         loadedProductId = productId
         _product.value = null
         _reviews.value = null
         _isFavorite.value = false
         currentWishlistItemId = null
 
-        // Gọi song song các API
+        // Call APIs in parallel
         fetchProductById(token, productId)
         fetchProductReviews(token, productId)
         fetchRelatedProducts(token)
@@ -89,13 +83,13 @@ class ProductDetailViewModel : BaseViewModel() {
 
     private fun fetchProductReviews(token: String, productId: String) {
         reviewRepo.getReviewsByProduct(token, productId) { result ->
-            // Dù null hay không cũng post value để Fragment cập nhật UI (ẩn/hiện layout review)
+            // Update UI regardless of null/empty to hide/show review layout
             _reviews.postValue(result ?: emptyList())
         }
     }
 
     private fun fetchRelatedProducts(token: String) {
-        // Chỉ fetch nếu chưa có (related products thường ít thay đổi theo product ID context)
+        // Only fetch if data is missing (related products usually change less frequently)
         if (_relatedProducts.value == null) {
             mainRepository.getProducts(token) { products ->
                 if (products != null) {
@@ -119,7 +113,7 @@ class ProductDetailViewModel : BaseViewModel() {
 
     fun toggleWishlist(token: String, userEmail: String?, productId: String) {
         if (userEmail.isNullOrBlank()) {
-            toastMessage.postValue("Vui lòng đăng nhập để sử dụng Wishlist")
+            toastMessage.postValue("Please login to use Wishlist")
             return
         }
 
@@ -133,34 +127,28 @@ class ProductDetailViewModel : BaseViewModel() {
                     if (success) {
                         _isFavorite.postValue(false)
                         currentWishlistItemId = null
-                        toastMessage.postValue("Đã xóa khỏi Wishlist")
+                        toastMessage.postValue("Removed from Wishlist")
                     } else {
-                        toastMessage.postValue("Xóa thất bại")
+                        toastMessage.postValue("Removal failed")
                     }
                 }
             } else {
-                // Trường hợp lạ: isFavorite = true nhưng không có ID -> Refresh lại
+                // Rare case: isFavorite is true but ID is missing -> Refresh status
                 checkWishlistStatus(token, productId)
             }
         } else {
             // ADD
             val request = AddWishlistRequest(UUID.fromString(productId))
-            // Logic cũ: tìm list ID -> add item. Để đơn giản hóa, ta gọi hàm add wishlist của mainRepo (đã handle logic create/add)
-            // Lưu ý: Logic createAndAddItemToWishlist phức tạp của bạn nên được giữ lại hoặc gọi qua repo.
-            // Ở đây mình dùng lại logic đã viết ở repo/fragment cũ nhưng clean hơn:
 
             mainRepository.addToWishlist(token, userEmail, request) { success ->
                 if (success) {
-                    // Refresh để lấy ID mới vừa tạo
+                    // Refresh to get the newly created ID
                     checkWishlistStatus(token, productId)
-                    toastMessage.postValue("Đã thêm vào Wishlist")
+                    toastMessage.postValue("Added to Wishlist")
                 } else {
-                    toastMessage.postValue("Thêm vào Wishlist thất bại")
+                    toastMessage.postValue("Failed to add to Wishlist")
                 }
             }
         }
     }
-
-
-
 }

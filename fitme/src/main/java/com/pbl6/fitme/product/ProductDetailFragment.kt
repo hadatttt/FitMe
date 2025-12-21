@@ -75,7 +75,6 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
             }
         }
 
-
         viewModel.product.observe(viewLifecycleOwner) { product ->
             product?.let {
                 currentProduct = it
@@ -122,7 +121,7 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
         // 6. Cart / Buy Actions
         viewModel.onAddToCartSuccess.observe(viewLifecycleOwner) { success ->
             if (success) {
-                Toast.makeText(requireContext(), "Đã thêm vào giỏ hàng", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Added to cart successfully", Toast.LENGTH_SHORT).show()
                 navigate(R.id.cartFragment)
                 viewModel.onAddToCartSuccess.postValue(false)
             }
@@ -142,7 +141,7 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
         val userEmail = SessionManager.getInstance().getUserEmail(requireContext())
 
         if (token.isNullOrBlank()) {
-            Toast.makeText(requireContext(), "Vui lòng đăng nhập để xem chi tiết", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Please login to view details", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -167,20 +166,17 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
 
     private fun showAddToCartSheet() {
         currentProduct?.let { product ->
-            // Reset cờ auto (dù không dùng nữa nhưng cứ reset để tránh lỗi logic sau này)
             autoOpenAddToCart = false
-
-            // SỬA Ở ĐÂY: Chỉ truyền 1 tham số là product
             val bottomSheet = AddToCartBottomSheetFragment.newInstance(product)
-
             bottomSheet.show(parentFragmentManager, "AddToCartBottomSheet")
-        } ?: Toast.makeText(requireContext(), "Đang tải dữ liệu...", Toast.LENGTH_SHORT).show()
+        } ?: Toast.makeText(requireContext(), "Loading data...", Toast.LENGTH_SHORT).show()
     }
+
     private fun showVariationsSheet() {
         currentProduct?.let {
             val bottomSheet = VariationsBottomSheetFragment.newInstance(it)
             bottomSheet.show(parentFragmentManager, "VariationsBottomSheet")
-        } ?: Toast.makeText(requireContext(), "Đang tải dữ liệu...", Toast.LENGTH_SHORT).show()
+        } ?: Toast.makeText(requireContext(), "Loading data...", Toast.LENGTH_SHORT).show()
     }
 
     private fun populateUI(p: Product) {

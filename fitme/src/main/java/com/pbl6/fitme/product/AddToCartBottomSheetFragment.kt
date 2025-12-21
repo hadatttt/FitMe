@@ -35,7 +35,7 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
     private lateinit var rvSize: RecyclerView
     private lateinit var rvColor: RecyclerView
     private lateinit var btnCloseSheet: ImageButton
-    private lateinit var btnAddToCartSheet: Button // Nút này trong layout XML vẫn có thể id là btnBuyNowSheet, nhưng ta gán logic add cart
+    private lateinit var btnAddToCartSheet: Button
     private lateinit var btnMinus: ImageButton
     private lateinit var btnPlus: ImageButton
     private lateinit var tvQty: TextView
@@ -45,15 +45,13 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Dùng chung layout dialog_buy hoặc dialog_add_to_card tùy bạn
-        // Ở đây giả sử dùng chung dialog_buy
         return inflater.inflate(R.layout.dialog_buy, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Lấy dữ liệu an toàn
+        // 1. Safe data retrieval
         arguments?.let {
             currentProduct = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 it.getSerializable(ARG_PRODUCT, Product::class.java)
@@ -64,14 +62,14 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
         }
 
         if (currentProduct == null) {
-            Toast.makeText(context, "Không tải được sản phẩm", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Could not load product", Toast.LENGTH_SHORT).show()
             dismiss()
             return
         }
 
         bindViews(view)
 
-        // Đổi text nút thành "Thêm vào giỏ"
+        // Update button text to English
         btnAddToCartSheet.text = "Add to Cart"
 
         initAdapters()
@@ -87,7 +85,7 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
         rvSize = view.findViewById(R.id.rvSize)
         rvColor = view.findViewById(R.id.rvColor)
         btnCloseSheet = view.findViewById(R.id.btnCloseSheet)
-        btnAddToCartSheet = view.findViewById(R.id.btnBuyNowSheet) // ID trong XML
+        btnAddToCartSheet = view.findViewById(R.id.btnBuyNowSheet)
         btnMinus = view.findViewById(R.id.btnMinusDetail)
         btnPlus = view.findViewById(R.id.btnPlusDetail)
         tvQty = view.findViewById(R.id.tvQtyDetail)
@@ -113,7 +111,6 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
     private fun initListeners() {
         btnCloseSheet.setOnClickListener { dismiss() }
 
-        // LOGIC QUAN TRỌNG: GỌI HÀM ADD TO CART LOCAL
         btnAddToCartSheet.setOnClickListener {
             handleAddToCart()
         }
@@ -124,7 +121,7 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
             if (current < max) {
                 tvQty.text = (current + 1).toString()
             } else {
-                Toast.makeText(context, "Chỉ còn $max sản phẩm", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Only $max items left", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -136,10 +133,9 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
         }
     }
 
-    // --- HÀM XỬ LÝ LƯU GIỎ HÀNG VÀO LOCAL ---
     private fun handleAddToCart() {
         if (selectedVariant == null) {
-            Toast.makeText(context, "Vui lòng chọn màu và size", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Please select color and size", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -147,10 +143,10 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
         val session = SessionManager.getInstance()
         val context = requireContext()
 
-        // 1. Lấy Cart ID (nếu chưa có thì tự tạo)
+        // 1. Get or Create Cart ID
         val cartId = session.getOrCreateCartId(context)
 
-        // 2. Tạo đối tượng CartItem
+        // 2. Create CartItem object
         val cartItem = CartItem(
             cartItemId = UUID.randomUUID(),
             cartId = cartId,
@@ -159,11 +155,11 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
             addedAt = System.currentTimeMillis().toString()
         )
 
-        // 3. Gọi SessionManager để lưu Local
+        // 3. Save to Local Session
         session.addToCartLocal(context, cartItem)
 
-        // 4. Thông báo và đóng dialog
-        Toast.makeText(context, "Đã thêm vào giỏ hàng", Toast.LENGTH_SHORT).show()
+        // 4. Feedback and close
+        Toast.makeText(context, "Added to cart successfully", Toast.LENGTH_SHORT).show()
         dismiss()
     }
 
@@ -187,7 +183,7 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
                     onSizeSelected(defaultSize)
                 }
             } else {
-                tvPriceSheet.text = "Hết hàng"
+                tvPriceSheet.text = "Out of stock"
                 btnAddToCartSheet.isEnabled = false
             }
         }
@@ -227,18 +223,18 @@ class AddToCartBottomSheetFragment : BottomSheetDialogFragment() {
         if (variant != null) {
             selectedVariant = variant
             tvPriceSheet.text = String.format("$%.2f", variant.price)
-            tvStockSheet.text = "Kho: ${variant.stockQuantity}"
+            tvStockSheet.text = "Stock: ${variant.stockQuantity}"
             btnAddToCartSheet.isEnabled = variant.stockQuantity > 0
         } else {
             selectedVariant = null
-            tvPriceSheet.text = "Không có sẵn"
-            tvStockSheet.text = "Kho: -"
+            tvPriceSheet.text = "Not available"
+            tvStockSheet.text = "Stock: -"
             btnAddToCartSheet.isEnabled = false
         }
         tvQty.text = "1"
     }
 
-    // ================== ADAPTER CLASSES (COPY Y HỆT) ==================
+    // ================== ADAPTER CLASSES ==================
 
     class ColorAdapter(
         private var items: List<String>,

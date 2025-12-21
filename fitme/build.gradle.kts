@@ -63,6 +63,8 @@ dependencies {
     api(libs.androidx.navigation.fragment.ktx)
     api(libs.androidx.navigation.ui.ktx)
     api(libs.permissionx)
+    implementation(libs.androidx.compose.animation.graphics)
+    implementation(libs.androidx.core.animation)
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")

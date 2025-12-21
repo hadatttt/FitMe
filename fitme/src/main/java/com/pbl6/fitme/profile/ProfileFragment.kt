@@ -7,6 +7,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
 import com.pbl6.fitme.R
+import com.pbl6.fitme.checkin.CheckInDialogFragment
 import com.pbl6.fitme.databinding.FragmentProfileBinding
 import com.pbl6.fitme.model.Product
 import com.pbl6.fitme.repository.CouponRepository
@@ -50,6 +51,10 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
     override fun initListener() {
         binding.llVoucher.singleClick {
             navigate(R.id.voucherFragment)
+        }
+        binding.btnCheck.setDraggableWithClick {
+            val dialog = CheckInDialogFragment()
+            dialog.show(parentFragmentManager, "CheckInDialog")
         }
         // Nút Back
         onBackPressed {
