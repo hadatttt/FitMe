@@ -37,7 +37,8 @@ data class Order(
     val paymentId: String? = null,
     val paymentMethod: String? = null,
     val paymentStatus: String? = null,
-    val paymentAmount: Double? = null
+    val paymentAmount: Double? = null,
+    var usePoints: Boolean = false
 ) : Serializable
 
 data class ShippingAddress(

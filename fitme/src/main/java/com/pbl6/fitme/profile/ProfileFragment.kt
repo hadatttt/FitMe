@@ -37,18 +37,15 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
         highlightSelectedTab(R.id.person_id)
-
+        fetchUserPoints()
         // Setup RecyclerView sản phẩm
         setupRecyclerViews()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Cập nhật lại dữ liệu mỗi khi màn hình hiện lên
         updateOrderBadges()
         fetchUserProfile()
         fetchVoucherCount() // 2. Gọi hàm lấy số lượng Voucher
     }
+
+
 
     override fun initListener() {
         binding.llVoucher.singleClick {
@@ -162,7 +159,28 @@ class ProfileFragment : BaseFragment<FragmentProfileBinding, ProfileViewModel>()
             }
         }
     }
+    private fun fetchUserPoints() {
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
+        val userId = SessionManager.getInstance().getUserId(requireContext())?.toString()
 
+        // LOG DEBUG
+        Log.d("ProfileDebug", "Token: $token")
+        Log.d("ProfileDebug", "UserId: $userId")
+
+        if (!token.isNullOrBlank() && !userId.isNullOrBlank()) {
+            userRepository.getUserPoints(token, userId) { points ->
+                Log.d("ProfileDebug", "Points API Response: $points") // Xem API trả về gì
+                activity?.runOnUiThread {
+                    if (context != null && isAdded) {
+                        val currentPoints = points ?: 0
+                        binding.tvCoinValue.text = "$currentPoints points"
+                    }
+                }
+            }
+        } else {
+            Log.e("ProfileDebug", "Không lấy được UserId hoặc Token")
+        }
+    }
     // --- 5. LOGIC BADGE ĐƠN HÀNG ---
     private fun updateOrderBadges() {
         val token = SessionManager.getInstance().getAccessToken(requireContext())

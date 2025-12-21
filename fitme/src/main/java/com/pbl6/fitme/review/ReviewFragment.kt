@@ -85,7 +85,7 @@ class ReviewFragment : BaseFragment<FragmentReviewBinding, ReviewViewModel>() {
         viewModel.createReviewResult.observe(viewLifecycleOwner) { isSuccess ->
             if (isSuccess) {
                 Toast.makeText(requireContext(), "Review submitted successfully!", Toast.LENGTH_SHORT).show()
-                findNavController().popBackStack() // Quay lại màn hình trước
+                findNavController().popBackStack()
             } else {
                 Toast.makeText(requireContext(), "Failed to submit review. Try again.", Toast.LENGTH_SHORT).show()
             }
@@ -98,7 +98,6 @@ class ReviewFragment : BaseFragment<FragmentReviewBinding, ReviewViewModel>() {
         }
     }
 
-    // Hàm cập nhật trạng thái chữ (Excellent, Good, etc.)
     private fun updateRatingStatus(rating: Float) {
         val status = when (rating.toInt()) {
             5 -> "Excellent"
@@ -110,7 +109,6 @@ class ReviewFragment : BaseFragment<FragmentReviewBinding, ReviewViewModel>() {
         binding.tvRatingStatus.text = status
     }
 
-    // Hàm thêm text từ Chip vào EditText
     private fun addTagToComment(tag: String) {
         val currentText = binding.etComment.text.toString()
         if (!currentText.contains(tag)) {

@@ -75,7 +75,62 @@ class UserRepository {
                 }
             })
     }
+    fun getUserPoints(token: String, userId: String, onResult: (Int?) -> Unit) {
+        val bearerToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
 
+        Log.d("UserRepo", ">>> Requesting Points for UserID: $userId")
+
+        // QUAN TRỌNG: Đổi <Int> thành <Double> để nhận số lẻ từ Backend
+        userApiService.getUserPoints(bearerToken, userId).enqueue(object : Callback<BaseResponse<Double>> {
+            override fun onResponse(
+                call: Call<BaseResponse<Double>>,
+                response: Response<BaseResponse<Double>>
+            ) {
+                Log.d("UserRepo", ">>> HTTP Response Code: ${response.code()}")
+
+                if (response.isSuccessful && response.body() != null) {
+                    val apiResponse = response.body()
+
+                    Log.d("UserRepo", ">>> API Code: ${apiResponse?.code}")
+                    Log.d("UserRepo", ">>> API Result (Raw Coin): ${apiResponse?.result}")
+
+                    // Chấp nhận code 200, 0 hoặc 1000
+                    if (apiResponse?.code == 200 || apiResponse?.code == 0 || apiResponse?.code == 1000) {
+
+                        // 1. Lấy giá trị Coin gốc (Double), nếu null thì bằng 0.0
+                        val rawCoin: Double = apiResponse?.result ?: 0.0
+
+                        // 2. Nhân với 25.000
+                        val calculatedVal = rawCoin * 25000
+
+                        // 3. Quy tròn (round) và chuyển về Int
+                        val finalPoints = kotlin.math.round(calculatedVal).toInt()
+
+                        Log.d("UserRepo", ">>> Converted: $rawCoin * 25000 = $finalPoints points")
+                        onResult(finalPoints)
+                    } else {
+                        Log.e("UserRepo", ">>> API Logic Error: Code is not 200/0/1000")
+                        onResult(0)
+                    }
+                } else {
+                    // Xử lý lỗi HTTP
+                    try {
+                        val errorStr = response.errorBody()?.string()
+                        Log.e("UserRepo", ">>> HTTP Error Body: $errorStr")
+                    } catch (e: Exception) {
+                        Log.e("UserRepo", ">>> HTTP Error (Cannot read body)")
+                    }
+                    onResult(0)
+                }
+            }
+
+            override fun onFailure(call: Call<BaseResponse<Double>>, t: Throwable) {
+                Log.e("UserRepo", ">>> NETWORK FAILURE: ${t.message}")
+                t.printStackTrace()
+                onResult(0)
+            }
+        })
+    }
     fun createUpdateUserParts(
         username: String,
         password: String,

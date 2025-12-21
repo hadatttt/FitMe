@@ -6,6 +6,8 @@ import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
 import com.pbl6.fitme.databinding.FragmentCartBinding
+import com.pbl6.fitme.model.CartItem
+import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
 import hoang.dqm.codebase.base.activity.onBackPressed
@@ -15,18 +17,17 @@ import java.util.UUID
 
 class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
 
-    private val cartItems = mutableListOf<com.pbl6.fitme.model.CartItem>()
+    private val cartItems = mutableListOf<CartItem>()
     private lateinit var cartAdapter: CartProductAdapter
-    private val cartRepository = com.pbl6.fitme.repository.CartRepository()
+
+    // Chỉ dùng MainRepo để lấy thông tin Tên/Ảnh/Giá sản phẩm để hiển thị
     private val mainRepository = com.pbl6.fitme.repository.MainRepository()
     private val addressRepository = com.pbl6.fitme.repository.AddressRepository()
-    private var accessToken: String? = null
 
-    // Map lưu thông tin sản phẩm
+    // Cache thông tin sản phẩm
     private var productMap: MutableMap<UUID, com.pbl6.fitme.model.Product> = mutableMapOf()
     private var variantMap: MutableMap<UUID, com.pbl6.fitme.model.ProductVariant> = mutableMapOf()
 
-    // Set lưu các variantId đang được tích chọn
     private val selectedVariantIds = mutableSetOf<UUID>()
 
     override fun initView() {
@@ -36,74 +37,72 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
 
         binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
 
-        accessToken = com.pbl6.fitme.session.SessionManager.getInstance().getAccessToken(requireContext())
-        val token = accessToken
+        // Vẫn lấy token để load địa chỉ (nếu có) và load thông tin sản phẩm
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
 
+        // 1. Load Địa chỉ (Nếu user đã login)
         if (!token.isNullOrBlank()) {
-            val email = com.pbl6.fitme.session.SessionManager.getInstance().getUserEmail(requireContext())
-
+            val email = SessionManager.getInstance().getUserEmail(requireContext())
             if (!email.isNullOrBlank()) {
                 addressRepository.getUserAddresses(token, email) { listAddress ->
                     activity?.runOnUiThread {
                         if (!listAddress.isNullOrEmpty()) {
                             val defaultAddress = listAddress.find { it.isDefault } ?: listAddress.first()
-
-                            binding.txtShippingAddress.text = "${defaultAddress.addressLine1},${defaultAddress.addressLine2}"
+                            binding.txtShippingAddress.text = "${defaultAddress.addressLine1}, ${defaultAddress.addressLine2}"
                         } else {
                             binding.txtShippingAddress.text = "Please add a shipping address"
                         }
                     }
                 }
             }
-            mainRepository.getProducts(token) { products ->
-                activity?.runOnUiThread {
-                    productMap.clear()
-                    products?.forEach { p -> productMap[p.productId] = p }
+        } else {
+            binding.txtShippingAddress.text = "Login to see address"
+        }
 
-                    mainRepository.getProductVariants(token) { variants ->
-                        activity?.runOnUiThread {
-                            variantMap.clear()
-                            variants?.forEach { v -> variantMap[v.variantId] = v }
+        // 2. LOAD CART TỪ LOCAL (Luôn luôn lấy từ local)
+        loadCartFromLocal(token ?: "")
+    }
 
-                            val cartId = com.pbl6.fitme.session.SessionManager.getInstance().getOrCreateCartId(requireContext()).toString()
-                            cartRepository.getCart(token, cartId) { items ->
-                                activity?.runOnUiThread {
-                                    cartItems.clear()
-                                    val fallback = com.pbl6.fitme.session.SessionManager.getInstance().getLocalCartItems(requireContext())
-                                    if (items != null) cartItems.addAll(items)
-                                    else if (fallback != null) cartItems.addAll(fallback)
+    private fun loadCartFromLocal(token: String) {
+        // Lấy danh sách ID và số lượng từ máy
+        val localItems = SessionManager.getInstance().getLocalCartItems(requireContext())
 
-                                    // Mặc định chọn tất cả các item khi mới load
-                                    selectedVariantIds.clear()
-                                    cartItems.forEach { selectedVariantIds.add(it.variantId) }
+        cartItems.clear()
+        if (localItems != null) {
+            cartItems.addAll(localItems)
+        }
 
-                                    val missingVariantIds = mutableListOf<UUID>()
-                                    cartItems.forEach { ci ->
-                                        val existingProduct = variantMap[ci.variantId]?.let { v -> productMap[v.productId] }
-                                        if (existingProduct == null) missingVariantIds.add(ci.variantId)
-                                    }
+        // Mặc định chọn tất cả
+        selectedVariantIds.clear()
+        cartItems.forEach { selectedVariantIds.add(it.variantId) }
 
-                                    if (missingVariantIds.isEmpty()) {
-                                        setupCartAdapter()
-                                    } else {
-                                        var remaining = missingVariantIds.size
-                                        missingVariantIds.forEach { vid ->
-                                            mainRepository.getProductByVariantId(token, vid.toString()) { product ->
-                                                activity?.runOnUiThread {
-                                                    product?.let { p -> productMap[p.productId] = p }
-                                                    try {
-                                                        val foundVariant = product?.variants?.find { it.variantId == vid }
-                                                        if (foundVariant != null) variantMap[foundVariant.variantId] = foundVariant
-                                                    } catch (_: Exception) { }
+        if (cartItems.isEmpty()) {
+            setupCartAdapter()
+            return
+        }
 
-                                                    remaining -= 1
-                                                    if (remaining <= 0) setupCartAdapter()
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+        // Tìm những item chưa có thông tin chi tiết (Tên, Ảnh...)
+        val missingVariantIds = cartItems.map { it.variantId }
+            .filter { vid -> !variantMap.containsKey(vid) }
+            .distinct()
+
+        if (missingVariantIds.isEmpty()) {
+            setupCartAdapter()
+        } else {
+            // Gọi API lấy thông tin chi tiết để hiển thị (KHÔNG PHẢI API CART)
+            var remaining = missingVariantIds.size
+            missingVariantIds.forEach { vid ->
+                mainRepository.getProductByVariantId(token, vid.toString()) { product ->
+                    activity?.runOnUiThread {
+                        if (product != null) {
+                            productMap[product.productId] = product
+                            product.variants.find { it.variantId == vid }?.let { v ->
+                                variantMap[v.variantId] = v
                             }
+                        }
+                        remaining -= 1
+                        if (remaining <= 0) {
+                            setupCartAdapter()
                         }
                     }
                 }
@@ -112,81 +111,82 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
     }
 
     private fun setupCartAdapter() {
-        cartAdapter = CartProductAdapter(
-            cartItems,
-            variantMap,
-            productMap,
-            selectedVariantIds, // Truyền danh sách đang chọn vào adapter
-            object : CartProductAdapter.OnCartActionListener {
+        if (!::cartAdapter.isInitialized) {
+            cartAdapter = CartProductAdapter(
+                cartItems,
+                variantMap,
+                productMap,
+                selectedVariantIds,
+                object : CartProductAdapter.OnCartActionListener {
 
-                // Xử lý sự kiện tích chọn checkbox
-                override fun onSelectionChanged(position: Int, isSelected: Boolean) {
-                    if (position in cartItems.indices) {
-                        val variantId = cartItems[position].variantId
-                        if (isSelected) {
-                            selectedVariantIds.add(variantId)
-                        } else {
-                            selectedVariantIds.remove(variantId)
+                    // Xử lý Checkbox
+                    override fun onSelectionChanged(position: Int, isSelected: Boolean) {
+                        if (position in cartItems.indices) {
+                            val variantId = cartItems[position].variantId
+                            if (isSelected) selectedVariantIds.add(variantId)
+                            else selectedVariantIds.remove(variantId)
+                            updateCartView()
                         }
-                        // Tính lại tiền ngay lập tức
-                        updateCartView()
                     }
-                }
 
-                override fun onRemove(position: Int) {
-                    if (position in cartItems.indices) {
-                        val itemToRemove = cartItems[position]
-                        val t = accessToken
-                        if (!t.isNullOrBlank()) {
-                            cartRepository.removeCartItem(t, itemToRemove.cartItemId.toString()) { success ->
-                                activity?.runOnUiThread {
-                                    if (success) {
-                                        // Xóa khỏi danh sách chọn nếu có
-                                        selectedVariantIds.remove(itemToRemove.variantId)
-                                        cartItems.removeAt(position)
-                                        cartAdapter.notifyItemRemoved(position)
-                                        cartAdapter.notifyItemRangeChanged(position, cartItems.size)
-                                        updateCartView()
-                                    }
-                                }
-                            }
-                        } else {
+                    // Xóa Item -> Xóa Local
+                    override fun onRemove(position: Int) {
+                        if (position in cartItems.indices) {
+                            val itemToRemove = cartItems[position]
                             selectedVariantIds.remove(itemToRemove.variantId)
                             cartItems.removeAt(position)
+
+                            // Lưu danh sách mới xuống Local
+                            saveCartToLocal()
+
                             cartAdapter.notifyItemRemoved(position)
+                            cartAdapter.notifyItemRangeChanged(position, cartItems.size)
                             updateCartView()
                         }
                     }
-                }
 
-                override fun onIncrease(position: Int) {
-                    if (position in cartItems.indices) {
-                        cartItems[position] = cartItems[position].copy(
-                            quantity = cartItems[position].quantity + 1
-                        )
-                        cartAdapter.notifyItemChanged(position)
-                        updateCartView()
-                    }
-                }
+                    // Tăng số lượng -> Lưu Local
+                    override fun onIncrease(position: Int) {
+                        if (position in cartItems.indices) {
+                            val newItem = cartItems[position].copy(quantity = cartItems[position].quantity + 1)
+                            cartItems[position] = newItem
 
-                override fun onDecrease(position: Int) {
-                    if (position in cartItems.indices) {
-                        if (cartItems[position].quantity > 1) {
-                            cartItems[position] = cartItems[position].copy(
-                                quantity = cartItems[position].quantity - 1
-                            )
+                            saveCartToLocal()
+
                             cartAdapter.notifyItemChanged(position)
                             updateCartView()
-                        } else {
-                            onRemove(position)
+                        }
+                    }
+
+                    // Giảm số lượng -> Lưu Local
+                    override fun onDecrease(position: Int) {
+                        if (position in cartItems.indices) {
+                            val currentQty = cartItems[position].quantity
+                            if (currentQty > 1) {
+                                val newItem = cartItems[position].copy(quantity = currentQty - 1)
+                                cartItems[position] = newItem
+
+                                saveCartToLocal()
+
+                                cartAdapter.notifyItemChanged(position)
+                                updateCartView()
+                            } else {
+                                onRemove(position)
+                            }
                         }
                     }
                 }
-            }
-        )
-
-        binding.rvCart.adapter = cartAdapter
+            )
+            binding.rvCart.adapter = cartAdapter
+        } else {
+            cartAdapter.notifyDataSetChanged()
+        }
         updateCartView()
+    }
+
+    // Hàm lưu danh sách hiện tại vào SharedPreferences
+    private fun saveCartToLocal() {
+        SessionManager.getInstance().saveLocalCartItems(requireContext(), cartItems)
     }
 
     private fun updateCartView() {
@@ -201,7 +201,7 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
             binding.rvCart.visibility = View.VISIBLE
             binding.emptyView.visibility = View.GONE
 
-            // --- TÍNH TỔNG TIỀN CHỈ CÁC ITEM ĐƯỢC CHỌN ---
+            // Tính tổng tiền dựa trên các item được chọn và giá trong variantMap
             val total = cartItems.sumOf { cartItem ->
                 if (selectedVariantIds.contains(cartItem.variantId)) {
                     val variant = variantMap[cartItem.variantId]
@@ -211,94 +211,53 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
                 }
             }
             binding.txtTotal.text = "Total $%.2f".format(total)
-
             setCheckoutEnabled(selectedVariantIds.isNotEmpty())
         }
     }
 
     private fun setCheckoutEnabled(isEnabled: Boolean) {
         binding.btnCheckout.isEnabled = isEnabled
-        if (isEnabled) {
-            binding.btnCheckout.setBackgroundColor(resources.getColor(R.color.maincolor, null))
-            binding.btnCheckout.setTextColor(resources.getColor(android.R.color.white, null))
-        } else {
-            binding.btnCheckout.setBackgroundColor(resources.getColor(android.R.color.darker_gray, null))
-            binding.btnCheckout.setTextColor(resources.getColor(android.R.color.white, null))
-        }
+        val color = if (isEnabled) R.color.maincolor else android.R.color.darker_gray
+        binding.btnCheckout.setBackgroundColor(resources.getColor(color, null))
     }
 
     override fun initListener() {
-        onBackPressed {
-            hideToolbar()
-            popBackStack()
-        }
+        onBackPressed { hideToolbar(); popBackStack() }
+        try { binding.ivBack.singleClick { hideToolbar(); popBackStack() } } catch (_: Exception) { }
 
-        try {
-            binding.ivBack.singleClick {
-                hideToolbar()
-                popBackStack()
-            }
-        } catch (_: Exception) { }
-
-        binding.btnEditAddress.singleClick {
-            navigate(R.id.shippingAddressFragment)
-        }
+        binding.btnEditAddress.singleClick { navigate(R.id.shippingAddressFragment) }
 
         binding.btnCheckout.singleClick {
             val selectedItems = cartItems.filter { selectedVariantIds.contains(it.variantId) }
-
             if (selectedItems.isNotEmpty()) {
-
-                // --- 1) Gửi item qua checkout như cũ ---
-                val variantIds = ArrayList<String>()
-                val variantQuantities = ArrayList<Int>()
-
-                selectedItems.forEach { ci ->
-                    variantIds.add(ci.variantId.toString())
-                    variantQuantities.add(ci.quantity)
-                }
+                val variantIds = ArrayList(selectedItems.map { it.variantId.toString() })
+                val variantQuantities = ArrayList(selectedItems.map { it.quantity })
 
                 val bundle = Bundle().apply {
                     putStringArrayList("cart_variant_ids", variantIds)
                     putIntegerArrayList("cart_variant_quantities", variantQuantities)
                 }
-
                 navigate(R.id.checkoutFragment, bundle)
-
-                val token = accessToken
-                if (!token.isNullOrBlank()) {
-                    selectedItems.forEach { item ->
-                        cartRepository.removeCartItem(token, item.cartItemId.toString()) { }
-                    }
-                }
-
-                cartItems.removeAll(selectedItems)
-                selectedVariantIds.removeAll(selectedItems.map { it.variantId }.toSet())
-
-                cartAdapter.notifyDataSetChanged()
-                updateCartView()
-
             } else {
                 Toast.makeText(context, "Please select items to checkout", Toast.LENGTH_SHORT).show()
             }
         }
 
+        setupBottomNavigation()
+    }
 
-        requireActivity().findViewById<View>(R.id.home_id).singleClick {
-            highlightSelectedTab(R.id.home_id)
-            navigate(R.id.homeFragment)
-        }
-        requireActivity().findViewById<View>(R.id.wish_id).singleClick {
-            highlightSelectedTab(R.id.wish_id)
-            navigate(R.id.wishlistFragment)
-        }
-
-        requireActivity().findViewById<View>(R.id.cart_id).singleClick {
-            highlightSelectedTab(R.id.cart_id)
-        }
-        requireActivity().findViewById<View>(R.id.person_id).singleClick {
-            highlightSelectedTab(R.id.person_id)
-            navigate(R.id.profileFragment)
+    private fun setupBottomNavigation() {
+        val navIds = mapOf(
+            R.id.home_id to R.id.homeFragment,
+            R.id.wish_id to R.id.wishlistFragment,
+            R.id.cart_id to null,
+            R.id.person_id to R.id.profileFragment
+        )
+        navIds.forEach { (id, dest) ->
+            requireActivity().findViewById<View>(id).singleClick {
+                highlightSelectedTab(id)
+                if (dest != null) navigate(dest)
+            }
         }
     }
 
@@ -307,17 +266,14 @@ class CartFragment : BaseFragment<FragmentCartBinding, CartViewModel>() {
     private fun highlightSelectedTab(selectedId: Int) {
         val ids = listOf(R.id.home_id, R.id.wish_id, R.id.cart_id, R.id.person_id)
         ids.forEach { id ->
-            val view = requireActivity().findViewById<View>(id)
-            if (id == selectedId) {
-                view.setBackgroundResource(R.drawable.bg_selected_tab)
-            } else {
-                view.setBackgroundColor(resources.getColor(android.R.color.transparent, null))
+            requireActivity().findViewById<View>(id).apply {
+                if (id == selectedId) setBackgroundResource(R.drawable.bg_selected_tab)
+                else setBackgroundColor(resources.getColor(android.R.color.transparent, null))
             }
         }
     }
 
     private fun hideToolbar() {
-        val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
-        toolbar.visibility = View.GONE
+        activity?.findViewById<View>(R.id.toolbar)?.visibility = View.GONE
     }
 }

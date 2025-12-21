@@ -6,11 +6,6 @@
         android:layout_height="wrap_content">
 
     <!-- Icon cảnh báo -->
-    <ImageView
-            android:src="@drawable/sad"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginBottom="15dp" />
 
     <!-- Tiêu đề -->
     <TextView

@@ -40,6 +40,7 @@ class AppSharePref(private val context: Context) {
         private const val PREF_SEARCH = "searchCount"
         private const val PREF_NAME_DAILY = "daily_pref"
         private const val KEY_SAVED_DATE = "saved_date"
+        private const val PREF_REWARD_LEVEL = "rewardLevel"
     }
 
     private val sharePref by lazy {
@@ -90,7 +91,7 @@ class AppSharePref(private val context: Context) {
             sharePref.edit { putInt(PREF_RELOAD, value) }
         }
     var spinCount: Int
-        get() = sharePref.getInt(PREF_SPIN, 30)
+        get() = sharePref.getInt(PREF_SPIN, 5)
         set(value) {
             sharePref.edit { putInt(PREF_SPIN, value) }
         }
@@ -238,5 +239,9 @@ class AppSharePref(private val context: Context) {
         val today = LocalDate.now().toString()
         return savedDate == today
     }
-
+    var rewardLevel: Int
+        get() = sharePref.getInt(PREF_REWARD_LEVEL, 0)
+        set(value) {
+            sharePref.edit { putInt(PREF_REWARD_LEVEL, value) }
+        }
 }

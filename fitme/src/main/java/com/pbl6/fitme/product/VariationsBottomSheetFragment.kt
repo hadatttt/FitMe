@@ -22,7 +22,6 @@ import java.io.Serializable
 
 class VariationsBottomSheetFragment : BottomSheetDialogFragment() {
 
-    // Bỏ ViewModel, dùng trực tiếp SessionManager để tránh lỗi requireParentFragment()
 
     private var currentProduct: Product? = null
     private var selectedColor: String? = null

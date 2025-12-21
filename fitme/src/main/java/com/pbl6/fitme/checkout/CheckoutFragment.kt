@@ -2,7 +2,6 @@ package com.pbl6.fitme.checkout
 
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -13,6 +12,7 @@ import com.pbl6.fitme.model.*
 import com.pbl6.fitme.repository.AddressRepository
 import com.pbl6.fitme.repository.CouponRepository
 import com.pbl6.fitme.repository.MainRepository
+import com.pbl6.fitme.repository.UserRepository
 import com.pbl6.fitme.session.SessionManager
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
@@ -22,15 +22,17 @@ import java.util.UUID
 import kotlin.math.min
 
 class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel>() {
-    private var total: Double = 0.0 // Đây là Subtotal (Tổng tiền hàng)
+    private var total: Double = 0.0
     private var shippingFee: Double = 0.0
+    private var isUsePoints: Boolean = false
+    private var currentUserPoints: Int = 0
+    private val EXCHANGE_RATE = 25000.0
 
-    // --- BIẾN MỚI CHO COUPON ---
-    private var discountAmount: Double = 0.0 // Số tiền được giảm
-    private var selectedCoupon: Coupon? = null // Coupon đang chọn
+    private var discountAmount: Double = 0.0
+    private var selectedCoupon: Coupon? = null
     private val couponRepository = CouponRepository()
+    private val userRepository = UserRepository()
     private lateinit var couponAdapter: CouponAdapter
-    // ---------------------------
 
     private lateinit var checkoutProductAdapter: CheckoutProductAdapter
     private val mainRepository = MainRepository()
@@ -52,22 +54,18 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
     override fun initView() {
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
-
         highlightSelectedTab(R.id.cart_id)
 
-        // Setup Cart List
         binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
         checkoutProductAdapter = CheckoutProductAdapter(emptyMap(), emptyMap())
         binding.rvCart.adapter = checkoutProductAdapter
 
-        // --- SETUP COUPON RECYCLERVIEW ---
         couponAdapter = CouponAdapter()
         binding.rvVoucherHorizontal.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         binding.rvVoucherHorizontal.adapter = couponAdapter
 
-        // Load danh sách coupon
         loadCoupons()
-        // --------------------------------
+        fetchUserPoints()
 
         val email = SessionManager.getInstance().getUserEmail(requireContext())
         val token = SessionManager.getInstance().getAccessToken(requireContext()).toString()
@@ -87,7 +85,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             }
         }
 
-        // Load info (Giữ nguyên code cũ)
         try {
             val session = SessionManager.getInstance()
             val recipient = session.getRecipientName(requireContext()) ?: ""
@@ -98,79 +95,35 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             if (userEmail2.isNotBlank()) binding.txtEmail.text = "Email: $userEmail2"
         } catch (_: Exception) {}
 
-        try {
-            binding.txtPaymentMethod.text = when (selectedPaymentMethod) {
-                PaymentMethod.MOMO -> "MOMO"
-                PaymentMethod.VNPAY -> "VNPay"
-                PaymentMethod.COD -> "Cash on Delivery"
-            }
-        } catch (_: Exception) {}
+        updatePaymentMethodText()
     }
 
-
-    private fun loadCoupons() {
-        val TAG = "CouponDebug" // Tag để bạn dễ tìm trong Logcat
-
+    private fun fetchUserPoints() {
         val token = SessionManager.getInstance().getAccessToken(requireContext())
+        val userId = SessionManager.getInstance().getUserId(requireContext())?.toString()
 
-        // Log 1: Kiểm tra token có lấy được không
-        Log.d(TAG, "Start loadCoupons. Token exists: ${!token.isNullOrBlank()}")
-
-        if (!token.isNullOrBlank()) {
-            couponRepository.getAllCoupons(token) { coupons ->
+        if (!token.isNullOrBlank() && !userId.isNullOrBlank()) {
+            userRepository.getUserPoints(token, userId) { points ->
                 activity?.runOnUiThread {
-                    // Log 2: Kiểm tra kết quả trả về từ API
-                    if (coupons == null) {
-                        Log.e(TAG, "API Error: Coupons list is NULL")
-                    } else {
-                        Log.d(TAG, "API Success: Received ${coupons.size} coupons")
-
-                        // (Tùy chọn) In chi tiết từng mã để xem trạng thái isActive
-                        coupons.forEach {
-                            Log.d(TAG, " >> Item: Code=${it.code}, Active=${it.isActive}")
-                        }
-
-                        // Chỉ hiện những coupon đang Active
-                        val activeCoupons = coupons.filter { it.isActive }
-
-                        // Log 3: Kiểm tra số lượng sau khi lọc
-                        Log.d(TAG, "Filtered Active Coupons: ${activeCoupons.size}")
-
-                        couponAdapter.setList(activeCoupons)
-                    }
+                    currentUserPoints = points ?: 0
+                    updateTotalPrice()
                 }
             }
-        } else {
-            Log.e(TAG, "Aborted: Token is null or blank")
         }
     }
 
-//    override fun onResume() {
-//        super.onResume()
-//        val hasItems = binding.rvCart.adapter?.itemCount ?: 0
-//        if (!dataLoaded || hasItems == 0) {
-//            initData()
-//        }
-//        // ... (Giữ nguyên logic check orderId cũ)
-//        viewModel.getCurrentOrderId()?.let { orderId ->
-//            val token = SessionManager.getInstance().getAccessToken(requireContext())
-//            if (!token.isNullOrBlank()) {
-//                mainRepository.getOrderById(token, orderId.toString()) { order ->
-//                    activity?.runOnUiThread {
-//                        if (order != null) {
-//                            viewModel.clearCurrentOrderId()
-//                            try {
-//                                val bundle = android.os.Bundle()
-//                                bundle.putString("order_id", order.orderId ?: "")
-//                                navigate(R.id.orderDetailFragment, bundle)
-//                            } catch (_: Exception) {}
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        // ... (Giữ nguyên logic refresh contact info)
-//    }
+    private fun loadCoupons() {
+        val token = SessionManager.getInstance().getAccessToken(requireContext())
+        if (!token.isNullOrBlank()) {
+            couponRepository.getAllCoupons(token) { coupons ->
+                activity?.runOnUiThread {
+                    if (coupons != null) {
+                        couponAdapter.setList(coupons.filter { it.isActive })
+                    }
+                }
+            }
+        }
+    }
 
     override fun initListener() {
         binding.ivBack.singleClick { popBackStack() }
@@ -178,27 +131,25 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         binding.btnEditContact.singleClick { navigate(R.id.contactInforFragment) }
         binding.btnEditPayment.singleClick { showPaymentMethodDialog() }
 
-        // --- XỬ LÝ CHỌN COUPON TỪ DANH SÁCH ---
+        binding.switchUseCoin.setOnCheckedChangeListener { _, isChecked ->
+            isUsePoints = isChecked
+            updateTotalPrice()
+        }
+
         couponAdapter.setOnClickItemRecyclerView { coupon, _ ->
             checkAndApplyCoupon(coupon)
         }
 
-        // --- XỬ LÝ NHẬP MÃ CODE TAY ---
         binding.btnApplyVoucher.singleClick {
             val code = binding.etVoucherCode.text.toString().trim()
-            if (code.isBlank()) {
-                Toast.makeText(requireContext(), "Please enter a code", Toast.LENGTH_SHORT).show()
-                return@singleClick
-            }
             val token = SessionManager.getInstance().getAccessToken(requireContext())
-            if (!token.isNullOrBlank()) {
+            if (!token.isNullOrBlank() && code.isNotBlank()) {
                 couponRepository.getCouponByCode(token, code) { coupon ->
                     activity?.runOnUiThread {
                         if (coupon != null && coupon.isActive) {
                             checkAndApplyCoupon(coupon)
                         } else {
-                            Toast.makeText(requireContext(), "Invalid or expired coupon", Toast.LENGTH_SHORT).show()
-                            // Nếu mã sai thì reset coupon đang chọn
+                            Toast.makeText(requireContext(), "Invalid coupon", Toast.LENGTH_SHORT).show()
                             selectedCoupon = null
                             discountAmount = 0.0
                             updateTotalPrice()
@@ -208,7 +159,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             }
         }
 
-        // NÚT CHECKOUT (Đã sửa để truyền Coupon vào Order)
         binding.btnCheckout.singleClick {
             val token = SessionManager.getInstance().getAccessToken(requireContext())
             if (token.isNullOrBlank()) {
@@ -225,11 +175,10 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             if (currentAddress == null) {
                 binding.btnCheckout.isEnabled = true
                 Toast.makeText(requireContext(), "Please add/select a shipping address", Toast.LENGTH_LONG).show()
-                // Thử load lại (Giữ nguyên code cũ)
                 return@singleClick
             }
 
-            if (binding.txtShippingAddress.text.isNullOrBlank() || currentAddress.addressLine1.isBlank()) {
+            if (binding.txtShippingAddress.text.isNullOrBlank() || useraddress?.addressLine1?.isBlank() == true) {
                 Toast.makeText(requireContext(), "Please add a shipping address", Toast.LENGTH_LONG).show()
                 return@singleClick
             }
@@ -238,31 +187,11 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
 
             val loginResponse = SessionManager.getInstance().getLoginResponse(requireContext())
             val userEmail = loginResponse?.result?.email?.takeIf { !it.isNullOrBlank() }
-                ?: SessionManager.getInstance().getUserEmail(requireContext())
+                ?: SessionManager.getInstance().getUserEmail(requireContext()) ?: ""
 
-            val subtotal = total
-            val shippingMoney = shippingFee
+            val finalCalculations = calculateFinalTotal()
+            val totalAmount = finalCalculations.first
 
-            // --- TÍNH TOÁN FINAL TOTAL ---
-            // Total = (Subtotal - Discount) + Shipping
-            var totalAfterDiscount = subtotal - discountAmount
-            if (totalAfterDiscount < 0) totalAfterDiscount = 0.0
-
-            val rawTotal = totalAfterDiscount + shippingFee
-
-            val totalAmount = try {
-                if (selectedPaymentMethod == PaymentMethod.VNPAY) {
-                    val bd = java.math.BigDecimal(rawTotal.toString())
-                    val rounded = bd.setScale(0, java.math.RoundingMode.HALF_UP).toDouble()
-                    rounded
-                } else {
-                    rawTotal
-                }
-            } catch (ex: Exception) {
-                rawTotal
-            }
-
-            // Build order items (Giữ nguyên)
             val orderItems = cartItems.map { cartItem ->
                 val unified = createUnifiedVariantMap()
                 val variant = unified[cartItem.variantId]
@@ -277,19 +206,16 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             }
 
             val order = Order(
-                userEmail = userEmail ?: "",
+                userEmail = userEmail,
                 shippingAddressId = "",
                 shippingAddress = currentAddress,
-
-                // --- UPDATE THÔNG TIN COUPON ---
                 couponCode = selectedCoupon?.code ?: "",
                 discountAmount = discountAmount,
-                // -------------------------------
-
+                usePoints = isUsePoints,
                 orderItems = orderItems,
-                subtotal = subtotal,
+                subtotal = total,
                 totalAmount = totalAmount,
-                shippingFee = shippingMoney,
+                shippingFee = shippingFee,
                 orderNotes = "",
                 paymentMethod = when (selectedPaymentMethod) {
                     PaymentMethod.MOMO -> "MOMO"
@@ -298,7 +224,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                 }
             )
 
-            // ... (Phần logic gọi API createOrder và Payment giữ nguyên y hệt code cũ)
             mainRepository.createOrder(token, order) { createdOrder ->
                 activity?.runOnUiThread {
                     if (createdOrder == null) {
@@ -306,18 +231,14 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                         Toast.makeText(requireContext(), "Failed to create order", Toast.LENGTH_LONG).show()
                         return@runOnUiThread
                     }
-                    // Logic Payment cũ...
                     when (selectedPaymentMethod) {
                         PaymentMethod.MOMO -> {
-                            // ... (Giữ nguyên logic MOMO)
                             handleMomoPayment(token, createdOrder, totalAmount, userEmail)
                         }
                         PaymentMethod.VNPAY -> {
-                            // ... (Giữ nguyên logic VNPAY)
                             handleVNPayPayment(token, createdOrder, userEmail)
                         }
                         PaymentMethod.COD -> {
-                            // ... (Giữ nguyên logic COD)
                             handleCODPayment()
                         }
                     }
@@ -341,24 +262,10 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             updateTotalPrice()
         }
 
-        // Tab click listeners (Giữ nguyên)
-        val tabIds = listOf(
-            R.id.home_id to R.id.homeFragment,
-            R.id.wish_id to R.id.wishlistFragment,
-            R.id.cart_id to R.id.cartFragment,
-            R.id.person_id to R.id.profileFragment
-        )
-        tabIds.forEach { (tabId, dest) ->
-            requireActivity().findViewById<View>(tabId).singleClick {
-                highlightSelectedTab(tabId)
-                navigate(dest)
-            }
-        }
+        setupBottomNav()
     }
 
-    // --- LOGIC KIỂM TRA VÀ ÁP DỤNG COUPON ---
     private fun checkAndApplyCoupon(coupon: Coupon) {
-        // Kiểm tra min order
         if (total < coupon.minimumOrderAmount) {
             Toast.makeText(requireContext(), "Order must be at least $${coupon.minimumOrderAmount}", Toast.LENGTH_LONG).show()
             selectedCoupon = null
@@ -372,12 +279,29 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         updateTotalPrice()
     }
 
-    // --- HÀM UPDATE TOTAL PRICE ĐÃ SỬA ---
     private fun updateTotalPrice() {
-        // 1. Tính toán Discount
+        val (finalTotal, pointDiscountUsd) = calculateFinalTotal()
+        val potentialDiscountUsd = currentUserPoints / EXCHANGE_RATE
+
+        binding.txtTotal.text = "Total \$${String.format("%.2f", finalTotal)}"
+
+        if (isUsePoints) {
+            val displayedDiscount = if (pointDiscountUsd > 0) pointDiscountUsd else 0.0
+            binding.txtCoinBalance.text = "Points applied: -$${String.format("%.2f", displayedDiscount)} (${currentUserPoints} pts)"
+            binding.txtCoinBalance.setTextColor(resources.getColor(android.R.color.holo_green_dark, null))
+        } else {
+            binding.txtCoinBalance.text = "Use ${currentUserPoints} points (-$${String.format("%.2f", potentialDiscountUsd)})"
+            binding.txtCoinBalance.setTextColor(resources.getColor(hoang.dqm.codebase.R.color.gray_ac, null))
+        }
+
+        binding.switchUseCoin.isEnabled = currentUserPoints > 0
+        binding.rvCart.visibility = View.VISIBLE
+        dataLoaded = true
+    }
+
+    private fun calculateFinalTotal(): Pair<Double, Double> {
         discountAmount = 0.0
         selectedCoupon?.let { coupon ->
-            // Check lại điều kiện phòng khi subtotal thay đổi
             if (total >= coupon.minimumOrderAmount) {
                 if (coupon.discountType == "PERCENTAGE") {
                     var calcDiscount = total * (coupon.discountValue / 100)
@@ -386,7 +310,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                     }
                     discountAmount = calcDiscount
                 } else {
-                    // FIXED_AMOUNT
                     discountAmount = coupon.discountValue
                 }
             } else {
@@ -396,45 +319,33 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             }
         }
 
-        // 2. Tính Total
-        var totalAfterDiscount = total - discountAmount
-        if (totalAfterDiscount < 0) totalAfterDiscount = 0.0
-        val finalTotal = totalAfterDiscount + shippingFee
+        val subTotalAfterCoupon = total - discountAmount
+        var pointDiscountUsd = 0.0
 
-        // 3. Hiển thị
-        binding.txtTotal.text = "Total \$${String.format("%.2f", finalTotal)}"
-        binding.rvCart.visibility = View.VISIBLE
-        dataLoaded = true
+        if (isUsePoints && currentUserPoints > 0) {
+            val potentialUsd = currentUserPoints / EXCHANGE_RATE
+            pointDiscountUsd = minOf(potentialUsd, subTotalAfterCoupon)
+        }
+
+        var tempTotal = subTotalAfterCoupon - pointDiscountUsd
+        if (tempTotal < 0) tempTotal = 0.0
+
+        val finalTotal = tempTotal + shippingFee
+        return Pair(finalTotal, pointDiscountUsd)
     }
 
-    // (Giữ nguyên toàn bộ logic InitData khổng lồ của bạn)
     override fun initData() {
-        // ... (Code cũ của bạn giữ nguyên, không thay đổi logic lấy cart)
-        // ...
-        // Chỉ lưu ý: Ở những chỗ bạn gán `total = ...` và gọi `updateTotalPrice()`,
-        // hàm `updateTotalPrice` mới của tôi sẽ tự động trừ coupon dựa trên biến `total` đó.
-
-        superCallInitData() // Tôi gói gọn code cũ vào hàm này để đỡ rối mắt ở đây
-    }
-
-    // Paste toàn bộ nội dung hàm initData cũ của bạn vào đây
-// Thay thế toàn bộ hàm superCallInitData cũ bằng hàm này
-    private fun superCallInitData() {
         val args = arguments
-        // Các tham số cũ
         val buyProductId = args?.getString("buy_now_product_id")
         val buyVariantId = args?.getString("buy_now_variant_id")
         val buyQuantity = args?.getInt("buy_now_quantity") ?: 1
         val cartIndices = args?.getIntegerArrayList("cart_item_indices")
         val cartVariantIds = args?.getStringArrayList("cart_variant_ids")
         val cartVariantQuantities = args?.getIntegerArrayList("cart_variant_quantities")
-
-        // --- THAM SỐ MỚI CHO REORDER ---
         val reorderId = args?.getString("reorder_id")
 
         val token = SessionManager.getInstance().getAccessToken(requireContext())
 
-        // 1. Tải danh sách Product và Variant trước (Logic cũ)
         mainRepository.getProducts(token ?: "") { products ->
             activity?.runOnUiThread {
                 productMap = products?.associateBy { it.productId } ?: emptyMap()
@@ -443,30 +354,21 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                     activity?.runOnUiThread {
                         variantMap = variants?.associateBy { it.variantId } ?: emptyMap()
 
-                        // --- BẮT ĐẦU XỬ LÝ CÁC TRƯỜNG HỢP ---
-
                         if (!reorderId.isNullOrBlank()) {
-                            // === CASE 1: REORDER (MUA LẠI ĐƠN CŨ) ===
                             if (!token.isNullOrBlank()) {
                                 mainRepository.getOrderById(token, reorderId) { oldOrder ->
                                     activity?.runOnUiThread {
                                         if (oldOrder != null) {
-                                            // Chuyển đổi OrderItem của đơn cũ thành CartItem cho màn hình Checkout
                                             val reorderItems = mutableListOf<CartItem>()
-
-                                            // Duyệt qua list item của đơn cũ (items hoặc orderItems tùy model)
                                             val items = if (oldOrder.items.isNotEmpty()) oldOrder.items else oldOrder.orderItems
 
                                             items.forEach { item ->
                                                 try {
-                                                    // Lấy Variant ID (Model OrderItem trả về String, cần cast sang UUID)
-                                                    // Lưu ý: Đảm bảo model OrderItem có trường variantId
                                                     val vIdString = item.variantId
-
                                                     if (!vIdString.isNullOrBlank()) {
                                                         reorderItems.add(
                                                             CartItem(
-                                                                cartItemId = UUID.randomUUID(), // Tạo ID mới giả
+                                                                cartItemId = UUID.randomUUID(),
                                                                 addedAt = null,
                                                                 quantity = item.quantity,
                                                                 cartId = UUID.randomUUID(),
@@ -480,17 +382,15 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                                             }
 
                                             cartItems = reorderItems
-                                            // Tải thông tin chi tiết sản phẩm và hiển thị
                                             loadProductsForCartItems(token, cartItems)
                                         } else {
-                                            android.widget.Toast.makeText(requireContext(), "Could not load order details", android.widget.Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(requireContext(), "Could not load order details", Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 }
                             }
                         }
                         else if (!buyProductId.isNullOrBlank() && !buyVariantId.isNullOrBlank()) {
-                            // === CASE 2: BUY NOW (MUA NGAY) ===
                             try {
                                 val cartItem = CartItem(
                                     cartItemId = UUID.randomUUID(), addedAt = null, quantity = buyQuantity,
@@ -501,7 +401,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
                             } catch (ex: Exception) { cartItems = emptyList() }
                         }
                         else if (cartVariantIds != null && cartVariantIds.isNotEmpty()) {
-                            // === CASE 3: CHỌN TỪ GIỎ HÀNG (Truyền ID) ===
                             val list = mutableListOf<CartItem>()
                             cartVariantIds.forEachIndexed { index, vidStr ->
                                 try {
@@ -537,6 +436,7 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             }
         }
     }
+
     private fun loadProductsForCartItems(token: String?, items: List<CartItem>) {
         val productIdsToFetch = items.mapNotNull {
             variantMap[it.variantId]?.productId
@@ -568,14 +468,11 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             val v = unified[cartItem.variantId]
             (v?.price ?: 0.0) * cartItem.quantity
         }
-        updateTotalPrice() // Gọi hàm update mới để tính cả coupon
+        updateTotalPrice()
     }
 
-    // Các hàm Payment cũ để code gọn (Bạn copy logic cũ vào đây)
     private fun handleMomoPayment(token: String, createdOrder: Order, totalAmount: Double, userEmail: String?) {
-        val exchangeRate = 25000L
-        val amountVndLong = (totalAmount * exchangeRate).toLong()
-
+        val amountVndLong = (totalAmount * EXCHANGE_RATE).toLong()
         mainRepository.createMomoPayment(token, amountVndLong, userEmail ?: "", createdOrder.orderId?.toString()) { momoResp ->
             activity?.runOnUiThread {
                 binding.btnCheckout.isEnabled = true
@@ -613,7 +510,6 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
         } catch (_: Exception) {}
     }
 
-    // ... (Giữ nguyên các hàm helper khác: createUnifiedVariantMap, showPaymentMethodDialog, highlightSelectedTab)
     private fun createUnifiedVariantMap(): Map<UUID, ProductVariant> {
         val unified = variantMap.toMutableMap()
         productMap.values.forEach { product ->
@@ -644,15 +540,30 @@ class CheckoutFragment : BaseFragment<FragmentCheckoutBinding, CheckoutViewModel
             }
             .setPositiveButton("OK") { dialog, _ ->
                 selectedPaymentMethod = tempSelection
-                binding.txtPaymentMethod.text = when (selectedPaymentMethod) {
-                    PaymentMethod.MOMO -> "MOMO"
-                    PaymentMethod.VNPAY -> "VNPay"
-                    PaymentMethod.COD -> "Cash on Delivery"
-                }
+                updatePaymentMethodText()
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun updatePaymentMethodText() {
+        binding.txtPaymentMethod.text = when (selectedPaymentMethod) {
+            PaymentMethod.MOMO -> "MOMO"
+            PaymentMethod.VNPAY -> "VNPay"
+            PaymentMethod.COD -> "Cash on Delivery"
+        }
+    }
+
+    private fun setupBottomNav() {
+        val ids = listOf(R.id.home_id, R.id.wish_id, R.id.cart_id, R.id.person_id)
+        val dests = listOf(R.id.homeFragment, R.id.wishlistFragment, R.id.cartFragment, R.id.profileFragment)
+        ids.forEachIndexed { index, id ->
+            requireActivity().findViewById<View>(id).singleClick {
+                highlightSelectedTab(id)
+                navigate(dests[index])
+            }
+        }
     }
 
     private fun highlightSelectedTab(selectedId: Int) {

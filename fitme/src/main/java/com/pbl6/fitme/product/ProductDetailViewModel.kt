@@ -161,46 +161,6 @@ class ProductDetailViewModel : BaseViewModel() {
         }
     }
 
-    // --- CART LOGIC (Giữ nguyên logic cũ nhưng clean hơn) ---
 
-    fun addToCart(context: Context, token: String, variantId: UUID, quantity: Int = 1) {
-        val request = AddCartRequest(variantId, quantity)
-        val session = SessionManager.getInstance()
-        val profileId = session.getUserId(context)?.toString()
-        val cartId = if (!profileId.isNullOrBlank()) null else session.getOrCreateCartId(context).toString()
 
-        // ... (Giữ nguyên logic phức tạp getCartByUser/createCartForNewUser của bạn ở đây) ...
-        // Để ngắn gọn cho câu trả lời, mình gọi hàm này đại diện:
-        handleAddToCartComplexLogic(context, token, profileId, cartId, request, variantId, quantity)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun handleAddToCartComplexLogic(context: Context, token: String, profileId: String?, localCartId: String?, request: AddCartRequest, variantId: UUID, quantity: Int) {
-        // Copy logic addToCart cũ của bạn vào đây
-        // Khi thành công:
-        // onAddToCartSuccess.postValue(true)
-
-        // Demo vắn tắt (thực tế bạn paste code cũ vào):
-        val session = SessionManager.getInstance()
-        if (profileId != null) {
-            mainRepository.getCartByUser(token, profileId) { serverCartId ->
-                // ... logic cũ ...
-                mainRepository.addToCart(context, token, serverCartId ?: "", request) { success ->
-                    if(success) onAddToCartSuccess.postValue(true)
-                    else {
-                        session.addLocalCartItem(context, variantId, quantity)
-                        onAddToCartSuccess.postValue(true)
-                    }
-                }
-            }
-        } else {
-            mainRepository.addToCart(context, token, localCartId ?: "", request) { success ->
-                if(success) onAddToCartSuccess.postValue(true)
-                else {
-                    session.addLocalCartItem(context, variantId, quantity)
-                    onAddToCartSuccess.postValue(true)
-                }
-            }
-        }
-    }
 }

@@ -27,7 +27,11 @@ interface UserApiService {
         @PartMap params: Map<String, @JvmSuppressWildcards RequestBody>,
         @Part avatar: MultipartBody.Part? = null
     ): Call<BaseResponse<UserResponse>>
-
+    @GET("users/points/{userId}")
+    fun getUserPoints(
+        @Header("Authorization") token: String,
+        @Path("userId") userId: String
+    ): Call<BaseResponse<Double>>
     @GET("users/{userId}")
     fun getUserDetail(
         @Header("Authorization") token: String,

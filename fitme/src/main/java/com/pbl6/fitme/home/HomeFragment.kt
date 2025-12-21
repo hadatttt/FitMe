@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -18,7 +19,6 @@ import com.pbl6.fitme.session.SessionManager
 import com.pbl6.fitme.untils.AppSharePref
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.navigate
-import hoang.dqm.codebase.base.activity.onBackPressed
 import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.utils.setDraggableWithClick
 import hoang.dqm.codebase.utils.singleClick
@@ -26,14 +26,17 @@ import hoang.dqm.codebase.utils.singleClick
 class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
 
     private lateinit var productAdapter: ProductAdapter
+    private var isProductMode = false // Biến theo dõi trạng thái hiện tại
 
     override fun initView() {
         val toolbar = requireActivity().findViewById<View>(R.id.toolbar)
         toolbar.visibility = View.VISIBLE
         highlightSelectedTab(R.id.home_id)
 
-        setupRecyclerViews()
+        // Mặc định hiển thị Category Mode
+        toggleViewMode(showProducts = false)
 
+        setupRecyclerViews()
         observeViewModel()
 
         val token = SessionManager.getInstance().getAccessToken(requireContext())
@@ -55,11 +58,18 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
 
     private fun observeViewModel() {
         viewModel.obsCategories.observe(this) { categories ->
+            // Khi load xong category, hiển thị vào Grid
             binding.rvCategories.adapter = CategoryAdapter(categories) { selectedCategory ->
+                // CLICK VÀO CATEGORY
                 val catId = selectedCategory.categoryId
                 val token = SessionManager.getInstance().getAccessToken(requireContext())
+
+                binding.tvAllItems.text = selectedCategory.categoryName ?: "Collection"
+
                 if (catId != null && !token.isNullOrBlank()) {
                     viewModel.loadProductsByCategory(token, catId.toString())
+                    // Chuyển sang chế độ xem sản phẩm
+                    toggleViewMode(showProducts = true)
                 }
             }
         }
@@ -71,13 +81,30 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
 
         viewModel.obsCurrentGender.observe(this) { gender ->
             updateGenderTabUI(gender)
+            // Khi đổi giới tính, nên reset về màn hình Category để chọn lại
+            toggleViewMode(showProducts = false)
         }
     }
 
     override fun initListener() {
-        onBackPressed {
-            hideToolbar()
-            popBackStack()
+        // Xử lý nút Back cứng của điện thoại
+        requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (isProductMode) {
+                    // Nếu đang xem sản phẩm -> Quay lại xem danh mục
+                    toggleViewMode(showProducts = false)
+                } else {
+                    // Nếu đang ở danh mục -> Thoát/Ẩn toolbar như cũ
+                    isEnabled = false
+                    hideToolbar()
+                    popBackStack()
+                }
+            }
+        })
+
+        // Nút tắt (X) ở màn hình sản phẩm
+        binding.btnCloseProductMode.singleClick {
+            toggleViewMode(showProducts = false)
         }
 
         binding.btnSlot.setDraggableWithClick {
@@ -93,6 +120,11 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
         binding.etSearchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                // Khi search, có thể muốn hiện list sản phẩm luôn
+                if (!s.isNullOrEmpty() && !isProductMode) {
+                    toggleViewMode(showProducts = true)
+                    binding.tvAllItems.text = "Search Results"
+                }
                 viewModel.searchProduct(s.toString())
             }
             override fun afterTextChanged(s: Editable?) {}
@@ -102,12 +134,21 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
             showSortPopupMenu()
         }
 
-        binding.tvAllItems.singleClick {
-            viewModel.resetToDefaultGenderList()
-            Toast.makeText(requireContext(), "All items", Toast.LENGTH_SHORT).show()
-        }
-
         setupBottomNavigation()
+    }
+
+    // Hàm chuyển đổi giao diện
+    private fun toggleViewMode(showProducts: Boolean) {
+        isProductMode = showProducts
+        if (showProducts) {
+            binding.containerCategoryMode.visibility = View.GONE
+            binding.containerProductMode.visibility = View.VISIBLE
+        } else {
+            binding.containerCategoryMode.visibility = View.VISIBLE
+            binding.containerProductMode.visibility = View.GONE
+            // Reset lại title nếu cần
+            binding.tvAllItems.text = "Collections"
+        }
     }
 
     private fun setupRecyclerViews() {
@@ -123,8 +164,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding, HomeMainViewModel>() {
 
         binding.rvItems.layoutManager = GridLayoutManager(requireContext(), 2)
         binding.rvItems.adapter = productAdapter
-        binding.rvCategories.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+
+        // SỬA: Category hiển thị dạng Grid 2 cột thay vì Horizontal
+        binding.rvCategories.layoutManager = GridLayoutManager(requireContext(), 2)
     }
+
+    // ... (Giữ nguyên các hàm updateGenderTabUI, highlightSelectedTab, setupBottomNavigation, showSortPopupMenu, hideToolbar cũ) ...
 
     private fun updateGenderTabUI(selectedGender: String) {
         val selectedColor = ContextCompat.getColor(requireContext(), R.color.black)

@@ -465,7 +465,7 @@ class MainRepository {
         })
     }
     fun getWishlistItems(onResult: (List<WishlistItem>?) -> Unit) {
-        // This method now requires a wishlistId. Keep a stub implementation to avoid breaking callers.
+        // This method now requires a wishlistId. Keep a stub cimplementation to avoid breaking callers.
         Log.e("MainRepository", "getWishlistItems called without wishlistId - not supported")
         onResult(null)
     }

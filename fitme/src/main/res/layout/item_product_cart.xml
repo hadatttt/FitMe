@@ -19,9 +19,9 @@
                 android:id="@+id/chkSelect_cart"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:buttonTint="#FF6F00"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
+                app:buttonTint="#FF6F00"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 

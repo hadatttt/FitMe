@@ -2,6 +2,7 @@ package com.pbl6.fitme.order
 
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pbl6.fitme.R
@@ -13,11 +14,15 @@ import com.pbl6.fitme.repository.MainRepository
 import hoang.dqm.codebase.base.activity.BaseFragment
 import hoang.dqm.codebase.base.activity.popBackStack
 import hoang.dqm.codebase.base.activity.onBackPressed
-import hoang.dqm.codebase.utils.singleClick
+import android.app.Dialog
+import android.view.Window
 
+import hoang.dqm.codebase.utils.singleClick
+import com.pbl6.fitme.untils.*
 class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
 
     private val mainRepo = MainRepository()
+    private val appSharePref by lazy { AppSharePref(requireContext()) }
     private var currentOrders: List<Order> = emptyList()
     private var currentStatus: OrderStatus = OrderStatus.PENDING
 
@@ -59,6 +64,8 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
                     currentOrders = allOrders
                     updateTabCounts()
                     displayOrders(allOrders, initialStatus)
+                    checkOrderRewards(allOrders)
+
                 } else {
                     showEmptyState()
                     selectTab(initialStatus)
@@ -157,7 +164,27 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
         binding.recyclerOrders.visibility = View.GONE
         binding.emptyViewOrder.visibility = View.VISIBLE
     }
+    private fun checkOrderRewards(orders: List<Order>) {
+        // Đếm số đơn hàng đã giao (DELIVERED)
+        val deliveredCount = orders.count { order ->
+            val s = (order.status ?: order.orderStatus ?: "")
+            s.equals(OrderStatus.DELIVERED.name, ignoreCase = true) ||
+                    s.equals(OrderStatus.DELIVERED.value, ignoreCase = true)
+        }
 
+        val currentLevel = appSharePref.rewardLevel
+
+        if (deliveredCount in 1..3) {
+            if (currentLevel < 1) {
+                showRewardDialog()
+            }
+        }
+        else if (deliveredCount in 4..6) {
+            if (currentLevel < 2) {
+                showRewardDialog()
+            }
+        }
+    }
     private fun updateTabCounts() {
         fun getCount(status: OrderStatus) = currentOrders.count { order ->
             val s = (order.status ?: order.orderStatus ?: "")
@@ -173,7 +200,38 @@ class OrdersFragment : BaseFragment<FragmentOrdersBinding, OrdersViewModel>() {
             tvTabCancelled.text = "Cancelled (${getCount(OrderStatus.CANCELLED)})"
         }
     }
+    // Hàm hiển thị Dialog nhận thưởng +5 Spin
+    private fun showRewardDialog() {
+        context?.let { ctx ->
+            val dialog = Dialog(ctx)
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            dialog.setContentView(R.layout.dialog_collect)
+            dialog.setCancelable(false)
 
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            dialog.window?.setLayout(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+
+            val imvCenter = dialog.findViewById<androidx.appcompat.widget.AppCompatImageView>(R.id.imvCenter)
+            val btnClose = dialog.findViewById<View>(R.id.btnClose)
+
+            imvCenter.setImageResource(R.drawable.ic5spin)
+
+            appSharePref.spinCount += 5
+
+            appSharePref.rewardLevel = 1
+
+
+
+            btnClose.setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialog.show()
+        }
+    }
     private fun selectTab(selectedStatus: OrderStatus) {
         binding.apply {
             val views = listOf(tvTabPending, tvTabConfirmed, tvTabProcessing, tvTabShipped, tvTabDelivered, tvTabCancelled)

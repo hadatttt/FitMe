@@ -12,6 +12,7 @@
             android:layout_height="wrap_content"
             android:text="Card"
             android:fontFamily="@font/baloo2_semibold"
+            android:layout_marginTop="16dp"
             android:textSize="@dimen/_30sdp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -152,7 +153,8 @@
             android:layout_height="@dimen/_40sdp"
             android:padding="@dimen/_7sdp"
             android:src="@drawable/ic_back"
-            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:background="@drawable/bg_circle_blue"/>

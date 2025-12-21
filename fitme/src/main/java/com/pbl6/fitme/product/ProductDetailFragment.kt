@@ -166,14 +166,16 @@ class ProductDetailFragment : BaseFragment<FragmentProductDetailBinding, Product
     }
 
     private fun showAddToCartSheet() {
-        currentProduct?.let {
-            val auto = autoOpenAddToCart
+        currentProduct?.let { product ->
+            // Reset cờ auto (dù không dùng nữa nhưng cứ reset để tránh lỗi logic sau này)
             autoOpenAddToCart = false
-            val bottomSheet = AddToCartBottomSheetFragment.newInstance(it, auto)
+
+            // SỬA Ở ĐÂY: Chỉ truyền 1 tham số là product
+            val bottomSheet = AddToCartBottomSheetFragment.newInstance(product)
+
             bottomSheet.show(parentFragmentManager, "AddToCartBottomSheet")
         } ?: Toast.makeText(requireContext(), "Đang tải dữ liệu...", Toast.LENGTH_SHORT).show()
     }
-
     private fun showVariationsSheet() {
         currentProduct?.let {
             val bottomSheet = VariationsBottomSheetFragment.newInstance(it)

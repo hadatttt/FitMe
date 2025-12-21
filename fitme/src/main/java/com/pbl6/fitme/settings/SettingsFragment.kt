@@ -70,7 +70,7 @@ class SettingsFragment : Fragment() {
             .create()
 
         // Làm tròn góc cho dialog nếu muốn đẹp hơn
-        dlg.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dlg.window?.setBackgroundDrawableResource(android.R.color.white)
 
         val btnCancel = dlgView.findViewById<Button>(R.id.btnCancel)
         val btnLogout = dlgView.findViewById<Button>(R.id.btnLogout)
